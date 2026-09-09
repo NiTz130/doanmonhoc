@@ -27,10 +27,10 @@ Nguyên tắc chia: **mỗi người đi theo lĩnh vực của mình xuyên su�
 
 | Thành viên | Lĩnh vực | Module xử lý | Tầng API | Màn frontend | File test |
 |---|---|---|---|---|---|
-| **TV1**<br>Nhóm trưởng | Nền tảng, CSDL, điều phối, tích hợp | `pipeline/srt.py`, `db.py`, `dieu_phoi.py`, `main.py` | — (duyệt kiến trúc, giữ `api/` mỏng) | Khung chung, điều hướng, gộp và tích hợp | `test_srt.py`, `test_db.py`, `test_pipeline.py` |
-| **TV2** | Đầu vào: nhận video, phụ đề sẵn, âm thanh, nhận dạng | `pipeline/subs.py`, `audio.py`, `asr.py` | `api/app.py`, `api/viec.py` — tải lên, tạo công việc, chạy nền, tiến độ | Trang tải lên, bảng tiến độ | `test_asr.py`, `test_api.py` |
-| **TV3** | Dịch và thuật ngữ | `pipeline/translate.py` | `api/nhom.py` — nhóm, thuật ngữ, khung mặc định | Trang quản lý nhóm và thuật ngữ | `test_translate.py` |
-| **TV4** | Hình học, vùng mờ, kết xuất, tổng hợp kiểm thử | `pipeline/markbox.py`, `render.py` | Route khung ảnh và nhận hộp (trong `api/app.py`, phối hợp TV2) | Canvas vẽ hộp trên 8 khung, trang kết quả | `test_render.py` |
+| **TV1**<br>Nhóm trưởng | Nền tảng, CSDL, điều phối, tích hợp | `pipeline/srt.py`, `db.py`, `dieu_phoi.py`, `main.py` | — (duyệt kiến trúc, giữ `api/` mỏng) | Khung chung, điều hướng, gộp và tích hợp | `test_pipeline.py`, `tests_db.py` |
+| **TV2** | Đầu vào: nhận video, phụ đề sẵn, âm thanh, nhận dạng | `pipeline/subs.py`, `audio.py`, `asr.py` | `api/app.py`, `api/viec.py` — tải lên, tạo công việc, chạy nền, tiến độ | Trang tải lên, bảng tiến độ | `tests_media.py`, `tests_api.py` |
+| **TV3** | Dịch và thuật ngữ | `pipeline/translate.py` | `api/nhom.py` — nhóm, thuật ngữ, khung mặc định | Trang quản lý nhóm và thuật ngữ | `tests_translate.py` |
+| **TV4** | Hình học, vùng mờ, kết xuất, tổng hợp kiểm thử | `pipeline/markbox.py`, `render.py` | Route khung ảnh và nhận hộp (trong `api/app.py`, phối hợp TV2) | Canvas vẽ hộp trên 8 khung, trang kết quả | `tests_media.py`, `tests_smoke.py` |
 
 Ranh giới file không chồng nhau — đó là điều kiện để bốn nhánh chạy song song mà không tranh chỗ. Route nhóm tách riêng thành `api/nhom.py` (FastAPI `APIRouter`) chính là để TV2 và TV3 không cùng sửa `app.py`. File dùng chung chỉ còn `pyproject.toml`, `pipeline/__init__.py`, `api/__init__.py` và `README.md`; sửa các file này phải báo trong nhóm trước khi merge.
 
@@ -117,7 +117,7 @@ Sáu giai đoạn nối tiếp; trong một giai đoạn thì bốn người ch�
 - **`api/` phải mỏng.** Route chỉ validate, gọi `dieu_phoi` rồi trả JSON. Bắt gặp ffmpeg, model hay filtergraph trong `api/` là lý do từ chối PR — nếu không, sẽ có hai nhánh xử lý và CLI với web cho ra kết quả khác nhau.
 - Sau G4 chốt tính năng; G5 chỉ sửa lỗi và chuẩn bị bảo vệ, không thêm tính năng ngoài phạm vi.
 
-**Kiểm thử tách theo người, không dùng chung một file.** Spec §10 và plan STEP-1 ban đầu mô tả một `test_pipeline.py` duy nhất với runner ở cuối; với bốn người cùng ghi thì lần nào cũng đụng đúng vị trí cuối file. Nhóm tách thành `test_srt.py`, `test_db.py`, `test_asr.py`, `test_translate.py`, `test_render.py`, `test_api.py` theo bảng §2, và `test_pipeline.py` import hết rồi chạy runner. Vẫn `assert` trần, vẫn không thêm framework test, không phạm IC-1. Test API dùng `TestClient` của FastAPI, không mở cổng mạng thật.
+**Kiểm thử tách theo người, không dùng chung một file.** Spec §10 và plan STEP-1 ban đầu mô tả một `test_pipeline.py` duy nhất với runner ở cuối; với bốn người cùng ghi thì lần nào cũng đụng đúng vị trí cuối file. Nhóm tách thành `tests_db.py`, `tests_media.py`, `tests_translate.py`, `tests_api.py` và `tests_smoke.py` theo bảng §2; `test_pipeline.py` giữ test SRT và điều phối, import các file kia rồi chạy runner. Vẫn `assert` trần, vẫn không thêm framework test, không phạm IC-1. Test API dùng `TestClient` của FastAPI, không mở cổng mạng thật.
 
 ## 6. Tiêu chí hoàn thành và minh chứng
 
@@ -139,12 +139,12 @@ Test offline không cần khóa API, không cần GPU, không mở cổng mạng
 
 | Cổng | Điều kiện đóng cổng | Kết quả/PR đã bàn giao | Việc bị chặn | Người xử lý | Nhóm trưởng xác nhận |
 |---|---|---|---|---|---|
-| **G0** | `srt.py` trên `main`, chữ ký module và bảng route chốt, PC-1–PC-3 có kết quả, V-1 pass | Chưa cập nhật | — | — | [ ] |
-| **G1** | Bốn module chạy độc lập với dữ liệu giả; V-3, V-4, V-5 pass | Chưa cập nhật | — | — | [ ] |
-| **G2** | Chạy trọn một video qua CLI; V-2, V-6 pass; batch hai video không ghi đè | Chưa cập nhật | — | — | [ ] |
-| **G3** | V-9 pass; chạy trọn một video qua `TestClient`, cùng kết quả với CLI | Chưa cập nhật | — | — | [ ] |
-| **G4** | V-10: tải lên → vẽ hộp → tải kết quả chạy được trên trình duyệt | Chưa cập nhật | — | — | [ ] |
-| **G5** | V-7 có kết quả nhìn được; V-8 PASS hoặc NOT RUN có lý do; báo cáo/slide/demo xong | Chưa cập nhật | — | — | [ ] |
+| **G0** | `srt.py` trên `main`, chữ ký module và bảng route chốt, PC-1–PC-3 có kết quả, V-1 pass | `pipeline/srt.py`; V-1 PASS | — | — | [ ] |
+| **G1** | Bốn module chạy độc lập với dữ liệu giả; V-3, V-4, V-5 pass | `db.py`, `subs/audio/asr.py`, `translate.py`, `markbox.py`, `render.py`; V-3/V-4/V-5 và phần hộp V-6 PASS | — | — | [ ] |
+| **G2** | Chạy trọn một video qua CLI; V-2, V-6 pass; batch hai video không ghi đè | `dieu_phoi.py`, `main.py`; V-2, V-6 PASS | — | — | [ ] |
+| **G3** | V-9 pass; chạy trọn một video qua `TestClient`, cùng kết quả với CLI | `api/app.py`, `api/viec.py`, `api/nhom.py`; V-9 PASS (4 test, gồm `test_api_va_cli_cung_ket_qua`) | — | — | [ ] |
+| **G4** | V-10: tải lên → vẽ hộp → tải kết quả chạy được trên trình duyệt | `web/index.html`, `app.js`, `style.css`; luồng đã chạy trọn qua HTTP với ffmpeg thật. **V-10 còn thiếu ảnh chụp màn hình trên trình duyệt thật** | Ảnh chụp màn hình V-10 | TV4 | [ ] |
+| **G5** | V-7 có kết quả nhìn được; V-8 PASS hoặc NOT RUN có lý do; báo cáo/slide/demo xong | `README.md`; V-7 PASS có ảnh khung 720p/1080p, blur bật/tắt đúng khoảng. **V-8 NOT RUN — chưa có `DEEPSEEK_API_KEY` và video thật** | Báo cáo, slide, demo; V-8 | Cả nhóm | [ ] |
 
 Trạng thái V-1–V-10 chi tiết nằm ở §Verification của plan; bảng này chỉ ghi cổng đã đóng hay chưa.
 

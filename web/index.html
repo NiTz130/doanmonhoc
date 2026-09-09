@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dịch phụ đề video Anh → Việt</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Dịch phụ đề video</h1>
+  <nav>
+    <a href="#tai-len">Tải lên</a>
+    <a href="#tien-do">Tiến độ</a>
+    <a href="#khung">Vùng làm mờ</a>
+    <a href="#nhom">Nhóm &amp; thuật ngữ</a>
+  </nav>
+</header>
+
+<p id="bao" hidden></p>
+
+<!-- 1. Tải lên -->
+<section id="tai-len">
+  <h2>Tải video lên</h2>
+  <form id="form-tai-len">
+    <label>Video<input type="file" name="file" accept="video/*" required></label>
+    <label>Nhóm <small>(để trống nếu chạy lẻ)</small><input name="nhom" placeholder="Tên phim hoặc kênh"></label>
+    <div class="hang">
+      <label>Ngôn ngữ nguồn<input name="lang" value="en" size="4"></label>
+      <label>Model nhận dạng<input name="model" value="large-v3"></label>
+      <label>Cỡ chữ<input name="font_scale" type="number" step="0.01" min="0.01" value="0.42"></label>
+    </div>
+    <div class="hang">
+      <label>Làm mờ phụ đề cứng
+        <select name="blur">
+          <option value="auto">auto — bật với video ngang</option>
+          <option value="on">on — luôn bật, sẽ hỏi vùng</option>
+          <option value="off">off — không làm mờ</option>
+        </select>
+      </label>
+      <label class="o"><input type="checkbox" name="separate"> Tách giọng hát (Demucs)</label>
+      <label class="o"><input type="checkbox" name="force_asr"> Bỏ phụ đề sẵn, chạy Whisper</label>
+      <label class="o"><input type="checkbox" name="force"> Chạy lại mọi bước</label>
+    </div>
+    <button>Bắt đầu</button>
+  </form>
+</section>
+
+<!-- 2. Tiến độ -->
+<section id="tien-do" hidden>
+  <h2>Tiến độ</h2>
+  <p id="viec-id" class="mo"></p>
+  <div class="thanh"><div id="thanh-chay"></div></div>
+  <p id="viec-trang-thai">Chưa có công việc nào.</p>
+  <p><a id="tai-ket-qua" href="#" hidden download>Tải video kết quả</a></p>
+</section>
+
+<!-- 3. Canvas vẽ hộp -->
+<section id="khung" hidden>
+  <h2>Khoanh vùng phụ đề cứng</h2>
+  <p class="mo">Kéo chuột để vẽ hộp. Hộp giữ nguyên khi chuyển khung — bấm qua lại để
+     xem câu hai dòng có lọt hết vào hộp không.</p>
+  <div class="dieu-khien">
+    <button id="khung-lui" type="button">←</button>
+    <span id="khung-nhan">—</span>
+    <button id="khung-toi" type="button">→</button>
+  </div>
+  <div id="khung-boc">
+    <img id="khung-anh" alt="Khung hình mẫu">
+    <canvas id="khung-canvas"></canvas>
+  </div>
+  <p id="khung-hop" class="mo">Chưa vẽ hộp nào.</p>
+  <p>
+    <button id="hop-gui" type="button" disabled>Xong, kết xuất</button>
+    <button id="hop-bo" type="button">Bỏ qua (không làm mờ)</button>
+  </p>
+</section>
+
+<!-- 4. Nhóm và thuật ngữ -->
+<section id="nhom" hidden>
+  <h2>Nhóm và thuật ngữ</h2>
+  <form id="form-nhom" class="hang">
+    <input name="ten" placeholder="Tên nhóm mới" required>
+    <button>Tạo nhóm</button>
+  </form>
+  <ul id="nhom-ds"></ul>
+
+  <div id="nhom-chi-tiet" hidden>
+    <h3>Thuật ngữ của <span id="nhom-ten"></span></h3>
+    <table id="bang-thuat-ngu"><thead><tr><th>Gốc</th><th>Bản dịch</th></tr></thead><tbody></tbody></table>
+    <form id="form-thuat-ngu" class="hang">
+      <input name="goc" placeholder="Ironhold" required>
+      <input name="dich" placeholder="Thành Sắt" required>
+      <label class="o"><input type="checkbox" name="khoa"> Khoá</label>
+      <button>Lưu</button>
+    </form>
+    <form id="form-hop-nhom" class="hang">
+      <input name="hop" placeholder="x,y,w,h — ví dụ 0.3,0.855,0.4,0.09" required>
+      <button>Đặt khung mặc định</button>
+    </form>
+  </div>
+</section>
+
+<script src="app.js"></script>
+</body>
+</html>
