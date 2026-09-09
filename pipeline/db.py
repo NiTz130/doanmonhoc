@@ -35,6 +35,16 @@ CREATE TABLE IF NOT EXISTS nhat_ky (
  token_vao INTEGER, token_ra INTEGER, loi TEXT,
  luc TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS cong_viec (
+ id TEXT PRIMARY KEY,
+ video_id INTEGER REFERENCES video(id) ON DELETE CASCADE,
+ trang_thai TEXT NOT NULL
+ CHECK (trang_thai IN ('cho','dang_chay','cho_chon_khung','xong','suy_giam','loi')),
+ buoc TEXT, tien_do REAL NOT NULL DEFAULT 0.0,
+ duong_dan_ra TEXT, loi TEXT,
+ tao_luc TEXT NOT NULL DEFAULT (datetime('now')),
+ cap_nhat_luc TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
 
 
@@ -178,3 +188,27 @@ def ghi_nhat_ky(
     )
     if buoc == "render" and ket_qua == "xong":
         con.execute("UPDATE video SET xong_luc=datetime('now') WHERE id=?", (video_id,))
+
+
+def tao_cong_viec(con: sqlite3.Connection, cid: str, video_id: int | None = None) -> str:
+    """Bang cong_viec chi bao tien do cho frontend; no khong quyet dinh resume."""
+    if not isinstance(cid, str) or not cid.strip():
+        raise ValueError("Thiếu id công việc")
+    con.execute("INSERT INTO cong_viec(id,video_id,trang_thai) VALUES (?,?,'cho')", (cid, video_id))
+    return cid
+
+
+def cap_nhat_cong_viec(con: sqlite3.Connection, cid: str, **cot: object) -> None:
+    hop_le = {"video_id", "trang_thai", "buoc", "tien_do", "duong_dan_ra", "loi"}
+    la = cot.keys() - hop_le
+    if la:
+        raise ValueError(f"Cột công việc không hợp lệ: {sorted(la)}")
+    if not cot:
+        return
+    dat = ",".join(f"{k}=?" for k in cot)
+    con.execute(f"UPDATE cong_viec SET {dat},cap_nhat_luc=datetime('now') WHERE id=?",
+                (*cot.values(), cid))
+
+
+def doc_cong_viec(con: sqlite3.Connection, cid: str) -> sqlite3.Row | None:
+    return con.execute("SELECT * FROM cong_viec WHERE id=?", (cid,)).fetchone()
