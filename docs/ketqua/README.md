@@ -19,5 +19,7 @@ Chỉ tầng dịch được thay bằng bảng tra sẵn, vì nhóm chưa có `
 Video tải về: h264 1280×720, còn nguyên audio AAC, 12.04 s — đúng độ dài và độ phân
 giải của bản gốc, chỉ qua một lần nén.
 
+Kết quả V-8 (API dịch thật) ở [V8.md](V8.md).
+
 Ảnh smoke media V-7 (`smoke_*.png`) sinh bằng `test_pipeline.py --smoke`, không lưu
 trong repo vì tái tạo được bất cứ lúc nào.
