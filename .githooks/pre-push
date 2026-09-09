@@ -1,0 +1,17 @@
+#!/bin/sh
+# Chặn push lên main hoặc lên nhánh không phải của mình.
+cua_toi=$(git config nhom.nhanh)
+
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+	case "$remote_ref" in
+		refs/heads/main)
+			echo "DUNG LAI: khong duoc push thang len main."
+			echo "  Push len nhanh cua ban, roi mo Pull Request tren github.com."
+			exit 1
+			;;
+	esac
+	if [ -n "$cua_toi" ] && [ "$remote_ref" != "refs/heads/$cua_toi" ]; then
+		echo "DUNG LAI: dang push len '$remote_ref', nhanh cua ban la '$cua_toi'."
+		exit 1
+	fi
+done
