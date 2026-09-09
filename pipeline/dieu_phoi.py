@@ -151,7 +151,8 @@ def _sua_tay(ra: Path, goc: list[Cue]) -> bool:
 
 def _buoc_dich(work: Path, sub_goc: Path, cues: list[Cue], tc: TuyChon,
                glossary: dict[str, str], goi: Callable | None,
-               bam: Callable[[Path], str], ap_dung: Callable[[str, dict], None]) -> list[int]:
+               bam: Callable[[Path], str],
+               ap_dung: Callable[[str, dict], dict]) -> tuple[list[int], int, int]:
     ra = work / "sub_vi.srt"
     ky = chu_ky(["sub_vi", bam(sub_goc), tc.model_dich, PROMPT_VER, glossary])
     # --force-asr lam moi ban dich ke ca khi ASR sinh ra noi dung trung y het.
@@ -162,7 +163,7 @@ def _buoc_dich(work: Path, sub_goc: Path, cues: list[Cue], tc: TuyChon,
             ap_dung(cu["hash"], cu.get("moi") or {})
             if cu.get("hash") != bam_file(ra):
                 _ghi_manifest(work, "sub_vi", ky, ra, moi={}, sua_tay=True)
-            return list(cu.get("giu_nguon") or [])
+            return list(cu.get("giu_nguon") or []), 0, 0     # cache hit: khong ton token
 
     if goi is None:
         raise RuntimeError("Thieu DEEPSEEK_API_KEY nen khong dich duoc")
@@ -176,7 +177,7 @@ def _buoc_dich(work: Path, sub_goc: Path, cues: list[Cue], tc: TuyChon,
                   chu_ky(["sub_vi", bam(sub_goc), tc.model_dich, PROMPT_VER,
                           ap_dung(bam_file(ra), kq.thuat_ngu_moi)]),
                   ra, moi={}, giu_nguon=kq.giu_nguon)
-    return kq.giu_nguon
+    return kq.giu_nguon, kq.token_vao, kq.token_ra
 
 
 def _buoc_hop(video: Path, work: Path, tc: TuyChon, W: int, H: int, cues: list[Cue],
@@ -239,9 +240,11 @@ def _chay(video: Path, work: Path, tc: TuyChon, tien: Callable, con, goi) -> Ket
             dem[path] = bam_file(path)
         return dem[path]
 
-    def nhat_ky(buoc: str, ket_qua: str, t0: float, loi: str | None = None) -> None:
+    def nhat_ky(buoc: str, ket_qua: str, t0: float, loi: str | None = None,
+                token_vao: int | None = None, token_ra: int | None = None) -> None:
         with con:
-            db.ghi_nhat_ky(con, vid, buoc, ket_qua, round(time.monotonic() - t0, 3), loi=loi)
+            db.ghi_nhat_ky(con, vid, buoc, ket_qua, round(time.monotonic() - t0, 3),
+                           token_vao, token_ra, loi)
 
     tien("nhan_dien", 0.0)
     W, H, thoi_luong = nhan_dien(video)
@@ -265,12 +268,12 @@ def _chay(video: Path, work: Path, tc: TuyChon, tien: Callable, con, goi) -> Ket
     tien("dich", 0.4)
     t0 = time.monotonic()
     try:
-        giu_nguon = _buoc_dich(work, sub_goc, cues, tc, glossary, goi, bam, ap_dung)
+        giu_nguon, tk_vao, tk_ra = _buoc_dich(work, sub_goc, cues, tc, glossary, goi, bam, ap_dung)
     except BaseException as exc:
         nhat_ky("dich", "loi", t0, str(exc))
         raise
     nhat_ky("dich", "suy_giam" if giu_nguon else "xong", t0,
-            f"giu nguon {len(giu_nguon)} cue" if giu_nguon else None)
+            f"giu nguon {len(giu_nguon)} cue" if giu_nguon else None, tk_vao, tk_ra)
 
     tien("vung_blur", 0.7)
 
@@ -301,6 +304,29 @@ def _chay(video: Path, work: Path, tc: TuyChon, tien: Callable, con, goi) -> Ket
     nhat_ky("render", "xong", t0)
     tien("render", 1.0)
     return KetQua("suy_giam" if giu_nguon else "xong", work, ra=ra, giu_nguon=giu_nguon)
+
+
+# ------------------------------------------------- quan ly nhom (CLI va API)
+# IC-2: chi file nay goi db.py. CLI va api/nhom.py deu di qua bon ham duoi.
+
+def nhom_danh_sach(con) -> list[dict]:
+    return [dict(r) for r in con.execute(
+        "SELECT ten,blur_x,blur_y,blur_w,blur_h FROM nhom ORDER BY ten")]
+
+
+def nhom_thuat_ngu(con, ten: str) -> dict[str, str]:
+    return db.doc_thuat_ngu(con, db.lay_nhom(con, ten))
+
+
+def nhom_dat_thuat_ngu(con, ten: str, goc: str, dich: str, khoa: bool = False) -> None:
+    db.dat_thuat_ngu(con, db.lay_nhom(con, ten), goc, dich, khoa)
+
+
+def nhom_dat_hop(con, ten: str, hop: dict, W: int = 1920, H: int = 1080) -> dict:
+    """Hop luon qua validator dung chung cua markbox, du den tu CLI hay API."""
+    hop = _nap("markbox").kiem_hop(hop, W, H)
+    db.ghi_hop(con, db.lay_nhom(con, ten), hop)
+    return hop
 
 
 # ---------------------------------------------------------------- batch
