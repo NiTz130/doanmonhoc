@@ -37,6 +37,25 @@ Hai dòng `git config` cuối bật khoá an toàn: máy sẽ **từ chối** co
 bạn đang đứng nhầm ở `main` hay ở nhánh của người khác. Chạy thiếu hai dòng này là
 tự tháo khoá — bắt buộc chạy đủ.
 
+## Đã clone từ trước? Chạy một lần khối này
+
+Nếu bạn clone repo trước khi có phần khoá an toàn, chạy đúng bốn dòng sau
+(thay `feat/asr` bằng nhánh của mình):
+
+```bash
+cd ~/Desktop/doanmonhoc
+git switch feat/asr
+git pull origin main
+git config core.hooksPath .githooks
+git config nhom.nhanh feat/asr
+```
+
+Kiểm tra đã xong chưa — lệnh dưới phải in ra `feat/asr`:
+
+```bash
+git config nhom.nhanh
+```
+
 ## Mỗi lần bắt đầu làm
 
 ```bash
