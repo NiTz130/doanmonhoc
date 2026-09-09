@@ -143,7 +143,7 @@ Test offline không cần khóa API, không cần GPU, không mở cổng mạng
 | **G1** | Bốn module chạy độc lập với dữ liệu giả; V-3, V-4, V-5 pass | `db.py`, `subs/audio/asr.py`, `translate.py`, `markbox.py`, `render.py`; V-3/V-4/V-5 và phần hộp V-6 PASS | — | — | [ ] |
 | **G2** | Chạy trọn một video qua CLI; V-2, V-6 pass; batch hai video không ghi đè | `dieu_phoi.py`, `main.py`; V-2, V-6 PASS | — | — | [ ] |
 | **G3** | V-9 pass; chạy trọn một video qua `TestClient`, cùng kết quả với CLI | `api/app.py`, `api/viec.py`, `api/nhom.py`; V-9 PASS (4 test, gồm `test_api_va_cli_cung_ket_qua`) | — | — | [ ] |
-| **G4** | V-10: tải lên → vẽ hộp → tải kết quả chạy được trên trình duyệt | `web/index.html`, `app.js`, `style.css`; luồng đã chạy trọn qua HTTP với ffmpeg thật. **V-10 còn thiếu ảnh chụp màn hình trên trình duyệt thật** | Ảnh chụp màn hình V-10 | TV4 | [ ] |
+| **G4** | V-10: tải lên → vẽ hộp → tải kết quả chạy được trên trình duyệt | `web/index.html`, `app.js`, `style.css`; **V-10 PASS** — chạy thật trên Chromium, không lỗi JS, ảnh ở [docs/ketqua](ketqua/) | — | — | [x] |
 | **G5** | V-7 có kết quả nhìn được; V-8 PASS hoặc NOT RUN có lý do; báo cáo/slide/demo xong | `README.md`; V-7 PASS có ảnh khung 720p/1080p, blur bật/tắt đúng khoảng. **V-8 NOT RUN — chưa có `DEEPSEEK_API_KEY` và video thật** | Báo cáo, slide, demo; V-8 | Cả nhóm | [ ] |
 
 Trạng thái V-1–V-10 chi tiết nằm ở §Verification của plan; bảng này chỉ ghi cổng đã đóng hay chưa.
