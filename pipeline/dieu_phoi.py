@@ -16,7 +16,7 @@ from pipeline.srt import (Cue, bam_file, chu_ky, doc_json, doc_srt, ghi_json,
 
 # Tang khi doi cach sinh artifact cua mot buoc: moi manifest cu thanh cache miss.
 VER = {"audio": 1, "sub_goc": 1, "sub_vi": 1, "vung_blur": 1}
-PROMPT_VER = 1
+PROMPT_VER = 2                          # doi prompt phai lam moi moi ban dich cu
 HAU_TO = "_vi.mp4"
 MANIFEST = "trang_thai.json"
 # Duoi nguong nay coi nhu nhan dang hong, khong phai video it thoai.
