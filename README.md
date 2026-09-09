@@ -25,16 +25,26 @@ cp .env.example .env          # rồi mở .env, điền DEEPSEEK_API_KEY
 **GPU NVIDIA là tuỳ chọn nhưng nên có.** Không có thì Whisper chạy CPU ở khoảng
 **2.2× thời lượng video** — phim hai tiếng mất 4–5 tiếng; ffmpeg cũng lui về `libx264`.
 
-Có card NVIDIA mà vẫn thấy dòng `Library cublas64_12.dll is not found` thì card không
-thiếu, chỉ thiếu CUDA runtime. Cài vào venv:
+### Bật GPU trên Windows
+
+Thấy dòng `Library cublas64_12.dll is not found or cannot be loaded` thì card không
+thiếu, chỉ thiếu CUDA runtime. Hai bước, **phải làm cả hai**:
 
 ```bash
 uv pip install nvidia-cublas-cu12 nvidia-cudnn-cu12
+
+# ctranslate2.dll chi tim phu thuoc trong chinh thu muc no, nen dat cublas canh no:
+NV=.venv/Lib/site-packages/nvidia/cublas/bin
+CT=.venv/Lib/site-packages/ctranslate2
+cp "$NV/cublas64_12.dll" "$NV/cublasLt64_12.dll" "$CT/"
 ```
 
-Kiểm lại bằng cách chạy một video ngắn: hết dòng cảnh báo đó là GPU đã được dùng. Đối
-chiếu phiên bản với tài liệu `faster-whisper`/`ctranslate2` đang cài — cài hai gói pip
-không phải lúc nào cũng đủ.
+Bước hai là bắt buộc trên Windows. Chỉ cài gói pip thôi thì DLL nằm trong
+`site-packages/nvidia/` và `ctranslate2` **không** tìm thấy — thêm vào `PATH` hay
+`os.add_dll_directory` đều không cứu được, đã thử.
+
+Kiểm lại bằng một video ngắn: hết dòng cảnh báo là GPU đã được dùng. Đo trên video
+2 phút của nhóm: **274 s xuống 56 s**.
 
 Tách giọng hát (tuỳ chọn, kéo theo torch ~2.5 GB): `uv sync --extra demucs`.
 

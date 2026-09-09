@@ -1,15 +1,19 @@
 #!/bin/sh
-# Chặn commit vào main hoặc vào nhánh không phải của mình.
+# Khoá an toàn CHỈ bật khi bạn đã khai báo nhánh riêng:
+#     git config nhom.nhanh feat/asr
+# Chưa khai báo thì bạn đang làm một mình trên main và hook không cản.
 nhanh=$(git symbolic-ref --short HEAD 2>/dev/null)
 cua_toi=$(git config nhom.nhanh)
 
+[ -z "$cua_toi" ] && exit 0
+
 if [ "$nhanh" = "main" ]; then
-	echo "DUNG LAI: dang o nhanh main. Khong duoc commit vao main."
-	echo "  Chay: git switch ${cua_toi:-<nhanh-cua-ban>}"
+	echo "DUNG LAI: dang o nhanh main. Nhanh cua ban la '$cua_toi'."
+	echo "  Chay: git switch $cua_toi"
 	exit 1
 fi
 
-if [ -n "$cua_toi" ] && [ "$nhanh" != "$cua_toi" ]; then
+if [ "$nhanh" != "$cua_toi" ]; then
 	echo "DUNG LAI: dang o nhanh '$nhanh', nhanh cua ban la '$cua_toi'."
 	echo "  Chay: git switch $cua_toi"
 	exit 1
