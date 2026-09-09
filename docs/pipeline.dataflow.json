@@ -1,0 +1,300 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Hệ thống dịch phụ đề video Anh sang Việt",
+    "output": "docs/pipeline.html",
+    "viewBox": [
+      1080,
+      720
+    ],
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "duong-nhanh",
+        "label": "Đường nhanh",
+        "focus": [
+          "input",
+          "main",
+          "subs",
+          "sub_goc",
+          "translate",
+          "render"
+        ],
+        "note": "Video đã kèm phụ đề tiếng Anh: rút thẳng ra, bỏ qua toàn bộ khâu nhận dạng."
+      },
+      {
+        "id": "duong-du-phong",
+        "label": "Đường dự phòng",
+        "focus": [
+          "main",
+          "audio_asr",
+          "sub_goc"
+        ],
+        "note": "Không có phụ đề sẵn thì mới tách âm thanh và chạy faster-whisper."
+      },
+      {
+        "id": "tri-nho",
+        "label": "Trí nhớ nhóm",
+        "focus": [
+          "db",
+          "main",
+          "markbox",
+          "translate"
+        ],
+        "note": "Thuật ngữ và khung làm mờ dùng chung cho mọi video trong cùng một nhóm."
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "Nguồn"
+    },
+    {
+      "label": "Chuẩn bị"
+    },
+    {
+      "label": "Phụ đề gốc"
+    },
+    {
+      "label": "Dịch và đánh dấu"
+    },
+    {
+      "label": "Kết xuất"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "input",
+      "type": "external",
+      "label": "input.mp4",
+      "sublabel": "video tiếng Anh",
+      "stage": 0,
+      "row": 0,
+      "tag": "nguồn"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "subtitles.db",
+      "sublabel": "sqlite3, 4 bảng",
+      "stage": 1,
+      "row": 0,
+      "tag": "trí nhớ"
+    },
+    {
+      "id": "main",
+      "type": "backend",
+      "label": "main.py",
+      "sublabel": "ffprobe, nạp nhóm",
+      "stage": 1,
+      "row": 2,
+      "tag": "điều phối"
+    },
+    {
+      "id": "subs",
+      "type": "backend",
+      "label": "subs.py",
+      "sublabel": "track nhúng, .srt cạnh",
+      "stage": 2,
+      "row": 0,
+      "tag": "1 giây"
+    },
+    {
+      "id": "sub_goc",
+      "type": "database",
+      "label": "sub_goc.srt",
+      "sublabel": "phụ đề tiếng Anh",
+      "stage": 2,
+      "row": 2,
+      "tag": "SRT"
+    },
+    {
+      "id": "audio_asr",
+      "type": "backend",
+      "label": "audio.py + asr.py",
+      "sublabel": "faster-whisper v3",
+      "stage": 2,
+      "row": 4,
+      "tag": "CUDA"
+    },
+    {
+      "id": "translate",
+      "type": "external",
+      "label": "translate.py",
+      "sublabel": "deepseek-v4-flash",
+      "stage": 3,
+      "row": 1,
+      "tag": "API"
+    },
+    {
+      "id": "markbox",
+      "type": "frontend",
+      "label": "markbox.py",
+      "sublabel": "cửa sổ tkinter",
+      "stage": 3,
+      "row": 3,
+      "tag": "người vẽ"
+    },
+    {
+      "id": "render",
+      "type": "backend",
+      "label": "render.py",
+      "sublabel": "một lần encode",
+      "stage": 4,
+      "row": 2,
+      "tag": "NVENC"
+    },
+    {
+      "id": "output",
+      "type": "frontend",
+      "label": "output.mp4",
+      "sublabel": "phụ đề Việt burn-in",
+      "stage": 4,
+      "row": 4,
+      "tag": "kết quả"
+    }
+  ],
+  "flows": [
+    {
+      "id": "input-main",
+      "from": "input",
+      "to": "main",
+      "label": "kích thước, thời lượng",
+      "classification": "ffprobe",
+      "variant": "emphasis",
+      "labelDy": 64,
+      "labelDx": -45
+    },
+    {
+      "id": "input-render",
+      "from": "input",
+      "to": "render",
+      "label": "video gốc",
+      "classification": "không nén lại",
+      "variant": "dashed",
+      "route": "top-channel"
+    },
+    {
+      "id": "main-db",
+      "from": "main",
+      "to": "db",
+      "label": "đọc và ghi nhóm",
+      "classification": "thuật ngữ, khung mờ",
+      "variant": "default",
+      "labelDy": -40
+    },
+    {
+      "id": "main-subs",
+      "from": "main",
+      "to": "subs",
+      "label": "tìm phụ đề có sẵn",
+      "classification": "thử trước",
+      "variant": "emphasis"
+    },
+    {
+      "id": "main-asr",
+      "from": "main",
+      "to": "audio_asr",
+      "label": "không tìm thấy",
+      "classification": "dự phòng",
+      "variant": "dashed"
+    },
+    {
+      "id": "subs-goc",
+      "from": "subs",
+      "to": "sub_goc",
+      "label": "rút ra sẵn",
+      "classification": "chính xác hơn",
+      "variant": "emphasis",
+      "labelDy": 40
+    },
+    {
+      "id": "asr-goc",
+      "from": "audio_asr",
+      "to": "sub_goc",
+      "label": "nhận dạng",
+      "classification": "chậm hơn",
+      "variant": "dashed",
+      "labelDy": -70
+    },
+    {
+      "id": "goc-translate",
+      "from": "sub_goc",
+      "to": "translate",
+      "label": "lô 400 dòng",
+      "classification": "kèm thuật ngữ",
+      "variant": "emphasis"
+    },
+    {
+      "id": "goc-markbox",
+      "from": "sub_goc",
+      "to": "markbox",
+      "label": "8 mốc câu",
+      "classification": "chọn khung mẫu",
+      "variant": "default"
+    },
+    {
+      "id": "goc-render",
+      "from": "sub_goc",
+      "to": "render",
+      "label": "mốc câu thành enable",
+      "classification": "nới 0.4s",
+      "variant": "default"
+    },
+    {
+      "id": "translate-render",
+      "from": "translate",
+      "to": "render",
+      "label": "sub_vi.srt",
+      "classification": "UTF-8 không BOM",
+      "variant": "emphasis"
+    },
+    {
+      "id": "markbox-render",
+      "from": "markbox",
+      "to": "render",
+      "label": "vung_blur.json",
+      "classification": "khung phần trăm",
+      "variant": "default"
+    },
+    {
+      "id": "render-output",
+      "from": "render",
+      "to": "output",
+      "label": "encode 1 lần",
+      "classification": "h264_nvenc",
+      "variant": "emphasis",
+      "labelDy": 90
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Hai đường lấy phụ đề gốc",
+      "items": [
+        "Track nhúng hoặc .srt cạnh video: rút ra 1 giây",
+        "Bỏ được cả tách audio lẫn nạp model Whisper",
+        "Track dạng ảnh PGS, VobSub coi như không có"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Khung làm mờ do người vẽ",
+      "items": [
+        "Không OCR, không Tesseract. tkinter stdlib",
+        "Trượt 8 khung để hộp trùm được câu 2 dòng",
+        "Lưu phần trăm nên 1080p và 720p dùng chung"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Trí nhớ và chạy lại",
+      "items": [
+        "Bộ 24 tập chỉ vẽ khung một lần",
+        "File trên đĩa là nguồn sự thật, CSDL ghi log",
+        "Xoá subtitles.db chỉ mất bảng thuật ngữ"
+      ]
+    }
+  ]
+}
