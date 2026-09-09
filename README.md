@@ -48,6 +48,12 @@ Kiểm lại bằng một video ngắn: hết dòng cảnh báo là GPU đã đ�
 
 Tách giọng hát (tuỳ chọn, kéo theo torch ~2.5 GB): `uv sync --extra demucs`.
 
+**Kích thước lô dịch phụ thuộc model.** Mặc định là 25 cue một request, đo trên
+`deepseek-v4-flash`: model này sinh 500–1100 token *ra* mỗi cue vì viết phần suy luận
+trước khi trả JSON, nên `max_tokens=16000` chỉ chứa nổi khoảng 30 cue. Đổi sang model
+khác thì đo lại rồi chỉnh `lo` trong `pipeline/translate.py` — để quá lớn thì mọi lô
+đều bị cắt và rơi vào chia đôi, đắt gấp 4 lần cho cùng một video.
+
 Kiểm nhanh môi trường:
 
 ```bash
@@ -102,7 +108,7 @@ $py main.py nhom set-box "Tên phim" 0.3,0.855,0.4,0.09
 | `--blur-box x,y,w,h` | Vùng mờ theo **phần trăm** 0–1, dùng chung được cho 720p lẫn 1080p |
 | `--font-scale 0.42` | `FontSize = chiều_cao_hộp × hệ_số`; chỉnh sau một lần chạy thử |
 | `--vad on\|off` | `on` (mặc định) cắt khoảng lặng để Whisper khỏi bịa chữ. **Tắt với video ca nhạc** — Silero VAD coi nhạc nền là không phải tiếng nói và vứt gần hết audio |
-| `--separate` | Tách giọng hát bằng Demucs trước khi nhận dạng (cần extra `demucs`) |
+| `--separate` | Tách giọng hát bằng Demucs trước khi nhận dạng (cần extra `demucs`). Đo được: với video ca nhạc thì `--vad off` hiệu quả hơn nhiều, `--separate` chỉ thêm chút |
 | `--force-asr` | Bỏ qua phụ đề có sẵn, chạy Whisper — dùng khi phụ đề sẵn lệch giờ |
 | `--force` | Chạy lại mọi bước |
 | `-o OUT` | Đường dẫn ra (chỉ cho một video; `batch` từ chối cờ này) |

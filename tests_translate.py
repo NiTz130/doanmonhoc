@@ -15,7 +15,9 @@ def test_translation_validation_and_context() -> None:
                         "thuat_ngu_moi": {"A": "changed", "B": "Bee"}}, token_vao=3, token_ra=4)
 
     lines = [str(i) for i in range(450)]
-    result = dich(lines, {"A": "Ay"}, good)
+    # lo truyen tuong minh: bai test nay kiem co che chia lo, khong khoa gia tri
+    # mac dinh (mac dinh do theo so token RA cua model, xem docstring cua dich).
+    result = dich(lines, {"A": "Ay"}, good, lo=400)
     assert result.ban == ["vi " + s for s in lines]
     assert len(calls) == 2 and calls[1]["context"] == lines[395:400]
     assert calls[1]["glossary"] == {"A": "Ay", "B": "Bee"}
