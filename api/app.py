@@ -91,6 +91,7 @@ def tai_len(
     blur_box: Annotated[str | None, Form()] = None,
     font_scale: Annotated[float, Form()] = 0.42,
     separate: Annotated[bool, Form()] = False,
+    vad: Annotated[bool, Form()] = True,
     force_asr: Annotated[bool, Form()] = False,
     force: Annotated[bool, Form()] = False,
 ) -> dict:
@@ -109,7 +110,7 @@ def tai_len(
         # Cung mot lock cua LD-2, khong co hang doi thu hai: mot video mot luc.
         raise HTTPException(409, "Da co tien trinh dang xu ly video nay")
     tc = TuyChon(nhom=nhom_ten or None, lang=lang, model=model, model_dich=model_dich,
-                 blur=blur, blur_box=hop, font_scale=font_scale, separate=separate,
+                 blur=blur, blur_box=hop, font_scale=font_scale, separate=separate, vad=vad,
                  force_asr=force_asr, force=force)
     viec.dat(cid, video, tc)
     with con:

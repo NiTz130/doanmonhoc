@@ -37,6 +37,8 @@ def _co_chung(p: argparse.ArgumentParser) -> None:
     p.add_argument("--blur-box", type=_hop)
     p.add_argument("--font-scale", type=float, default=0.42)
     p.add_argument("--separate", action="store_true")
+    p.add_argument("--vad", choices=("on", "off"), default="on",
+                   help="tat khi video ca nhac: VAD coi nhac nen la khong phai tieng noi")
     p.add_argument("--force-asr", action="store_true")
     p.add_argument("--force", action="store_true")
 
@@ -44,7 +46,8 @@ def _co_chung(p: argparse.ArgumentParser) -> None:
 def _tuy_chon(a: argparse.Namespace, ra: Path | None = None) -> TuyChon:
     return TuyChon(nhom=a.nhom, lang=a.lang, model=a.model, model_dich=a.model_dich,
                    blur=a.blur, blur_box=a.blur_box, font_scale=a.font_scale,
-                   separate=a.separate, force_asr=a.force_asr, force=a.force, ra=ra)
+                   separate=a.separate, vad=a.vad == "on",
+                   force_asr=a.force_asr, force=a.force, ra=ra)
 
 
 def _tien_do(buoc: str, ti_le: float) -> None:

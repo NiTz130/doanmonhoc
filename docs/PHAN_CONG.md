@@ -144,7 +144,7 @@ Test offline không cần khóa API, không cần GPU, không mở cổng mạng
 | **G2** | Chạy trọn một video qua CLI; V-2, V-6 pass; batch hai video không ghi đè | `dieu_phoi.py`, `main.py`; V-2, V-6 PASS | — | — | [ ] |
 | **G3** | V-9 pass; chạy trọn một video qua `TestClient`, cùng kết quả với CLI | `api/app.py`, `api/viec.py`, `api/nhom.py`; V-9 PASS (4 test, gồm `test_api_va_cli_cung_ket_qua`) | — | — | [ ] |
 | **G4** | V-10: tải lên → vẽ hộp → tải kết quả chạy được trên trình duyệt | `web/index.html`, `app.js`, `style.css`; **V-10 PASS** — chạy thật trên Chromium, không lỗi JS, ảnh ở [docs/ketqua](ketqua/) | — | — | [x] |
-| **G5** | V-7 có kết quả nhìn được; V-8 PASS hoặc NOT RUN có lý do; báo cáo/slide/demo xong | `README.md`; V-7 PASS có ảnh khung 720p/1080p, blur bật/tắt đúng khoảng. **V-8 một nửa: dịch thật PASS** (xem [V8.md](ketqua/V8.md) — 4 cue đúng, timestamp giữ nguyên, 287/915 token, chạy lại tốn 0 token). **Nửa nhận dạng NOT RUN — chưa có video có thoại thật** | Báo cáo, slide, demo; V-8 | Cả nhóm | [ ] |
+| **G5** | V-7 có kết quả nhìn được; V-8 PASS hoặc NOT RUN có lý do; báo cáo/slide/demo xong | `README.md`; V-7 PASS có ảnh khung 720p/1080p, blur bật/tắt đúng khoảng. **V-8 PASS** trên video thật 2 phút (xem [V8.md](ketqua/V8.md)): ASR + dịch + kết xuất chạy trọn, đường lui CUDA→CPU kích hoạt thật, có bảng chi phí đo được. Nhờ lượt này tìm ra lỗi `vad_filter` nuốt 90% phụ đề. Còn thiếu: Demucs, `batch` dữ liệu thật, và một video thoại nói | Báo cáo, slide, demo; V-8 | Cả nhóm | [ ] |
 
 Trạng thái V-1–V-10 chi tiết nằm ở §Verification của plan; bảng này chỉ ghi cổng đã đóng hay chưa.
 
