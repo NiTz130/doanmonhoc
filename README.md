@@ -131,6 +131,9 @@ và `tests_api`.
 Đây **không phải** end-to-end: nghiệm thu ASR và dịch thật là V-8, chỉ chạy khi nhóm
 đã thống nhất tài khoản và ngân sách.
 
+Luồng web đã chạy thật trên Chromium — tải lên, kéo chuột vẽ hộp, tải kết quả về —
+không lỗi JavaScript nào. Ảnh và kết luận ở [docs/ketqua](docs/ketqua/).
+
 ## 6. Kiến trúc
 
 ```

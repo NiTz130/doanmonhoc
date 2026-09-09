@@ -26,7 +26,7 @@ input, select, button {
   border: 1px solid var(--vien); border-radius: 6px; font: inherit;
 }
 input[type=checkbox] { display: inline-block; margin: 0; width: auto; }
-button { cursor: pointer; border-color: var(--nhan); color: var(--nhan); }
+button { display: inline-block; cursor: pointer; border-color: var(--nhan); color: var(--nhan); }
 button:disabled { cursor: not-allowed; opacity: .45; border-color: var(--vien); color: var(--mo); }
 .hang { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; }
 .mo { color: var(--mo); font-size: .87rem; }
