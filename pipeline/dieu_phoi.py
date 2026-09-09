@@ -314,6 +314,14 @@ def nhom_danh_sach(con) -> list[dict]:
         "SELECT ten,blur_x,blur_y,blur_w,blur_h FROM nhom ORDER BY ten")]
 
 
+def nhom_tao(con, ten: str) -> int:
+    return db.lay_nhom(con, ten)
+
+
+def nhom_hop(con, ten: str) -> dict[str, float] | None:
+    return db.doc_hop(con, db.lay_nhom(con, ten))
+
+
 def nhom_thuat_ngu(con, ten: str) -> dict[str, str]:
     return db.doc_thuat_ngu(con, db.lay_nhom(con, ten))
 

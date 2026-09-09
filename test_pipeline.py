@@ -10,8 +10,9 @@ from unittest.mock import patch
 import os
 import tempfile
 
+from tests_api import *         # noqa: F401,F403  V-9
 from tests_db import *          # noqa: F401,F403  V-3
-from tests_media import *       # noqa: F401,F403  V-4
+from tests_media import *       # noqa: F401,F403  V-4, V-6
 from tests_translate import *   # noqa: F401,F403  V-5
 
 
@@ -205,7 +206,14 @@ def test_batch_targets_and_cli():
 
 
 if __name__ == "__main__":
+    import sys
     import traceback
+    if "--smoke" in sys.argv:
+        # V-7: can ffmpeg that, sinh video bang lavfi. Khong phai end-to-end (V-8).
+        from tests_smoke import smoke_media
+        smoke_media()
+        print("smoke media: OK")
+        raise SystemExit(0)
     # Chay het roi moi bao: mot phan chua lam khong duoc che ket qua cac phan khac.
     that_bai = []
     for ten, ham in sorted(list(globals().items())):
