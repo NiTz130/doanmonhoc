@@ -77,9 +77,10 @@ def _pipeline_gia(dem: Counter, sidecar: Path | None):
         _srt(ra)
         return True
 
-    def nhan_dang(wav, ra, lang="en", model="large-v3", tao_model=None):
+    def nhan_dang(wav, ra, lang="en", model="large-v3", tao_model=None, vad=True):
         dem["asr"] += 1
         dem["wav:" + Path(wav).name] += 1
+        dem["vad:" + str(vad)] += 1
         _srt(ra)
 
     def dich(lines, glossary, goi, lo=400):
@@ -94,7 +95,9 @@ def _pipeline_gia(dem: Counter, sidecar: Path | None):
     mods = {
         "audio": SimpleNamespace(tach=tach),
         "subs": SimpleNamespace(CODEC_CHU={"subrip"}, probe_subs=lambda v: [],
-                                tim_sidecar=lambda v, lang="en": sidecar, tim_phu_de=tim_phu_de),
+                                tim_sidecar=lambda v, lang="en": (
+                                    sidecar if sidecar and sidecar.is_file() else None),
+                                tim_phu_de=tim_phu_de),
         "asr": SimpleNamespace(nhan_dang=nhan_dang),
         "translate": SimpleNamespace(dich=dich),
         "markbox": SimpleNamespace(kiem_hop=lambda hop, W, H: dict(hop),
@@ -170,6 +173,16 @@ def test_resume_dependencies_and_atomic_write():
         video.write_bytes(b"video-v2")
         chay(force_asr=True, separate=True)
         assert (dem["audio"], dem["asr"], dem["dich"]) == (2, 2, 4)
+        assert dem["vad:True"] == 2 and dem["vad:False"] == 0
+
+        # Doi --vad phai nhan dang lai: VAD sai lam mat 90% phu de nen cache cu vo dung.
+        sidecar.unlink()                                # bo sidecar de di duong ASR that
+        chay(vad=False)
+        assert (dem["asr"], dem["vad:False"]) == (3, 1)
+        chay(vad=False)                                 # cung vad: dung cache, khong goi lai
+        assert dem["asr"] == 3
+        chay(vad=True)                                  # doi vad: phai nhan dang lai
+        assert dem["asr"] == 4
 
     # Chua co hop nao: dung o cho_chon_khung chu khong phai loi.
     dem = Counter()

@@ -22,8 +22,19 @@ uv sync
 cp .env.example .env          # rồi mở .env, điền DEEPSEEK_API_KEY
 ```
 
-GPU NVIDIA là tuỳ chọn. Không có thì Whisper chạy CPU và ffmpeg dùng `libx264` —
-chậm hơn, kết quả như nhau.
+**GPU NVIDIA là tuỳ chọn nhưng nên có.** Không có thì Whisper chạy CPU ở khoảng
+**2.2× thời lượng video** — phim hai tiếng mất 4–5 tiếng; ffmpeg cũng lui về `libx264`.
+
+Có card NVIDIA mà vẫn thấy dòng `Library cublas64_12.dll is not found` thì card không
+thiếu, chỉ thiếu CUDA runtime. Cài vào venv:
+
+```bash
+uv pip install nvidia-cublas-cu12 nvidia-cudnn-cu12
+```
+
+Kiểm lại bằng cách chạy một video ngắn: hết dòng cảnh báo đó là GPU đã được dùng. Đối
+chiếu phiên bản với tài liệu `faster-whisper`/`ctranslate2` đang cài — cài hai gói pip
+không phải lúc nào cũng đủ.
 
 Tách giọng hát (tuỳ chọn, kéo theo torch ~2.5 GB): `uv sync --extra demucs`.
 
@@ -80,6 +91,7 @@ $py main.py nhom set-box "Tên phim" 0.3,0.855,0.4,0.09
 | `--blur auto\|on\|off` | `auto` (mặc định): bật với video ngang, tắt với video dọc |
 | `--blur-box x,y,w,h` | Vùng mờ theo **phần trăm** 0–1, dùng chung được cho 720p lẫn 1080p |
 | `--font-scale 0.42` | `FontSize = chiều_cao_hộp × hệ_số`; chỉnh sau một lần chạy thử |
+| `--vad on\|off` | `on` (mặc định) cắt khoảng lặng để Whisper khỏi bịa chữ. **Tắt với video ca nhạc** — Silero VAD coi nhạc nền là không phải tiếng nói và vứt gần hết audio |
 | `--separate` | Tách giọng hát bằng Demucs trước khi nhận dạng (cần extra `demucs`) |
 | `--force-asr` | Bỏ qua phụ đề có sẵn, chạy Whisper — dùng khi phụ đề sẵn lệch giờ |
 | `--force` | Chạy lại mọi bước |
@@ -130,6 +142,9 @@ và `tests_api`.
 720p và 1080p, rồi ghi ra `smoke_*.png` để **nhìn tận mắt** chữ Việt và vùng mờ.
 Đây **không phải** end-to-end: nghiệm thu ASR và dịch thật là V-8, chỉ chạy khi nhóm
 đã thống nhất tài khoản và ngân sách.
+
+Đã chạy thật với ASR và API dịch trên video có tiếng: kết quả, chi phí đo được và
+một lỗi tìm ra nhờ nó ở [docs/ketqua/V8.md](docs/ketqua/V8.md).
 
 Luồng web đã chạy thật trên Chromium — tải lên, kéo chuột vẽ hộp, tải kết quả về —
 không lỗi JavaScript nào. Ảnh và kết luận ở [docs/ketqua](docs/ketqua/).

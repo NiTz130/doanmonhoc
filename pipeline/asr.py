@@ -17,7 +17,10 @@ def loi_cuda(exc: RuntimeError | OSError) -> bool:
 
 
 def nhan_dang(wav: Path, ra: Path, lang: str = 'en', model: str = 'large-v3',
-             tao_model: Callable | None = None) -> None:
+             tao_model: Callable | None = None, vad: bool = True) -> None:
+    """vad=True cắt khoảng lặng để Whisper khỏi bịa chữ, nhưng Silero VAD coi nhạc nền
+    là không phải tiếng nói: với video ca nhạc nó vứt gần hết audio. Tắt bằng --vad off.
+    """
     if tao_model is None:
         from faster_whisper import WhisperModel
         tao_model = WhisperModel
@@ -26,7 +29,7 @@ def nhan_dang(wav: Path, ra: Path, lang: str = 'en', model: str = 'large-v3',
         recognizer = tao_model(model, device=device,
                               compute_type='int8_float16' if device == 'cuda' else 'int8')
         try:
-            segments, _ = recognizer.transcribe(str(wav), language=lang, vad_filter=True,
+            segments, _ = recognizer.transcribe(str(wav), language=lang, vad_filter=vad,
                 vad_parameters={'min_silence_duration_ms':500})
             return [Cue(i+1,s.start,s.end,s.text.strip()) for i,s in enumerate(segments)]
         finally:

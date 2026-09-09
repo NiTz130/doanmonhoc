@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import logging
 import subprocess
 import time
 from collections.abc import Callable
@@ -18,6 +19,8 @@ VER = {"audio": 1, "sub_goc": 1, "sub_vi": 1, "vung_blur": 1}
 PROMPT_VER = 1
 HAU_TO = "_vi.mp4"
 MANIFEST = "trang_thai.json"
+# Duoi nguong nay coi nhu nhan dang hong, khong phai video it thoai.
+TI_LE_PHU_TOI_THIEU = 0.25
 
 
 def _nap(ten: str):
@@ -36,6 +39,7 @@ class TuyChon:
     blur_box: dict[str, float] | None = None
     font_scale: float = 0.42
     separate: bool = False
+    vad: bool = True                        # Silero VAD; tat khi video ca nhac
     force_asr: bool = False
     force: bool = False
     ra: Path | None = None
@@ -127,12 +131,12 @@ def _buoc_sub_goc(video: Path, work: Path, tc: TuyChon,
     if che_do == "asr":
         wav = _buoc_audio(video, work, tc, bam)     # resume --separate dung dung vocals
         phu_thuoc = bam(wav)
-    ky = chu_ky(["sub_goc", che_do, phu_thuoc, tc.lang, tc.model])
+    ky = chu_ky(["sub_goc", che_do, phu_thuoc, tc.lang, tc.model, tc.vad])
     # force_asr bo cache sub goc moi lan duoc truyen, ke ca khi noi dung trung.
     if not (tc.force or tc.force_asr) and _cache(work, "sub_goc", ky, ra):
         return ra, che_do
     if che_do == "asr":
-        _nap("asr").nhan_dang(wav, ra, tc.lang, tc.model)
+        _nap("asr").nhan_dang(wav, ra, tc.lang, tc.model, vad=tc.vad)
     elif not _nap("subs").tim_phu_de(video, ra, tc.lang):
         raise RuntimeError(f"Mat nguon phu de giua chung: {video}")
     _ghi_manifest(work, "sub_goc", ky, ra)
@@ -257,8 +261,19 @@ def _chay(video: Path, work: Path, tc: TuyChon, tien: Callable, con, goi) -> Ket
     tien("sub_goc", 0.1)
     t0 = time.monotonic()
     sub_goc, che_do = _buoc_sub_goc(video, work, tc, bam)
-    nhat_ky("sub_goc", "xong" if che_do == "asr" else "bo_qua", t0)
     cues = doc_srt(sub_goc)
+    # Phu de phu qua it so voi thoi luong la hong im lang: video van xuat ra "xong"
+    # nhung 90% khong co chu. Hay gap khi VAD coi nhac nen la khong phai tieng noi.
+    phu = max(c.ket_thuc for c in cues) - min(c.bat_dau for c in cues)
+    thieu = che_do == "asr" and thoi_luong > 0 and phu / thoi_luong < TI_LE_PHU_TOI_THIEU
+    nhat_ky("sub_goc", "suy_giam" if thieu else ("xong" if che_do == "asr" else "bo_qua"), t0,
+            f"phu de chi phu {phu:.0f}s / {thoi_luong:.0f}s" if thieu else None)
+    if thieu:
+        canh_bao = (f"Phu de nhan dang chi phu {phu:.0f}s trong {thoi_luong:.0f}s video "
+                    f"({phu / thoi_luong:.0%}). Neu day la video ca nhac, chay lai voi "
+                    f"--vad off (va --force-asr), hoac --separate de tach giong hat.")
+        logging.warning(canh_bao)
+        tien("canh_bao", 0.1)
 
     def ap_dung(hash_artifact: str, moi: dict[str, str]) -> dict[str, str]:
         """Ghi tu moi trong mot transaction roi tra glossary nhom sau khi ap dung."""
