@@ -318,7 +318,10 @@ def _chay(video: Path, work: Path, tc: TuyChon, tien: Callable, con, goi) -> Ket
         raise
     nhat_ky("render", "xong", t0)
     tien("render", 1.0)
-    return KetQua("suy_giam" if giu_nguon else "xong", work, ra=ra, giu_nguon=giu_nguon)
+    # Phu de phu qua it cung la suy giam: bao "xong" va thoat 0 thi script goi
+    # main.py se dem video chi co 10% phu de la thanh cong.
+    return KetQua("suy_giam" if (giu_nguon or thieu) else "xong", work, ra=ra,
+                  giu_nguon=giu_nguon)
 
 
 # ------------------------------------------------- quan ly nhom (CLI va API)

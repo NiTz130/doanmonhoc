@@ -78,7 +78,9 @@ def _mot_video(video: Path, tc: TuyChon, con, goi) -> str:
               f"trong {kq.work}.\n  Chay lai voi --blur-box x,y,w,h hoac --blur off.",
               file=sys.stderr)
     elif kq.trang_thai == "suy_giam":
-        print(f"SUY GIAM: {len(kq.giu_nguon)} cue giu nguyen ban goc -> {kq.ra}", file=sys.stderr)
+        ly_do = (f"{len(kq.giu_nguon)} cue giu nguyen ban goc" if kq.giu_nguon
+                 else "phu de phu qua it so voi thoi luong, xem canh bao o tren")
+        print(f"SUY GIAM: {ly_do} -> {kq.ra}", file=sys.stderr)
     else:
         print(f"XONG: {kq.ra}")
     return kq.trang_thai
