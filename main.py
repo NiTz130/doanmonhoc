@@ -8,7 +8,7 @@ import sys
 from contextlib import closing
 from pathlib import Path
 
-from pipeline import db, dieu_phoi
+from pipeline import db, dieu_phoi  # db chi de mo ket noi; moi truy van qua dieu_phoi
 from pipeline.dieu_phoi import TuyChon
 
 
