@@ -28,6 +28,7 @@ function cap_nhat_ui() {
   $("video-file").disabled = dang_gui || dang_xu_ly;
   $("upload-note").textContent = dang_xu_ly ? "Công việc hiện tại chưa hoàn tất. Xem màn Tiến độ." : "Mỗi lần xử lý một video.";
   scene?.setBusy(dang_gui || dang_xu_ly);
+  $("sang-khung").hidden = !cho_hop;          // man tien do khong co loi sang man ve hop
 }
 
 function bao(text, ok = false) {

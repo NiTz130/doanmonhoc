@@ -1,0 +1,11 @@
+{
+  "name": "doanmonhoc",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test:frontend": "node test/frontend.cjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}
