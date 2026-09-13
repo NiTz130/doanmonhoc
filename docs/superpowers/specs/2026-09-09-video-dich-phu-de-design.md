@@ -2,6 +2,10 @@
 
 Ngày: 2026-09-09 — bản sửa v2 theo review và yêu cầu fix.
 
+Đồng bộ mô tả hiện trạng ngày 2026-09-12: các mã bước lịch sử được giữ để tra cứu,
+nhưng thứ tự chạy hiện tại là phụ đề gốc → vùng mờ → dịch → kết xuất.
+Kết quả kiểm tra cũ xem `docs/ketqua/`; bản cập nhật tài liệu này không phải lượt nghiệm thu mới.
+
 ## 1. Mục tiêu
 
 Cho một file video tiếng Anh, sinh ra file video mới có phụ đề tiếng Việt cháy
@@ -22,7 +26,7 @@ kết quả về. Xây theo hai giai đoạn:
 ```
 POST /api/video                tai video len, tao cong viec
 GET  /api/cong-viec/{id}       trang thai, buoc dang chay, tien do
-GET  /api/cong-viec/{id}/khung 8 khung hinh mau de ve hop
+GET  /api/cong-viec/{id}/khung mot khung moi cue de ve hop
 POST /api/cong-viec/{id}/hop   gui hop da ve (phan tram), chay tiep
 GET  /api/cong-viec/{id}/ket-qua  tai video ket qua
 GET/POST /api/nhom             nhom, thuat ngu, khung mac dinh
@@ -59,9 +63,9 @@ Tesseract **không còn cần**. Khung làm mờ do người dùng đánh dấu.
 | Sản phẩm | Web app: backend HTTP API trước, frontend sau. CLI giữ làm công cụ nội bộ |
 | Khung web | FastAPI + uvicorn; upload qua `python-multipart` |
 | Việc chạy lâu | Chạy nền trong tiến trình backend, trạng thái lưu ở bảng `cong_viec`, frontend hỏi tiến độ theo chu kỳ. Không Celery, không Redis, không hàng đợi ngoài |
-| Vùng làm mờ | **Người dùng đánh dấu**, không tự dò. Lưu ở cấp nhóm dạng phần trăm |
+| Vùng làm mờ | **Người dùng đánh dấu**, không tự dò. Vùng riêng theo cue lưu theo video; khung mặc định nhóm chỉ lưu khi chọn, dạng phần trăm |
 | Thời điểm làm mờ | Lấy từ mốc câu trong `sub_goc.srt`, nới ±0.4 s |
-| Màn đánh dấu | Canvas trong trình duyệt, trượt qua 8 khung để thấy được câu 2 dòng. Không dùng tkinter |
+| Màn đánh dấu | Canvas trong trình duyệt, một khung mỗi cue; vùng chung, vùng riêng và áp cho dải câu. Không dùng tkinter |
 | Đầu ra | Chỉ phụ đề tiếng Việt burn-in |
 | Trí nhớ nhiều video | SQLite, nhóm là tuỳ chọn (`nhom_id` cho phép NULL) |
 | Blur mặc định video dọc | Tắt (`--blur auto`) |
@@ -101,10 +105,11 @@ Tesseract **không còn cần**. Khung làm mờ do người dùng đánh dấu.
     |
     +--[2]   asr.py      faster-whisper large-v3   -> sub_goc.srt
     |
-    +--[3]   translate.py DeepSeek + thuat ngu nhom -> sub_vi.srt
-    |
-    +--[4]   markbox.py  trich 8 khung + validate hop     -> vung_blur.json
+    +--[4]   markbox.py  mot khung moi cue + validate vung -> vung_blur.json
     |                    hop den tu nhom, API hoac CLI; GUI o frontend
+    |                    cho_chon_khung neu chua co vung
+    |
+    +--[3]   translate.py DeepSeek + thuat ngu nhom -> sub_vi.srt
     |
     +--[5]   render.py   ffmpeg MOT lan encode      -> output.mp4
 ```
@@ -252,13 +257,12 @@ MODEL = "deepseek-v4-flash"
 
 **Thông tin provider:** model và JSON Output đối chiếu tài liệu chính thức https://api-docs.deepseek.com/quick_start/pricing/. Giá và giới hạn có thể đổi; kiểm tra trước chạy thật. Không coi ước tính trong bản cũ là báo giá.
 
-**Chia lô 400 dòng**, mỗi lô kèm 5 dòng liền trước làm ngữ cảnh, đánh dấu rõ là
+**Chia lô mặc định 25 dòng**, mỗi lô kèm 5 dòng liền trước làm ngữ cảnh, đánh dấu rõ là
 không dịch lại.
 
-Con số 400 chọn theo giới hạn thật của model: phụ đề một phim hai tiếng cũng chỉ
-khoảng 2000 dòng, chưa tới 50K token vào. Video 5–20 phút chỉ tốn **một request
-duy nhất** — vừa ít code hơn vừa dịch tốt hơn, vì model thấy trọn bộ thoại nên
-xưng hô và giọng văn nhất quán từ đầu tới cuối.
+Lô 400 của thiết kế ban đầu đã được giảm sau các lượt đo ghi trong
+[V8](../../ketqua/V8.md): giới hạn token đầu ra khiến model chia lại lô.
+Số request phụ thuộc số cue và phản hồi; đổi model cần đo lại.
 
 Vòng lặp chia lô vẫn giữ; với một lô nó chạy đúng một vòng, không cần nhánh
 riêng cho video ngắn.
@@ -294,7 +298,8 @@ bộ phần sau lệch timestamp. Đánh số rồi kiểm đếm là cách rẻ
 
 `sub_vi.srt` ghi **UTF-8 không BOM** để libass đọc đúng dấu tiếng Việt.
 
-Chi phí thực tế ghi nhận từ usage khi provider trả về; chưa đo trên video thật.
+Usage và thời gian của các lượt mẫu thật đã được ghi trong [V8](../../ketqua/V8.md).
+Đó là số đo lịch sử trên video ngắn, chưa đủ suy ra hiệu năng/chi phí phim dài.
 
 ### Bước 4 — Đánh dấu khung làm mờ (`pipeline/markbox.py`)
 
@@ -304,13 +309,13 @@ Chi phí thực tế ghi nhận từ usage khi provider trả về; chưa đo tr
 
 1. `--blur off`, hoặc `--blur auto` với video dọc → ghi `{"co_blur": false}`, xong.
 2. Có `--blur-box x,y,w,h` (phần trăm) → dùng luôn.
-3. Nhóm đã có khung → dùng luôn, **không hỏi gì**.
-4. Có lựa chọn đã lưu hợp lệ cho đúng video/hình học → dùng lại. Cache không được chặn thay đổi cờ hoặc box nhóm.
-5. Không có box nào → **công việc dừng ở trạng thái `cho_chon_khung`**, không phải lỗi. Backend đã trích sẵn 8 khung; frontend hiện chúng lên canvas, người dùng vẽ hộp rồi `POST .../hop`, công việc chạy tiếp từ bước 5. Chạy bằng CLI mà không có màn hình thì dừng với thông báo rõ, gợi ý `--blur-box` hoặc `--blur off`; không treo chờ.
+3. Có lựa chọn đã lưu hợp lệ cho đúng video/hình học và không bật `--force` → dùng lại, ưu tiên hơn khung nhóm.
+4. Nhóm đã có khung → dùng luôn, **không hỏi gì**.
+5. Không có box nào → **công việc dừng ở trạng thái `cho_chon_khung`**, không phải lỗi. Backend trích một khung mỗi cue; frontend hiện chúng lên canvas, người dùng vẽ vùng rồi `POST .../hop`, công việc chạy tiếp từ bước dịch. Chạy CLI thì dừng và gợi ý `--blur-box` hoặc `--blur off`; không treo chờ.
 
-**Màn đánh dấu (frontend, giai đoạn sau):**
+**Màn đánh dấu (frontend hiện tại):**
 
-Lấy tối đa 8 câu thoại rải đều theo chỉ số trong `sub_goc.srt`. Với mỗi câu,
+Lấy mọi câu thoại trong `sub_goc.srt`. Với mỗi câu,
 trích một khung tại `thời_điểm_bắt_đầu + 0.3 s`:
 
 ```
@@ -325,7 +330,7 @@ lý do bước 4 đứng sau bước 2 chứ không phải trước.
 
 ```
 +-------------------------------------------------------+
-| [<]   khung 3/8   00:04:17   "I'm not going back"  [>] |
+| [<]   khung 3/N   00:04:17   "I'm not going back"  [>] |
 | +---------------------------------------------------+ |
 | |                                                   | |
 | |            anh khung hinh                         | |
@@ -337,7 +342,7 @@ lý do bước 4 đứng sau bước 2 chứ không phải trước.
 +-------------------------------------------------------+
 ```
 
-**Hộp giữ nguyên khi chuyển khung.** Đó là toàn bộ lý do có thanh trượt: phụ đề
+**Vùng chung giữ nguyên khi chuyển khung; câu có vùng riêng hiện vùng riêng.** Phụ đề
 2 dòng cao hơn 1 dòng, nếu vẽ trên một khung 1 dòng rồi chốt luôn thì câu 2 dòng
 sẽ thòi ra ngoài vùng mờ. Bấm qua lại vài khung là thấy ngay câu nào cao nhất.
 
@@ -349,13 +354,12 @@ Backend không thu nhỏ ảnh, trả nguyên khung PNG đã trích.
 **Kết quả** lưu dạng **phần trăm** (0.0–1.0), không phải pixel:
 
 ```json
-{ "co_blur": true, "x": 0.30, "y": 0.855, "w": 0.40, "h": 0.09 }
+{ "co_blur": true, "vung": [{ "x": 0.30, "y": 0.855, "w": 0.40, "h": 0.09, "cue": null }] }
 ```
 
 Phần trăm để một nhóm có video 1080p lẫn 720p vẫn dùng chung được một khung.
 
-Box phải gồm số hữu hạn, x/y không âm, w/h dương, x+w và y+h <=1; đổi pixel chẵn còn tối thiểu 2×2 trong ảnh. Kiểm chung tại CLI/JSON/DB/GUI. Có nhóm thì ghi box CLI hoặc GUI lên `nhom`; off không xóa box nhóm. Bộ 24 tập: đánh dấu đúng một lần ở tập đầu, 23
-tập sau chạy thẳng không hỏi.
+Box phải gồm số hữu hạn, x/y không âm, w/h dương, x+w và y+h <=1; đổi pixel chẵn còn tối thiểu 2×2 trong ảnh. Kiểm chung tại CLI/JSON/DB/GUI. `cue: null` áp cho mọi câu chưa có vùng riêng; danh sách `cue` dùng chỉ số từ 0. Web cho phép áp vùng cho dải câu. Chỉ lưu khung mặc định nhóm khi chọn `luu_nhom`; nhóm giữ một vùng chính, không giữ chỉ số cue. CLI `--blur-box` nhận một hộp chung. Off không xóa box nhóm.
 
 ### Bước 5 — Kết xuất (`pipeline/render.py`)
 
@@ -501,6 +505,11 @@ biến số 1 vẫn giữ nguyên — `trang_thai.json` trên đĩa mới là ng
 việc chạy lại. Xoá `subtitles.db` làm mất lịch sử công việc, không làm mất
 artifact đã sinh.
 
+`api/app.py` đọc/tạo bản ghi công việc trực tiếp qua `db.py`; `api/viec.py`
+giữ ánh xạ CID → đường dẫn video/tuỳ chọn trong RAM. Restart làm mất ánh xạ và
+tác vụ đang chạy; DB và artifact còn nhưng không tự phục hồi tác vụ. Người dùng
+cần tải lại video để tạo công việc mới, tái dùng artifact hợp lệ.
+
 ## 8. Giao diện và cấu trúc file
 
 ```
@@ -546,14 +555,14 @@ xử lý. Tầng trên gọi tầng dưới, không bao giờ ngược lại.
 
 **Các module xử lý không biết gì về CSDL và không biết gì về HTTP.** Chúng có
 thể gọi ffmpeg/ghi file nhưng không truy cập DB, không nhận `Request`, không trả
-`Response`; nhận dữ liệu làm tham số và trả dữ liệu thuần. Chỉ `dieu_phoi.py`
-gọi `db.py`. Nhờ vậy bộ kiểm thử chạy được mà không cần dựng CSDL lẫn web
+`Response`; nhận dữ liệu làm tham số và trả dữ liệu thuần. `dieu_phoi.py` và
+các module API gọi `db.py`. Nhờ vậy bộ kiểm thử chạy được mà không cần dựng web
 server, và cùng một luồng dùng được cho cả API lẫn CLI.
 
 ```python
 subs.tim_phu_de(video, lang)            -> Path | None
 translate.dich(lines, glossary)         -> (ban_dich, thuat_ngu_moi)
-markbox.trich_khung(video, cues, n=8)   -> list[Path]
+markbox.trich_khung(video, cues, work)   -> list[Path]
 markbox.kiem_hop(hop, W, H)             -> dict            # LD-8
 render.ket_xuat(video, srt, hop, khoang, style, out)
 dieu_phoi.chay(video, tuy_chon, bao_tien_do) -> KetQua     # dung chung
@@ -569,9 +578,9 @@ chỗ khác nhau giữa hai đường chạy.
 |---|---|
 | `POST /api/video` | Nhận file tải lên + tuỳ chọn, tạo `cong_viec`, trả `id` |
 | `GET /api/cong-viec/{id}` | `trang_thai`, `buoc`, `tien_do`, `loi` |
-| `GET /api/cong-viec/{id}/khung` | Danh sách 8 khung mẫu kèm mốc thời gian và câu thoại |
+| `GET /api/cong-viec/{id}/khung` | Một khung mỗi cue kèm mốc thời gian và câu thoại |
 | `GET /api/cong-viec/{id}/khung/{i}` | Một file PNG |
-| `POST /api/cong-viec/{id}/hop` | Nhận hộp phần trăm, validate, chạy tiếp từ bước 5 |
+| `POST /api/cong-viec/{id}/hop` | Nhận hộp hoặc danh sách vùng theo cue, validate, chạy tiếp từ bước dịch |
 | `GET /api/cong-viec/{id}/ket-qua` | Tải video kết quả |
 | `GET/POST /api/nhom`, `/api/nhom/{ten}/thuat-ngu`, `/api/nhom/{ten}/hop` | Quản lý nhóm, thuật ngữ, khung mặc định |
 
@@ -643,7 +652,7 @@ import các file kia và là điểm vào duy nhất — `python test_pipeline.p
 5. Khung phần trăm ↔ pixel đi vòng về đúng giá trị cũ ở 1920×1080 và 1280×720.
 6. `MarginV` và `FontSize` suy đúng từ khung.
 7. Chuỗi `enable=` sinh ra đúng cú pháp `between(t,a,b)+between(t,c,d)`.
-8. Chia lô: 450 dòng ra đúng 2 lô; ghép lại đủ 450 dòng, đúng thứ tự, đúng index.
+8. Chia lô: 450 dòng với mặc định 25 tạo 18 lô khi không retry; ghép lại đủ 450 dòng, đúng thứ tự, đúng index.
 9. Kiểm đếm bắt được lô trả thiếu key và lô trả về rỗng.
 10. Tên thư mục làm việc: hai video cùng tên file ở hai thư mục khác nhau cho ra
     hai thư mục làm việc khác nhau.
@@ -671,7 +680,7 @@ Không làm, và không viết sẵn chỗ để sau này làm:
 - Lồng tiếng Việt bằng TTS
 - Giao diện desktop
 - Tự dò vùng phụ đề bằng OCR
-- Khung làm mờ thay đổi theo từng đoạn
+- Vùng làm mờ tự bám chuyển động trong một cue (vùng riêng theo cue đã có)
 - Nhúng track phụ đề mềm vào đầu ra
 - Tự nhận diện ngôn ngữ nguồn
 - Tự đoán nhóm từ tên file

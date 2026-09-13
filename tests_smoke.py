@@ -42,10 +42,18 @@ def smoke_media() -> None:
             ghi_srt(cues, srt)
             style = {"W": W, "H": H, "font_scale": 0.42,
                      "FontSize": 22, "MarginV": 30}
-            for ten, hop in (("khong_blur", None), ("co_blur", {"x": .3, "y": .8, "w": .4, "h": .12})):
+            duoi = {"x": .3, "y": .8, "w": .4, "h": .12}
+            tren = {"x": .3, "y": .05, "w": .4, "h": .12}
+            # hai_hop: phu de nhay cho — hop duoi cho cue 1, hop tren cho cue 2. Chung
+            # minh filtergraph noi nhieu chain chay that, khong chi dung tren giay.
+            for ten, vung in (
+                ("khong_blur", []),
+                ("co_blur", [({**duoi, "cue": None}, render.khoang_mo(cues, 5.0))]),
+                ("hai_hop", [({**duoi, "cue": [0]}, render.khoang_mo(cues[:1], 5.0)),
+                             ({**tren, "cue": [1]}, render.khoang_mo(cues[1:], 5.0))]),
+            ):
                 ra = work / f"{ten}.mp4"
-                render.ket_xuat(video, srt, hop,
-                                render.khoang_mo(cues, 5.0) if hop else [], style, ra)
+                render.ket_xuat(video, srt, vung, style, ra)
                 d_goc, d_ra = _probe(video), _probe(ra)
                 v = next(s for s in d_ra["streams"] if s["codec_type"] == "video")
                 assert (v["width"], v["height"]) == (W, H), (ten, v["width"], v["height"])
@@ -57,10 +65,14 @@ def smoke_media() -> None:
                       f"{float(d_ra['format']['duration']):.2f}s, con audio OK")
 
             # Khung nhin de nguoi cham mat kiem chu Viet va vung mo (khong tu suy ra tu kich thuoc).
-            for t, ten in ((1.0, "trong_cue"), (2.5, "ngoai_cue")):
+            for nguon, t, ten in ((("co_blur", 1.0, "trong_cue")),
+                                  ("co_blur", 2.5, "ngoai_cue"),
+                                  # hai_hop: t=1.0 phai mo O DUOI, t=4.0 mo O TREN.
+                                  ("hai_hop", 1.0, "hai_hop_cue1_duoi"),
+                                  ("hai_hop", 4.0, "hai_hop_cue2_tren")):
                 anh = Path.cwd() / f"smoke_{W}x{H}_{ten}.png"
                 subprocess.run(["ffmpeg", "-v", "error", "-ss", str(t), "-i",
-                                str(work / "co_blur.mp4"), "-frames:v", "1", "-y", str(anh)],
+                                str(work / f"{nguon}.mp4"), "-frames:v", "1", "-y", str(anh)],
                                check=True, capture_output=True, text=True)
                 print(f"  khung {ten} t={t}s -> {anh.name} (xem bang mat)")
 

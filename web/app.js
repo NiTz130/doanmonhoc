@@ -9,7 +9,10 @@ let cid = null;          // cong viec dang theo doi
 let dong_ho = null;      // setTimeout cua vong hoi tien do
 let khung_ds = [];       // danh sach khung mau
 let khung_i = 0;
-let hop = null;          // {x, y, w, h} theo phan tram, dung chung cho moi khung
+let hop = null;          // {x, y, w, h} dang ve tren khung hien tai, theo phan tram
+let hop_chung = null;    // hop ap cho moi cau chua co hop rieng
+let hop_rieng = new Map();   // chi so cau thoai -> hop rieng cua cau do
+let pham_vi = "chung";   // hop dang ve thuoc ve "chung" hay "rieng" cua cau nay
 let dang_gui = false;
 let dang_xu_ly = false;
 let dang_hoi = false;
@@ -62,7 +65,13 @@ async function goi(duong, tuy = {}) {
 
 $("video-file").addEventListener("change", () => {
   const file = $("video-file").files[0];
-  $("file-name").textContent = file ? `${file.name} · ${(file.size / 1024 ** 2).toFixed(1)} MiB` : "Chưa chọn video.";
+  // Doi hinh ca o tha tep chu khong chi ghi mot dong mo o duoi: nguoi dung moi
+  // nhin vao cai hop, hop khong doi gi thi ho tuong chua chon duoc.
+  $("file-name").textContent = file
+    ? `✓ Đã chọn: ${file.name} · ${(file.size / 1024 ** 2).toFixed(1)} MiB`
+    : "Chưa chọn video.";
+  $("file-name").classList.toggle("co-file", !!file);
+  $("drop-zone").classList.toggle("da-chon", !!file);
   bao("");
   cap_nhat_ui();
 });
@@ -106,6 +115,7 @@ $("form-tai-len").addEventListener("submit", async (e) => {
     $("viec-trang-thai").textContent = "Đang lấy trạng thái công việc…";
     $("connection-status").textContent = "";
     khung_ds = []; khung_cid = null; hop = null;
+    hop_chung = null; hop_rieng.clear(); pham_vi = "chung";
     $("khung-boc").hidden = true;
     $("khung-thumbnails").replaceChildren();
     $("form-toa-do").reset();
@@ -115,6 +125,8 @@ $("form-tai-len").addEventListener("submit", async (e) => {
     $("khung-lui").disabled = $("khung-toi").disabled = true;
     $("khung-empty").hidden = false;
     $("khung-hop").textContent = "Chưa vẽ hộp nào.";
+    $("hop-luu-nhom").checked = false;
+    $("hop-luu-nhom").disabled = true;
     $("tai-ket-qua").hidden = true;
     $("video-name").textContent = file.name;
     $("viec-id").textContent = "Công việc " + cid;
@@ -193,6 +205,7 @@ async function nap_khung() {
     const b = document.createElement("button"); b.type = "button";
     b.setAttribute("aria-label", `Xem khung ${index + 1} tại ${k.giay.toFixed(1)} giây`);
     const img = document.createElement("img"); img.alt = "";
+    img.loading = "lazy";        // mot khung moi cue: tai het cung luc la vo, anh trong
     img.src = `/api/cong-viec/${cid}/khung/${k.i}`;
     img.addEventListener("error", () => { img.hidden = true; });
     b.append(img, `${index + 1} · ${k.giay.toFixed(1)}s`);
@@ -203,14 +216,36 @@ async function nap_khung() {
   ve_khung();
 }
 
+// Chi so cau thoai that cua khung dang xem; /khung co the bo bot khung hong nen
+// vi tri trong danh sach khong chac bang chi so cau.
+function cue_i() {
+  return khung_ds[khung_i] ? khung_ds[khung_i].i : 0;
+}
+
+function dat_pham_vi() {
+  for (const r of document.querySelectorAll("[name=pham_vi]")) r.checked = r.value === pham_vi;
+  $("pham-vi-note").textContent = pham_vi === "rieng"
+    ? `Chỉ câu ${cue_i() + 1} dùng vùng này.`
+    : "Mọi câu chưa có vùng riêng đều dùng vùng này.";
+}
+
 function ve_khung() {
   const k = khung_ds[khung_i];
   if (!k) return;
+  // Doi khung la doi sang hop cua khung do: rieng neu co, khong thi hop chung.
+  pham_vi = hop_rieng.has(k.i) ? "rieng" : "chung";
+  const nguon = hop_rieng.get(k.i) || hop_chung;
+  hop = nguon ? { ...nguon } : null;
+  dat_pham_vi();
   anh_san_sang = false;
   $("image-status").textContent = "Đang tải ảnh mẫu…";
   $("toa-do-fields").disabled = true;
   $("hop-gui").disabled = true;
-  $("khung-thumbnails").querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-pressed", i === khung_i));
+  $("khung-thumbnails").querySelectorAll("button").forEach((b, i) => {
+    b.setAttribute("aria-pressed", i === khung_i);
+    // Vai chuc khung thi dai chuot khong tu chay theo: bam -> la mat dau khung dang xem.
+    if (i === khung_i) b.scrollIntoView({ block: "nearest", inline: "nearest" });
+  });
   $("khung-nhan").textContent =
     `khung ${khung_i + 1}/${khung_ds.length} · ${k.giay.toFixed(1)}s · "${k.text.replace(/\n/g, " ")}"`;
   $("khung-anh").src = `/api/cong-viec/${cid}/khung/${k.i}`;
@@ -232,7 +267,13 @@ anh.addEventListener("error", () => {
   $("image-status").textContent = "Không tải được ảnh mẫu. Chọn lại ảnh để thử lại, hoặc bỏ qua làm mờ.";
   $("toa-do-fields").disabled = true;
   $("hop-gui").disabled = true;
+  $("hop-luu-nhom").disabled = true;
 });
+
+// Tam 8 tay nam, theo ti le trong hop. Ve ra thi nguoi dung moi biet hop sua duoc.
+const NEO_TAY = [[0, 0], [.5, 0], [1, 0], [0, .5], [1, .5], [0, 1], [.5, 1], [1, 1]];
+const BAT_PX = 10;                  // ban kinh bat canh, tinh bang pixel tren man hinh
+const kep = (v, toi_da) => Math.min(toi_da, Math.max(0, v));
 
 function ve_hop() {
   canvas.width = anh.clientWidth;
@@ -247,6 +288,36 @@ function ve_hop() {
              hop.w * canvas.width, hop.h * canvas.height];
   ctx.fillRect(...r);
   ctx.strokeRect(...r);
+  ctx.fillStyle = "#f2c765";
+  for (const [ax, ay] of NEO_TAY) {
+    ctx.fillRect(r[0] + r[2] * ax - 4, r[1] + r[3] * ay - 4, 8, 8);
+  }
+}
+
+// Canh nao dang nam duoi con tro; khong cham canh nao thi null.
+function canh_duoi(px, py) {
+  if (!hop || !canvas.width || !canvas.height) return null;
+  const bx = BAT_PX / canvas.width, by = BAT_PX / canvas.height;
+  const trong_x = px >= hop.x - bx && px <= hop.x + hop.w + bx;
+  const trong_y = py >= hop.y - by && py <= hop.y + hop.h + by;
+  const c = { trai: trong_y && Math.abs(px - hop.x) <= bx,
+              phai: trong_y && Math.abs(px - hop.x - hop.w) <= bx,
+              tren: trong_x && Math.abs(py - hop.y) <= by,
+              duoi: trong_x && Math.abs(py - hop.y - hop.h) <= by };
+  return (c.trai || c.phai || c.tren || c.duoi) ? c : null;
+}
+
+function trong_hop(px, py) {
+  return !!hop && px >= hop.x && px <= hop.x + hop.w && py >= hop.y && py <= hop.y + hop.h;
+}
+
+function con_tro(px, py) {
+  if (!anh_san_sang || !cho_hop || dang_gui_hop) return "default";
+  const c = canh_duoi(px, py);
+  if (!c) return trong_hop(px, py) ? "move" : "crosshair";
+  if ((c.trai && c.tren) || (c.phai && c.duoi)) return "nwse-resize";
+  if ((c.phai && c.tren) || (c.trai && c.duoi)) return "nesw-resize";
+  return (c.trai || c.phai) ? "ew-resize" : "ns-resize";
 }
 
 // Chia cho clientWidth cho ra ngay phan tram: ti le naturalWidth/clientWidth trong
@@ -257,38 +328,103 @@ function phan_tram(e) {
           Math.min(1, Math.max(0, (e.clientY - o.top) / o.height))];
 }
 
-let neo = null;
+// Keo canh/goc de chinh, keo giua hop de doi: ve lai tu dau chi vi thieu 2 pixel
+// la viec phai lam di lam lai, vi con phai bao tron cau hai dong qua 8 khung.
+let keo = null;          // {che_do: 'moi' | 'dich' | 'canh', tu: [x,y], canh, hop0}
 canvas.addEventListener("pointerdown", (e) => {
   if (!anh_san_sang || dang_gui_hop || !cho_hop || (e.pointerType === "mouse" && e.button !== 0)) return;
-  neo = phan_tram(e);
+  const [x, y] = phan_tram(e);
+  const canh = canh_duoi(x, y);
+  keo = canh ? { che_do: "canh", tu: [x, y], canh, hop0: { ...hop } }
+    : trong_hop(x, y) ? { che_do: "dich", tu: [x, y], hop0: { ...hop } }
+    : { che_do: "moi", tu: [x, y] };
   canvas.setPointerCapture(e.pointerId);
 });
 canvas.addEventListener("pointermove", (e) => {
-  if (!neo) return;
   const [x, y] = phan_tram(e);
-  hop = { x: Math.min(neo[0], x), y: Math.min(neo[1], y),
-          w: Math.abs(x - neo[0]), h: Math.abs(y - neo[1]) };
+  if (!keo) { canvas.style.cursor = con_tro(x, y); return; }
+  if (keo.che_do === "moi") {
+    hop = { x: Math.min(keo.tu[0], x), y: Math.min(keo.tu[1], y),
+            w: Math.abs(x - keo.tu[0]), h: Math.abs(y - keo.tu[1]) };
+  } else if (keo.che_do === "dich") {
+    const b = keo.hop0;
+    hop = { ...b, x: kep(b.x + x - keo.tu[0], 1 - b.w), y: kep(b.y + y - keo.tu[1], 1 - b.h) };
+  } else {
+    // Doi bien roi chuan hoa lai: keo lat qua canh doi dien van ra hop hop le.
+    const c = keo.canh, o = keo.hop0;
+    const x0 = c.trai ? x : o.x, x1 = c.phai ? x : o.x + o.w;
+    const y0 = c.tren ? y : o.y, y1 = c.duoi ? y : o.y + o.h;
+    hop = { x: Math.min(x0, x1), y: Math.min(y0, y1),
+            w: Math.abs(x1 - x0), h: Math.abs(y1 - y0) };
+  }
   ve_hop();
 });
 function cap_nhat_hop() {
   const du = hop && hop.w > 0 && hop.h > 0;
-  $("hop-gui").disabled = !du || !anh_san_sang || dang_gui_hop || !cho_hop;
-  $("hop-bo").disabled = dang_gui_hop || !cho_hop;
-  $("toa-do-fields").disabled = !anh_san_sang || dang_gui_hop || !cho_hop;
+  // Mot cho duy nhat ghi hop nguoc ve trang thai, nen moi duong sua hop deu di qua day.
+  if (pham_vi === "rieng") {
+    if (du) hop_rieng.set(cue_i(), { ...hop }); else hop_rieng.delete(cue_i());
+  } else {
+    hop_chung = du ? { ...hop } : null;
+  }
+  const co = !!hop_chung || hop_rieng.size > 0;
+  const khoa = dang_gui_hop || !cho_hop;
+  $("hop-gui").disabled = !co || !anh_san_sang || khoa;
+  $("hop-bo").disabled = khoa;
+  $("hop-luu-nhom").disabled = !co || khoa;
+  $("toa-do-fields").disabled = !anh_san_sang || khoa;
+  $("pham-vi-fields").disabled = !anh_san_sang || khoa;
+  $("day-fields").disabled = !anh_san_sang || khoa;
+  $("khung-thumbnails").querySelectorAll("button").forEach((b, i) => {
+    b.classList.toggle("rieng", hop_rieng.has(khung_ds[i] ? khung_ds[i].i : -1));
+  });
+  const rieng = hop_rieng.size ? ` · ${hop_rieng.size} câu có vùng riêng` : "";
   $("khung-hop").textContent = du
-    ? `Hộp: x=${hop.x.toFixed(3)} y=${hop.y.toFixed(3)} w=${hop.w.toFixed(3)} h=${hop.h.toFixed(3)}`
-    : "Chưa có vùng hợp lệ. Vẽ hoặc nhập tọa độ bên dưới.";
+    ? `Hộp: x=${hop.x.toFixed(3)} y=${hop.y.toFixed(3)} w=${hop.w.toFixed(3)} h=${hop.h.toFixed(3)}${rieng}`
+    : "Chưa có vùng hợp lệ. Vẽ hoặc nhập tọa độ bên dưới." + rieng;
   if (du) for (const k of "xywh") $("form-toa-do").elements[k].value = hop[k];
   ve_hop();
 }
+
+for (const r of document.querySelectorAll("[name=pham_vi]")) {
+  r.addEventListener("change", () => {
+    if (!cho_hop || dang_gui_hop) return;
+    pham_vi = r.value;
+    if (pham_vi === "chung") {
+      hop_rieng.delete(cue_i());              // bo hop rieng, quay ve dung hop chung
+      if (hop_chung) hop = { ...hop_chung };
+    }
+    cap_nhat_hop();
+    dat_pham_vi();
+  });
+}
+
+// Phu de nhay cho thuong nhay ca mot canh, khong phai mot cau le.
+$("form-day").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (!cho_hop || dang_gui_hop) return;
+  if (!hop || !hop_hop_le(hop)) { bao("Vẽ một vùng hợp lệ trước khi áp cho dải câu."); return; }
+  const f = e.target.elements;
+  const tu = Number(f.tu.value) - 1, den = Number(f.den.value) - 1;
+  const het = khung_ds.length ? khung_ds[khung_ds.length - 1].i + 1 : 0;
+  if (!Number.isInteger(tu) || !Number.isInteger(den) || tu < 0 || den < tu || den >= het) {
+    bao(`Dải câu phải nằm trong 1–${het}, và câu đầu không lớn hơn câu cuối.`);
+    return;
+  }
+  for (const k of khung_ds) if (k.i >= tu && k.i <= den) hop_rieng.set(k.i, { ...hop });
+  pham_vi = hop_rieng.has(cue_i()) ? "rieng" : "chung";
+  bao(`Đã áp vùng cho câu ${tu + 1}–${den + 1}.`, true);
+  cap_nhat_hop();
+  dat_pham_vi();
+});
 canvas.addEventListener("pointerup", () => {
-  if (!neo) return;
-  neo = null;
+  if (!keo) return;
+  keo = null;
   const du = hop && hop.w > 0.01 && hop.h > 0.01;
-  if (!du) { hop = null; ve_hop(); }
+  if (!du) { hop = null; ve_hop(); }     // co rut hop ve gan 0 cung la cach xoa
   cap_nhat_hop();
 });
-canvas.addEventListener("pointercancel", () => { neo = null; cap_nhat_hop(); });
+canvas.addEventListener("pointercancel", () => { keo = null; cap_nhat_hop(); });
 $("form-toa-do").addEventListener("submit", (e) => {
   e.preventDefault();
   if (!anh_san_sang || dang_gui_hop || !cho_hop) return;
@@ -302,12 +438,25 @@ function hop_hop_le(box) {
     box.w > 0 && box.h > 0 && box.x + box.w <= 1 && box.y + box.h <= 1;
 }
 
-$("hop-gui").onclick = () => gui_hop(hop);
+// Hop chung mang cue: null (moi cau); cac cau cung mot hop rieng duoc gop lai.
+function xay_vung() {
+  const ra = hop_chung ? [{ ...hop_chung, cue: null }] : [];
+  const gom = new Map();
+  for (const i of [...hop_rieng.keys()].sort((a, b) => a - b)) {
+    const h = hop_rieng.get(i);
+    const khoa = `${h.x}|${h.y}|${h.w}|${h.h}`;
+    if (!gom.has(khoa)) gom.set(khoa, { ...h, cue: [] });
+    gom.get(khoa).cue.push(i);
+  }
+  return [...ra, ...gom.values()];
+}
+
+$("hop-gui").onclick = () => gui_hop(xay_vung());
 $("hop-bo").onclick = () => gui_hop(null);
 
 async function gui_hop(gia_tri) {
   if (!cid || !khung_ds.length || dang_gui_hop || !cho_hop) return;
-  if (gia_tri !== null && (!anh_san_sang || !hop_hop_le(gia_tri))) return;
+  if (gia_tri !== null && (!anh_san_sang || !gia_tri.length || !gia_tri.every(hop_hop_le))) return;
   dang_gui_hop = true;
   $("hop-gui").disabled = $("hop-bo").disabled = true;
   $("toa-do-fields").disabled = true;
@@ -316,7 +465,8 @@ async function gui_hop(gia_tri) {
     await goi(`/api/cong-viec/${cid}/hop`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(gia_tri === null ? { co_blur: false } : gia_tri),
+      body: JSON.stringify(gia_tri === null ? { co_blur: false }
+        : { co_blur: true, vung: gia_tri, luu_nhom: $("hop-luu-nhom").checked }),
     });
     cho_hop = false;
     hien("tien-do");
