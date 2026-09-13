@@ -35,6 +35,50 @@ def kiem_hop(hop: dict, W: int | None = None, H: int | None = None) -> dict[str,
     return sach
 
 
+def kiem_vung(vung: object, W: int | None = None, H: int | None = None,
+              so_cue: int | None = None) -> list[dict]:
+    """Chuan hoa danh sach vung mo; van di qua kiem_hop nen hinh hoc chi mot cho kiem.
+
+    Moi phan tu co x, y, w, h va `cue`: danh sach chi so cau thoai hop nay ap vao,
+    hoac None nghia la moi cau. Mot dict tran duoc coi la mot hop cho moi cau, nen
+    CLI, khung mac dinh cua nhom va JSON cu deu di duoc duong nay.
+    """
+    if isinstance(vung, dict):
+        vung = [vung]
+    if not isinstance(vung, list) or not vung:
+        raise ValueError("Vung lam mo phai la danh sach khong rong")
+    ra = []
+    for m in vung:
+        if not isinstance(m, dict):
+            raise ValueError("Moi vung lam mo phai la object co x, y, w, h")
+        hop = kiem_hop(m, W, H)
+        cue = m.get("cue")
+        if cue is not None:
+            if not isinstance(cue, list) or not cue:
+                raise ValueError("cue phai la danh sach chi so khong rong, hoac vang mat")
+            for i in cue:
+                if isinstance(i, bool) or not isinstance(i, int) or i < 0:
+                    raise ValueError(f"Chi so cau thoai phai la so nguyen khong am, nhan {i!r}")
+                if so_cue is not None and i >= so_cue:
+                    raise ValueError(f"Khong co cau thoai {i}; video chi co {so_cue} cau")
+            cue = sorted(set(cue))
+        ra.append({**hop, "cue": cue})
+    return ra
+
+
+def hop_chinh(vung: list[dict]) -> dict:
+    """Hop dai dien cho vi tri phu de goc chinh trong mot danh sach vung.
+
+    Kieu chu cua phu de Viet va khung mac dinh cua nhom deu phai chon MOT hop, va
+    phai chon giong nhau — nen quy tac nam o day chu khong chep hai ban.
+    Hop ap cho moi cau thang; khong co thi lay hop phu nhieu cau nhat.
+    """
+    if not vung:
+        raise ValueError("Danh sach vung rong, khong co hop nao de chon")
+    return next((v for v in vung if v.get("cue") is None),
+                max(vung, key=lambda v: len(v.get("cue") or ())))
+
+
 def tach_hop(text: str) -> dict[str, float]:
     """Chi tach chuoi 'x,y,w,h'; kiem_hop van la validator duy nhat."""
     phan = str(text).split(",")
@@ -57,14 +101,20 @@ def hop_sang_pixel(hop: dict, W: int, H: int) -> tuple[int, int, int, int]:
     return bx, by, bw, bh
 
 
-def trich_khung(video: Path, cues: list[Cue], work: Path, n: int = 8) -> list[Path]:
-    """Lay khung tai dau cau thoai, khong rai deu theo thoi gian: khung nao cung co chu."""
+def trich_khung(video: Path, cues: list[Cue], work: Path) -> list[Path]:
+    """Mot khung cho MOI cau thoai, khong lay mau.
+
+    Lay mau 8 khung thi khong ai kiem duoc hop da phu het chua: phu de nhay cho o
+    dung cau khong nam trong mau la lot luoi, ma do moi la cau can nhin.
+    Khung lay tai dau cau chu khong rai deu theo thoi gian: khung nao cung co chu.
+    """
+    # ponytail: tuan tu mot ffmpeg seek moi cue (~0.2s o 640x360, ~9s cho 43 cue).
+    # Phim hai tieng ~2000 cue thi mat vai phut va vai tram MB PNG; luc do hay
+    # trich theo yeu cau tung khung trong api/app.py thay vi trich truoc ca loat.
     work = Path(work)
     work.mkdir(parents=True, exist_ok=True)
-    chon = [cues[round(i * (len(cues) - 1) / max(1, min(n, len(cues)) - 1))]
-            for i in range(min(n, len(cues)))]
     ra = []
-    for i, c in enumerate(chon):
+    for i, c in enumerate(cues):
         path = work / f"khung_{i}.png"
         subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{c.bat_dau + 0.3:.3f}",
                         "-i", str(Path(video).resolve()), "-frames:v", "1", "-y", str(path)],
@@ -73,9 +123,7 @@ def trich_khung(video: Path, cues: list[Cue], work: Path, n: int = 8) -> list[Pa
     return ra
 
 
-def moc_khung(cues: list[Cue], n: int = 8) -> list[dict]:
+def moc_khung(cues: list[Cue]) -> list[dict]:
     """Mo ta cac khung da trich cho frontend: thu tu khop voi trich_khung."""
-    chon = [cues[round(i * (len(cues) - 1) / max(1, min(n, len(cues)) - 1))]
-            for i in range(min(n, len(cues)))]
     return [{"i": i, "giay": round(c.bat_dau + 0.3, 3), "text": c.text}
-            for i, c in enumerate(chon)]
+            for i, c in enumerate(cues)]

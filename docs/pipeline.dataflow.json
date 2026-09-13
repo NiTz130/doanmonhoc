@@ -21,7 +21,7 @@
           "translate",
           "render"
         ],
-        "note": "Video đã kèm phụ đề tiếng Anh: rút thẳng ra, bỏ qua toàn bộ khâu nhận dạng."
+        "note": "Video có phụ đề: bỏ qua ASR; chốt vùng mờ trước khi dịch. Các mũi tên biểu diễn dữ liệu, không phải thứ tự chạy."
       },
       {
         "id": "duong-du-phong",
@@ -57,7 +57,7 @@
       "label": "Phụ đề gốc"
     },
     {
-      "label": "Dịch và đánh dấu"
+      "label": "Chọn vùng, rồi dịch"
     },
     {
       "label": "Kết xuất"
@@ -77,7 +77,7 @@
       "id": "db",
       "type": "database",
       "label": "subtitles.db",
-      "sublabel": "sqlite3, 4 bảng",
+      "sublabel": "sqlite3, 5 bảng",
       "stage": 1,
       "row": 0,
       "tag": "trí nhớ"
@@ -85,7 +85,7 @@
     {
       "id": "main",
       "type": "backend",
-      "label": "main.py",
+      "label": "dieu_phoi.py",
       "sublabel": "ffprobe, nạp nhóm",
       "stage": 1,
       "row": 2,
@@ -131,7 +131,7 @@
       "id": "markbox",
       "type": "frontend",
       "label": "markbox.py",
-      "sublabel": "cửa sổ tkinter",
+      "sublabel": "canvas web + validate",
       "stage": 3,
       "row": 3,
       "tag": "người vẽ"
@@ -222,7 +222,7 @@
       "id": "goc-translate",
       "from": "sub_goc",
       "to": "translate",
-      "label": "lô 400 dòng",
+      "label": "lô 25 dòng",
       "classification": "kèm thuật ngữ",
       "variant": "emphasis"
     },
@@ -230,8 +230,8 @@
       "id": "goc-markbox",
       "from": "sub_goc",
       "to": "markbox",
-      "label": "8 mốc câu",
-      "classification": "chọn khung mẫu",
+      "label": "mỗi cue một khung",
+      "classification": "chọn vùng trước dịch",
       "variant": "default"
     },
     {
@@ -255,7 +255,7 @@
       "from": "markbox",
       "to": "render",
       "label": "vung_blur.json",
-      "classification": "khung phần trăm",
+      "classification": "vùng theo cue",
       "variant": "default"
     },
     {
@@ -282,8 +282,8 @@
       "dot": "cyan",
       "title": "Khung làm mờ do người vẽ",
       "items": [
-        "Không OCR, không Tesseract. tkinter stdlib",
-        "Trượt 8 khung để hộp trùm được câu 2 dòng",
+        "Canvas web, một khung cho mỗi cue",
+        "Vùng riêng từng cue, áp cho dải câu",
         "Lưu phần trăm nên 1080p và 720p dùng chung"
       ]
     },
@@ -291,9 +291,9 @@
       "dot": "amber",
       "title": "Trí nhớ và chạy lại",
       "items": [
-        "Bộ 24 tập chỉ vẽ khung một lần",
+        "Khung nhóm dùng khi video chưa có vùng riêng",
         "File trên đĩa là nguồn sự thật, CSDL ghi log",
-        "Xoá subtitles.db chỉ mất bảng thuật ngữ"
+        "Xoá DB mất nhóm, thuật ngữ và lịch sử"
       ]
     }
   ]

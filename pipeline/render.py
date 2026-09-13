@@ -8,7 +8,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from pipeline.markbox import hop_sang_pixel     # LD-8: mot validator hinh hoc duy nhat
+from pipeline.markbox import hop_chinh, hop_sang_pixel   # LD-8: hinh hoc chi mot cho
 from pipeline.srt import Cue, doc_srt, file_tam
 
 __all__ = ["hop_sang_pixel", "cue_thanh_khoang", "khoang_mo", "kieu_chu", "ket_xuat"]
@@ -113,29 +113,41 @@ def bo_ma_hoa() -> tuple[str, ...]:
     return ("-c:v", "libx264", "-preset", "medium", "-crf", "23")
 
 
-def ket_xuat(video: Path, srt: Path, hop: dict | None, khoang: list[tuple[float, float]],
+def ket_xuat(video: Path, srt: Path, vung: list[tuple[dict, list[tuple[float, float]]]],
              style: dict, ra: Path) -> Path:
-    """Mot lan encode duy nhat; audio copy nguyen, output tam roi probe roi replace."""
+    """Mot lan encode duy nhat; audio copy nguyen, output tam roi probe roi replace.
+
+    `vung` la danh sach (hop, khoang): moi hop co khoang thoi gian bat lam mo rieng,
+    nen phu de nhay cho giua cac canh van mo dung cho dung luc. Danh sach rong hoac
+    moi hop deu khong co khoang nao thi khong lam mo gi ca.
+    """
     for tool in ("ffmpeg", "ffprobe"):
         if shutil.which(tool) is None:
             raise RuntimeError(f"Thieu {tool} trong PATH")
     video, srt, ra = Path(video).resolve(), Path(srt), Path(ra)
     W, H = int(style["W"]), int(style["H"])
-    px = hop_sang_pixel(hop, W, H) if hop else None
+    dung = [(hop, khoang) for hop, khoang in vung if khoang]
+    # Phu de Viet chi ve o MOT cho, nen kieu chu bam theo hop chinh — cung quy tac
+    # ma dieu_phoi dung khi luu khung mac dinh cua nhom.
+    px = hop_sang_pixel(hop_chinh([h for h, _ in dung]), W, H) if dung else None
     ass = srt.with_suffix(".ass")
     viet_ass(doc_srt(srt), kieu_chu(W, H, px, style.get("font_scale", 0.42), style), ass)
 
     # cwd dat tai thu muc chua phu de va truyen ten tuong doi: duong dan Windows
     # tuyet doi trong filtergraph phai escape thanh C\:/... , sai mot dau la loi la.
     phu_de = "subtitles=" + _thoat(ass.name)
-    if px and khoang:
+    # Noi tiep tung hop: moi hop tach mot ban sao, crop-blur roi dan nguoc len anh
+    # dang chay, nen hop sau nhin thay ket qua cua hop truoc.
+    giai_doan, vao = [], "0:v"
+    for i, (hop, khoang) in enumerate(dung):
+        p = hop_sang_pixel(hop, W, H)
         bat = "+".join(f"between(t\\,{a:.3f}\\,{b:.3f})" for a, b in khoang)
-        loc = (f"[0:v]split[base][tmp];"
-               f"[tmp]crop={px[2]}:{px[3]}:{px[0]}:{px[1]},gblur=sigma=25[blur];"
-               f"[base][blur]overlay={px[0]}:{px[1]}:enable={bat}[bl];"
-               f"[bl]{phu_de}[v]")
-    else:
-        loc = f"[0:v]{phu_de}[v]"
+        giai_doan += [f"[{vao}]split[m{i}][c{i}]",
+                      f"[c{i}]crop={p[2]}:{p[3]}:{p[0]}:{p[1]},gblur=sigma=25[b{i}]",
+                      f"[m{i}][b{i}]overlay={p[0]}:{p[1]}:enable={bat}[v{i}]"]
+        vao = f"v{i}"
+    giai_doan.append(f"[{vao}]{phu_de}[v]")
+    loc = ";".join(giai_doan)
 
     with file_tam(ra) as tmp:
         lenh = ["ffmpeg", "-v", "error", "-y", "-i", str(video), "-filter_complex", loc,

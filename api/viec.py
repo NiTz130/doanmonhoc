@@ -38,11 +38,11 @@ def lay(cid: str) -> tuple[Path, TuyChon] | None:
         return _HO_SO.get(cid)
 
 
-def dat_hop(cid: str, hop: dict | None) -> TuyChon:
+def dat_hop(cid: str, hop: list[dict] | dict | None, luu_nhom: bool = False) -> TuyChon:
     """Nhan hop da ve roi chay tiep: cache lam moi dung buoc vung mo va render."""
     video, tc = _HO_SO[cid]
-    moi = replace(tc, blur="off", blur_box=None) if hop is None else \
-        replace(tc, blur="on", blur_box=hop)
+    moi = replace(tc, blur="off", blur_box=None, luu_hop_nhom=False) if hop is None else \
+        replace(tc, blur="on", blur_box=hop, luu_hop_nhom=luu_nhom)
     dat(cid, video, moi)
     return moi
 
@@ -82,6 +82,9 @@ def chay_nen(cid: str) -> None:
         except BaseException as exc:        # ngoai le nen phai thanh trang thai loi
             ghi(trang_thai="loi", loi=f"{type(exc).__name__}: {exc}")
         else:
-            ghi(trang_thai=kq.trang_thai, tien_do=1.0 if kq.ra else 0.7,
+            # cho_chon_khung giu nguyen tien do buoc cuoi da bao; dat cung mot con so
+            # o day thi thanh tien do nhay lui khi buoc dich chay tiep sau do.
+            ghi(trang_thai=kq.trang_thai,
                 duong_dan_ra=str(kq.ra) if kq.ra else None,
-                loi=f"giu nguon {len(kq.giu_nguon)} cue" if kq.giu_nguon else None)
+                loi=f"giu nguon {len(kq.giu_nguon)} cue" if kq.giu_nguon else None,
+                **({"tien_do": 1.0} if kq.ra else {}))

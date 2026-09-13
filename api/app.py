@@ -152,22 +152,23 @@ def mot_khung(con: Con, cid: str, i: int) -> FileResponse:
 @api.post("/cong-viec/{cid}/hop")
 def nhan_hop(con: Con, cid: str, nen: BackgroundTasks,
              than: Annotated[dict, Body()]) -> dict:
-    """Nhan hop da ve roi chay tiep tu buoc ket xuat. Bo qua ve = blur off."""
+    """Nhan hop da ve roi chay tiep tu buoc dich. Bo qua ve = blur off."""
     row = _cong_viec(con, cid)
     if row["trang_thai"] == "dang_chay":
         raise HTTPException(409, "Cong viec dang chay, doi no dung roi gui hop")
-    hop = None
+    vung = None
     if than.get("co_blur", True):
-        from pipeline.markbox import kiem_hop
+        from pipeline.markbox import kiem_vung
         try:
-            hop = kiem_hop(than)                # dung validator LD-8 cua CLI
+            # `vung` la danh sach hop kem cue; thieu thi coi than la mot hop cho moi cau.
+            vung = kiem_vung(than.get("vung", than))     # dung validator LD-8 cua CLI
         except (ValueError, TypeError) as exc:
             raise HTTPException(400, str(exc)) from None
-    viec.dat_hop(cid, hop)
+    viec.dat_hop(cid, vung, bool(than.get("luu_nhom")))
     with con:
         db.cap_nhat_cong_viec(con, cid, trang_thai="cho", loi=None)
     nen.add_task(viec.chay_nen, cid)
-    return {"id": cid, "trang_thai": "cho", "hop": hop}
+    return {"id": cid, "trang_thai": "cho", "vung": vung}
 
 
 @api.get("/cong-viec/{cid}/ket-qua")

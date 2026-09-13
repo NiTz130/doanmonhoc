@@ -101,3 +101,52 @@ if __name__ == '__main__':
         if name.startswith('test_'):
             fn()
             print('PASS', name)
+
+
+def test_moc_khung_mot_khung_moi_cue():
+    """43 phu de thi phai co 43 khung: lay mau 8 khung lam cau nhay cho lot luoi."""
+    from pipeline.markbox import moc_khung
+    from pipeline.srt import Cue
+    cues = [Cue(i + 1, i * 2.0, i * 2.0 + 1.5, f"line {i + 1}") for i in range(43)]
+    moc = moc_khung(cues)
+    assert len(moc) == 43
+    assert [m["i"] for m in moc] == list(range(43))
+    assert moc[0]["giay"] == 0.3 and moc[42]["giay"] == 84.3
+    assert moc[42]["text"] == "line 43"
+    assert moc_khung([]) == []
+
+
+def test_kieu_chu_bam_hop_ap_cho_moi_cau():
+    """Nhieu vung mo nhung phu de Viet chi ve mot cho: chon hop nao lam chuan."""
+    from pipeline.render import ket_xuat
+    duoi = {"x": .3, "y": .80, "w": .4, "h": .12, "cue": None}
+    tren = {"x": .3, "y": .05, "w": .4, "h": .12, "cue": [1]}
+    chon = []
+
+    def bat(W, H, px, font_scale=0.42, du_phong=None):
+        chon.append(px)
+        return {"PlayResX": W, "PlayResY": H, "FontName": "Arial",
+                "FontSize": 20, "MarginV": 10}
+
+    import pipeline.render as render
+    from pipeline.srt import Cue, ghi_srt
+    import tempfile
+    from pathlib import Path
+    from unittest.mock import patch
+
+    with tempfile.TemporaryDirectory() as d:
+        srt = Path(d) / "s.srt"
+        ghi_srt([Cue(1, 0, 1, "a"), Cue(2, 2, 3, "b")], srt)
+        style = {"W": 1280, "H": 720, "font_scale": .42}
+        # Chan truoc khi cham ffmpeg: chi can biet kieu_chu duoc goi voi hop nao.
+        with patch.object(render, "kieu_chu", bat), \
+                patch.object(render.subprocess, "run", side_effect=AssertionError("stop")):
+            for vung in ([(duoi, [(0.0, 3.0)]), (tren, [(1.6, 3.0)])],
+                         [(tren, [(1.6, 3.0)]), (duoi, [(0.0, 3.0)])]):
+                try:
+                    ket_xuat(Path(d) / "v.mp4", srt, vung, style, Path(d) / "r.mp4")
+                except AssertionError:
+                    pass
+    # Ca hai thu tu deu phai ra hop `duoi` (cue=None), khong phu thuoc thu tu danh sach.
+    assert len(chon) == 2 and chon[0] == chon[1], chon
+    assert chon[0] == render.hop_sang_pixel(duoi, 1280, 720), chon[0]

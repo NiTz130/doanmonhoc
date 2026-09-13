@@ -35,15 +35,15 @@ def _san(co_sidecar=True, dich_loi=False):
         return SimpleNamespace(ban=[f"vi {s}" for s in lines], thuat_ngu_moi={},
                                giu_nguon=[], token_vao=0, token_ra=0)
 
-    def trich_khung(video, cues, work, n=8):
+    def trich_khung(video, cues, work):
         ra = []
-        for i in range(min(n, len(cues))):
+        for i in range(len(cues)):
             p = Path(work) / f"khung_{i}.png"
             p.write_bytes(b"\x89PNG")
             ra.append(p)
         return ra
 
-    from pipeline.markbox import kiem_hop, moc_khung
+    from pipeline.markbox import kiem_vung, moc_khung
     mods = {
         "audio": SimpleNamespace(tach=lambda v, ra, separate=False:
                                  (Path(ra).write_bytes(b"wav"), Path(ra))[1]),
@@ -51,10 +51,10 @@ def _san(co_sidecar=True, dich_loi=False):
                                 tim_sidecar=tim_sidecar, tim_phu_de=tim_phu_de),
         "asr": SimpleNamespace(nhan_dang=lambda *a, **k: None),
         "translate": SimpleNamespace(dich=dich),
-        "markbox": SimpleNamespace(kiem_hop=kiem_hop, moc_khung=moc_khung,
+        "markbox": SimpleNamespace(kiem_vung=kiem_vung, moc_khung=moc_khung,
                                    trich_khung=trich_khung),
         "render": SimpleNamespace(khoang_mo=lambda cues, dur: [(0.0, 1.9)],
-                                  ket_xuat=lambda v, s, h, k, st, out: Path(out).write_bytes(b"mp4")),
+                                  ket_xuat=lambda v, s, vg, st, out: Path(out).write_bytes(b"mp4")),
     }
     with tempfile.TemporaryDirectory() as d:
         cu = Path.cwd()
@@ -123,7 +123,9 @@ def test_api_cho_chon_khung_roi_chay_tiep():
         assert tt["trang_thai"] == "cho_chon_khung" and tt["loi"] is None, tt
 
         khung = client.get(f"/api/cong-viec/{cid}/khung").json()
+        # Mot khung moi cue: lay mau thi khong kiem duoc hop da phu het phu de chua.
         assert len(khung) == 3 and khung[0]["giay"] == 0.3, khung
+        assert [k["i"] for k in khung] == [0, 1, 2], khung
         assert client.get(f"/api/cong-viec/{cid}/khung/0").status_code == 200
         assert client.get(f"/api/cong-viec/{cid}/khung/99").status_code == 404
         assert client.get(f"/api/cong-viec/{cid}/ket-qua").status_code == 404
