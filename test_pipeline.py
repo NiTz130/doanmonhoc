@@ -65,6 +65,11 @@ def _srt(path, so=2):
 @contextmanager
 def _pipeline_gia(dem: Counter, sidecar: Path | None):
     """Thay sau module xu ly bang ban gia dem so lan goi; khong ffmpeg, khong mang."""
+    # Validator that: hinh hoc phai duoc kiem that chu khong phai ban gia de lot.
+    from pipeline.markbox import hop_chinh, kiem_hop, kiem_vung
+    from pipeline.render import cue_thanh_khoang
+    from pipeline.srt import ghi_json
+
     def tach(video, ra, separate=False):
         dem["audio"] += 1
         p = Path(ra).with_name("vocals.wav") if separate else Path(ra)
@@ -88,9 +93,11 @@ def _pipeline_gia(dem: Counter, sidecar: Path | None):
         return SimpleNamespace(ban=[f"vi {s}" for s in lines], thuat_ngu_moi={"Hero": "Anh hùng"},
                                giu_nguon=[], token_vao=1, token_ra=1)
 
-    def ket_xuat(video, srt, hop, khoang, style, out):
+    def ket_xuat(video, srt, vung, style, out):
         dem["render"] += 1
         Path(out).write_bytes(b"mp4")
+        # Ghi lai de test doi chieu tung hop voi khoang thoi gian no duoc gan.
+        ghi_json(Path(srt).with_name("render_vung.json"), {"vung": vung})
 
     mods = {
         "audio": SimpleNamespace(tach=tach),
@@ -100,9 +107,11 @@ def _pipeline_gia(dem: Counter, sidecar: Path | None):
                                 tim_phu_de=tim_phu_de),
         "asr": SimpleNamespace(nhan_dang=nhan_dang),
         "translate": SimpleNamespace(dich=dich),
-        "markbox": SimpleNamespace(kiem_hop=lambda hop, W, H: dict(hop),
+        "markbox": SimpleNamespace(kiem_vung=kiem_vung, kiem_hop=kiem_hop,
+                                   hop_chinh=hop_chinh,
                                    trich_khung=lambda v, cues, work: [Path(work) / "khung_0.png"]),
-        "render": SimpleNamespace(ket_xuat=ket_xuat, khoang_mo=lambda cues, dur: [[0.0, 1.9]]),
+        # khoang_mo that: no thuan tuy tinh toan, va test can thay dung cue nao vao hop nao.
+        "render": SimpleNamespace(ket_xuat=ket_xuat, khoang_mo=cue_thanh_khoang),
     }
     from pipeline import dieu_phoi
     with patch.object(dieu_phoi, "_nap", mods.__getitem__), \
@@ -184,11 +193,81 @@ def test_resume_dependencies_and_atomic_write():
         chay(vad=True)                                  # doi vad: phai nhan dang lai
         assert dem["asr"] == 4
 
-    # Chua co hop nao: dung o cho_chon_khung chu khong phai loi.
+    # Chua co hop nao: dung o cho_chon_khung chu khong phai loi, va dung TRUOC buoc
+    # dich — bo cuoc o man ve hop thi khong duoc mat tien API dich.
     dem = Counter()
     with _san() as (video, sidecar), closing(db.mo(":memory:")) as con, _pipeline_gia(dem, sidecar):
         kq = dieu_phoi.chay(video, TuyChon(blur="on"), con=con, goi=lambda p: None)
-        assert kq.trang_thai == "cho_chon_khung" and kq.khung and dem["render"] == 0
+        assert kq.trang_thai == "cho_chon_khung" and kq.khung
+        assert (dem["dich"], dem["render"]) == (0, 0), "cho ve hop khong duoc ton token dich"
+
+        # Ve hop xong chay tiep: bay gio moi dich, roi ket xuat.
+        kq = dieu_phoi.chay(video, TuyChon(blur="on", blur_box=hop), con=con, goi=lambda p: None)
+        assert kq.trang_thai == "xong" and (dem["dich"], dem["render"]) == (1, 1)
+
+
+def test_hop_nhom_khong_bi_ghi_de_am_tham():
+    from pipeline import db, dieu_phoi
+    from pipeline.dieu_phoi import TuyChon
+    from pipeline.srt import doc_json, thu_muc_lam_viec
+    hop = {"x": 0.3, "y": 0.85, "w": 0.4, "h": 0.09}
+    mac_dinh = {"x": 0.1, "y": 0.80, "w": 0.3, "h": 0.10}
+    dem = Counter()
+    with _san() as (video, sidecar), closing(db.mo(":memory:")) as con, _pipeline_gia(dem, sidecar):
+        def chay(**kw):
+            return dieu_phoi.chay(video, TuyChon(nhom="Phim", **kw), con=con, goi=lambda p: None)
+
+        chay(blur_box=hop)
+        assert dieu_phoi.nhom_hop(con, "Phim") is None, "ve hop mot video khong duoc doi ca nhom"
+
+        chay(blur_box=hop, luu_hop_nhom=True)           # chon ro rang thi moi ghi
+        assert dieu_phoi.nhom_hop(con, "Phim") == hop
+
+        # Hop rieng cua video thang hop mac dinh cua nhom: no ve tren dung khung hinh nay.
+        dieu_phoi.nhom_dat_hop(con, "Phim", mac_dinh)
+        chay()
+        luu = doc_json(thu_muc_lam_viec(video) / "vung_blur.json")
+        assert [{k: v[k] for k in "xywh"} for v in luu["vung"]] == [hop], \
+            "hop rieng phai thang hop mac dinh nhom"
+
+
+def test_vung_mo_gan_tung_cau_thoai():
+    """Phu de nhay cho: moi hop chi lam mo dung nhung cau duoc gan cho no."""
+    from pipeline import db, dieu_phoi
+    from pipeline.dieu_phoi import TuyChon
+    from pipeline.srt import doc_json, thu_muc_lam_viec
+    duoi = {"x": 0.3, "y": 0.85, "w": 0.4, "h": 0.09}       # phu de goc, o day
+    tren = {"x": 0.3, "y": 0.05, "w": 0.4, "h": 0.09}       # vai cau nhay len dinh
+    dem = Counter()
+    with _san() as (video, sidecar), closing(db.mo(":memory:")) as con, _pipeline_gia(dem, sidecar):
+        # Ban gia sinh 2 cue: cue 0 o 0.0-1.5s, cue 1 o 2.0-3.5s.
+        vung = [{**duoi, "cue": None}, {**tren, "cue": [1]}]
+        kq = dieu_phoi.chay(video, TuyChon(nhom="Phim", blur_box=vung, luu_hop_nhom=True),
+                            con=con, goi=lambda p: None)
+        assert kq.trang_thai == "xong"
+
+        work = thu_muc_lam_viec(video)
+        luu = doc_json(work / "vung_blur.json")["vung"]
+        assert [v["cue"] for v in luu] == [None, [1]]
+
+        # Hop chung phu ca hai cau; hop tren chi phu cue 1, nen bat muon hon.
+        goi = doc_json(work / "render_vung.json")["vung"]
+        assert len(goi) == 2
+        (h1, k1), (h2, k2) = goi
+        assert {k: h1[k] for k in "xywh"} == duoi and {k: h2[k] for k in "xywh"} == tren
+        assert k1 == [[0.0, 3.9]], k1              # cue 0 + cue 1, gop lai
+        assert k2 == [[1.6, 3.9]], k2              # chi cue 1: khong mo tu giay 0
+
+        # Khung mac dinh cua nhom lay hop dung cho MOI cau, khong lay hop gan rieng.
+        assert dieu_phoi.nhom_hop(con, "Phim") == duoi
+
+        # Gan vao cau khong ton tai thi tu choi, khong lang le bo qua.
+        for xau in ([{**duoi, "cue": [99]}], [{**duoi, "cue": []}], [{**duoi, "cue": [-1]}]):
+            try:
+                dieu_phoi.chay(video, TuyChon(blur_box=xau), con=con, goi=lambda p: None)
+                assert False, xau
+            except ValueError:
+                pass
 
 
 def test_batch_targets_and_cli():

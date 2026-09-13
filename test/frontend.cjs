@@ -26,7 +26,7 @@ const screenshotDir = 'docs/ketqua';
         if(failPoll) return route.abort();
         return route.fulfill({json:{id:'sample-job',trang_thai:state,tien_do:state==='dang_chay'?0.42:1,buoc:'dịch phụ đề',co_ket_qua:['xong','suy_giam'].includes(state)}});
       }
-      if(path.endsWith('/khung')) return route.fulfill({json:Array.from({length:8},(_,i)=>({i,giay:i+0.3,text:'Dữ liệu mẫu để kiểm tra vùng phụ đề'}))});
+      if(path.endsWith('/khung')) return route.fulfill({json:Array.from({length:43},(_,i)=>({i,giay:i+0.3,text:'Dữ liệu mẫu để kiểm tra vùng phụ đề'}))});
       if(/\/khung\/\d+$/.test(path)) return failImage?route.abort():route.fulfill({contentType:'image/svg+xml',body:sampleImage.replace('width="1280" height="720"',`width="${imageWidth}" height="${imageHeight}"`)});
       if(path.endsWith('/hop') && path.includes('/cong-viec/')) {boxPayload=req.postDataJSON();state='suy_giam';return route.fulfill({json:{id:'sample-job'}});}
       if(path.endsWith('/ket-qua')) return route.fulfill({contentType:'video/mp4',headers:{'Content-Disposition':'attachment; filename="sample_vi.mp4"'},body:'sample-result'});
@@ -56,14 +56,18 @@ const screenshotDir = 'docs/ketqua';
     }
     await page.setViewportSize({width:1440,height:1000});
     await page.locator('#video-file').setInputFiles(file);
-    await page.locator('.advanced').evaluate(e=>{e.open=true});
+    // Chon xong phai thay ngay: dong chu mo o duoi hop thi nguoi moi dung khong nhin ra.
+    assert(await page.locator('#drop-zone').evaluate(e=>e.classList.contains('da-chon')),'O tha tep phai doi hinh khi da chon video');
+    assert(await page.locator('#file-name').evaluate(e=>e.classList.contains('co-file')),'Ten tep da chon phai duoc lam noi bat');
+    assert((await page.locator('#file-name').textContent()).startsWith('✓ Đã chọn:'),'Ten tep phai co dau xac nhan');
+    await page.locator('#form-tai-len .advanced').evaluate(e=>{e.open=true});
     await page.locator('[name=lang]').fill('');
-    await page.locator('.advanced').evaluate(e=>{e.open=false});
+    await page.locator('#form-tai-len .advanced').evaluate(e=>{e.open=false});
     await page.locator('#upload-submit').click();
-    assert.equal(await page.locator('.advanced').getAttribute('open'),'');
+    assert.equal(await page.locator('#form-tai-len .advanced').getAttribute('open'),'');
     assert.equal(uploads,0);
     await page.locator('[name=lang]').fill('en');
-    await page.locator('.advanced').evaluate(e=>{e.open=false});
+    await page.locator('#form-tai-len .advanced').evaluate(e=>{e.open=false});
     await page.locator('#form-tai-len').evaluate(form=>{
       form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
       form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
@@ -92,7 +96,10 @@ const screenshotDir = 'docs/ketqua';
     await page.locator('#poll-retry').click();
     await page.locator('#khung').waitFor({state:'visible'});
     await page.waitForFunction(()=>document.getElementById('image-status').textContent==='');
-    assert.equal(await page.locator('#khung-thumbnails button').count(),8);
+    // Mot khung moi cue: 43 phu de thi phai co du 43 anh de kiem hop phu het chua.
+    assert.equal(await page.locator('#khung-thumbnails button').count(),43);
+    assert.equal(await page.locator('#khung-thumbnails img').first().getAttribute('loading'),'lazy','43 anh tai cung luc se vo, phai lazy');
+    assert((await page.locator('#khung-nhan').textContent()).startsWith('khung 1/43'));
     for(const [k,v] of Object.entries({x:.2,y:.75,w:.5,h:.15}))await page.locator(`#form-toa-do [name=${k}]`).fill(String(v));
     await page.locator('#form-toa-do button').click();
     const saved=await page.locator('#khung-hop').textContent();
@@ -116,6 +123,55 @@ const screenshotDir = 'docs/ketqua';
       for(const [k,v] of Object.entries({x:.25,y:.7,w:.5,h:.2}))assert(Math.abs(vals[k]-v)<.015,`${w}x${h} ${k} mismatch`);
     }
     await page.setViewportSize({width:1440,height:1000});
+    // Hop phai sua duoc tai cho: ve lai tu dau chi vi thieu vai pixel la viec phai
+    // lam di lam lai, vi con phai bao tron cau hai dong qua ca 8 khung.
+    const datHop=async v=>{for(const [k,n] of Object.entries(v))await page.locator(`#form-toa-do [name=${k}]`).fill(String(n));await page.locator('#form-toa-do button').click();};
+    const docHop=()=>page.locator('#form-toa-do').evaluate(f=>Object.fromEntries(['x','y','w','h'].map(k=>[k,Number(f.elements[k].value)])));
+    const keo=async(tu,den)=>{
+      await page.locator('#khung-canvas').scrollIntoViewIfNeeded();
+      const b=await page.locator('#khung-canvas').boundingBox();
+      await page.mouse.move(b.x+b.width*tu[0],b.y+b.height*tu[1]);
+      await page.mouse.down();
+      await page.mouse.move(b.x+b.width*den[0],b.y+b.height*den[1],{steps:4});
+      await page.mouse.up();
+    };
+    const gan=async(mong,ten)=>{const v=await docHop();
+      for(const k of ['x','y','w','h'])assert(Math.abs(v[k]-mong[k])<.015,`${ten}: ${k}=${v[k]} mong ${mong[k]}`);};
+
+    await datHop({x:.2,y:.7,w:.5,h:.2});
+    await keo([.2,.7],[.15,.65]);                 // goc tren-trai: hai canh cung doi
+    await gan({x:.15,y:.65,w:.55,h:.25},'keo goc tren-trai');
+    await keo([.4,.9],[.4,.95]);                  // canh duoi: chi cao doi
+    await gan({x:.15,y:.65,w:.55,h:.30},'keo canh duoi');
+    await keo([.425,.8],[.525,.8]);               // keo giua hop: doi cho, giu kich thuoc
+    await gan({x:.25,y:.65,w:.55,h:.30},'keo giua hop de doi cho');
+    await keo([.9,.2],[.95,.25]);                 // ngoai hop: van la ve hop moi
+    await gan({x:.9,y:.2,w:.05,h:.05},'keo ngoai hop phai ve hop moi');
+    await datHop({x:.25,y:.65,w:.55,h:.30});
+
+    // Phu de nhay cho: sang khung 11, chuyen sang pham vi rieng, ve vung tren dinh,
+    // roi ap cho ca dai 11-13. Vung chung cua ca video phai khong bi dong vao.
+    await page.locator('#khung-thumbnails button').nth(10).click();
+    await page.waitForFunction(()=>document.getElementById('image-status').textContent==='');
+    await page.locator('[name=pham_vi][value=rieng]').check();
+    await datHop({x:.3,y:.05,w:.3,h:.10});
+    await page.locator('#form-day').locator('xpath=ancestor::details').evaluate(e=>{e.open=true});
+    await page.locator('#form-day [name=tu]').fill('11');
+    await page.locator('#form-day [name=den]').fill('13');
+    await page.locator('#form-day button').click();
+    assert((await page.locator('#bao').textContent()).includes('câu 11–13'));
+    assert.equal(await page.locator('#khung-thumbnails button.rieng').count(),3,'3 cau phai duoc danh dau rieng');
+
+    // Khung 11 dung vung rieng; khung 1 van dung vung chung. Doi khung phai doi hop.
+    await page.locator('#khung-thumbnails button').nth(10).click();
+    await page.waitForFunction(()=>document.getElementById('image-status').textContent==='');
+    assert.equal(await page.locator('[name=pham_vi]:checked').getAttribute('value'),'rieng');
+    await gan({x:.3,y:.05,w:.3,h:.10},'khung trong dai phai dung vung rieng');
+    await page.locator('#khung-thumbnails button').nth(0).click();
+    await page.waitForFunction(()=>document.getElementById('image-status').textContent==='');
+    assert.equal(await page.locator('[name=pham_vi]:checked').getAttribute('value'),'chung');
+    await gan({x:.25,y:.65,w:.55,h:.30},'khung ngoai dai phai dung vung chung');
+
     await page.locator('#form-toa-do [name=w]').fill('.99');
     await page.locator('#form-toa-do button').click();
     assert((await page.locator('#bao').textContent()).includes('Vùng phải nằm'));
@@ -128,15 +184,22 @@ const screenshotDir = 'docs/ketqua';
     assert(await page.locator('#hop-gui').isDisabled());
     failImage=false;await page.locator('#khung-lui').click();
     await page.waitForFunction(()=>document.getElementById('image-status').textContent==='');
+    await page.locator('#hop-luu-nhom').check();
     await page.locator('#hop-gui').click();
     await page.waitForFunction(()=>document.getElementById('viec-trang-thai').textContent.includes('còn dòng'));
-    assert(Math.abs(boxPayload.x-.25)<.015 && Math.abs(boxPayload.w-.5)<.015);
+    assert.equal(boxPayload.vung.length,2,'mot hop chung + mot hop cho dai cau');
+    const [chung,rieng]=boxPayload.vung;
+    assert.equal(chung.cue,null,'hop chung phai mang cue=null');
+    assert(Math.abs(chung.x-.25)<.015 && Math.abs(chung.w-.5)<.015);
+    assert.deepEqual(rieng.cue,[10,11,12],'hop rieng phai mang dung chi so cau 11-13');
+    assert(Math.abs(rieng.y-.05)<.015,'hop rieng phai giu toa do rieng cua no');
+    assert.equal(boxPayload.luu_nhom,true,'Tich o mac dinh nhom phai di kem hop');
     assert.equal(await page.locator('#tai-ket-qua').getAttribute('href'),'/api/cong-viec/sample-job/ket-qua');
     await page.locator('#tai-ket-qua').evaluate(a=>{a.href='data:video/mp4;base64,c2FtcGxl';a.download='sample_vi.mp4'});
     const downloadPromise=page.waitForEvent('download'); await page.locator('#tai-ket-qua').click();
     const download=await downloadPromise;assert.equal(download.suggestedFilename(),'sample_vi.mp4');
     await page.screenshot({path:`${screenshotDir}/B-result.png`,fullPage:true});
-    console.log('PASS polling recovery, 20 navigation cycles, 8 frames, landscape/portrait coordinates, image error, degraded result/download');
+    console.log('PASS polling recovery, 20 navigation cycles, 43 frames (one per cue, lazy), landscape/portrait coordinates, resize/move box, per-cue regions, group-default flag, image error, degraded result/download');
     rejectUpload=true;uploadDelay=1000;
     await page.locator('nav a[href="#tai-len"]').click();
     const terminalPolls=polls;

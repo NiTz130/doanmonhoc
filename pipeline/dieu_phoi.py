@@ -15,7 +15,7 @@ from pipeline.srt import (Cue, bam_file, chu_ky, doc_json, doc_srt, ghi_json,
                           khoa_work, thu_muc_lam_viec)
 
 # Tang khi doi cach sinh artifact cua mot buoc: moi manifest cu thanh cache miss.
-VER = {"audio": 1, "sub_goc": 1, "sub_vi": 1, "vung_blur": 1}
+VER = {"audio": 1, "sub_goc": 1, "sub_vi": 1, "vung_blur": 2}
 PROMPT_VER = 2                          # doi prompt phai lam moi moi ban dich cu
 HAU_TO = "_vi.mp4"
 MANIFEST = "trang_thai.json"
@@ -36,7 +36,9 @@ class TuyChon:
     model: str = "large-v3"
     model_dich: str = "deepseek-v4-flash"
     blur: str = "auto"                      # auto | on | off
-    blur_box: dict[str, float] | None = None
+    # Mot dict = mot hop cho moi cau (CLI, khung nhom); danh sach = hop gan cue rieng.
+    blur_box: dict[str, float] | list[dict] | None = None
+    luu_hop_nhom: bool = False           # hop nay co thanh mac dinh cua nhom khong
     font_scale: float = 0.42
     separate: bool = False
     vad: bool = True                        # Silero VAD; tat khi video ca nhac
@@ -184,31 +186,47 @@ def _buoc_dich(work: Path, sub_goc: Path, cues: list[Cue], tc: TuyChon,
     return kq.giu_nguon, kq.token_vao, kq.token_ra
 
 
+def _cue_cua(v: dict, cues: list[Cue]) -> list[Cue]:
+    """cue=None nghia la hop ap cho moi cau; khong thi chi nhung cau duoc gan."""
+    if v.get("cue") is None:
+        return cues
+    return [cues[i] for i in v["cue"] if i < len(cues)]
+
+
+def _hop_chung(vung: list[dict]) -> dict[str, float]:
+    """Khung mac dinh nhom lay hop chinh, dung quy tac render dung cho kieu chu."""
+    chung = _nap("markbox").hop_chinh(vung)
+    return {k: chung[k] for k in "xywh"}
+
+
 def _buoc_hop(video: Path, work: Path, tc: TuyChon, W: int, H: int, cues: list[Cue],
               bam: Callable[[Path], str], hop_nhom: dict | None,
-              luu_nhom: Callable[[dict], None]) -> dict | None:
+              luu_nhom: Callable[[dict], None]) -> list[dict]:
     """Co flags duoc xet truoc cache, nen doi --blur khong bi JSON cu che."""
     ra = work / "vung_blur.json"
-    kiem = _nap("markbox").kiem_hop
+    kiem = _nap("markbox").kiem_vung
     if tc.blur == "off" or (tc.blur == "auto" and W / H < 1.2):
         ghi_json(ra, {"co_blur": False})       # khong xoa hop cua nhom
-        return None
+        return []
     ky = chu_ky(["vung_blur", bam(video), W, H])
     if tc.blur_box is not None:
-        hop = kiem(tc.blur_box, W, H)
-        luu_nhom(hop)
-    elif hop_nhom is not None:
-        hop = kiem(hop_nhom, W, H)
+        vung = kiem(tc.blur_box, W, H, len(cues))
+        if tc.luu_hop_nhom:             # ve hop cho mot video khong am tham doi ca nhom
+            luu_nhom(_hop_chung(vung))
     else:
+        # Hop rieng cua video thang hop mac dinh cua nhom: no duoc ve tren dung khung
+        # hinh nay, con hop nhom chi la diem khoi dau khi video chua co gi.
         cu = None if tc.force else _cache(work, "vung_blur", ky, ra)
         luu = doc_json(ra) if cu else {}
         if cu and luu.get("co_blur"):
-            hop = kiem({k: luu[k] for k in "xywh"}, W, H)
+            vung = kiem(luu["vung"], W, H, len(cues))
+        elif hop_nhom is not None:
+            vung = kiem(hop_nhom, W, H, len(cues))
         else:
             raise ChoChonKhung(_nap("markbox").trich_khung(video, cues, work))
-    ghi_json(ra, {"co_blur": True, **hop})
+    ghi_json(ra, {"co_blur": True, "vung": vung})
     _ghi_manifest(work, "vung_blur", ky, ra)
-    return hop
+    return vung
 
 
 # ---------------------------------------------------------------- luong chinh
@@ -275,12 +293,28 @@ def _chay(video: Path, work: Path, tc: TuyChon, tien: Callable, con, goi) -> Ket
         logging.warning(canh_bao)
         tien("canh_bao", 0.1)
 
+    # Vung mo dung TRUOC buoc dich, du no chi can cue chu khong can ban dich: hop
+    # do nguoi dung ve, nen dung o day thi nguoi dung ve xong ngay sau ASR thay vi
+    # ngoi cho het ca buoc dich, va bo cuoc o man ve hop cung khong mat tien API.
+    tien("vung_blur", 0.4)
+
+    def luu_nhom(hop: dict) -> None:
+        if nid:
+            with con:
+                db.ghi_hop(con, nid, hop)
+
+    try:
+        vung = _buoc_hop(video, work, tc, W, H, cues, bam, hop_nhom, luu_nhom)
+    except ChoChonKhung as cho:
+        nhat_ky("vung_blur", "bo_qua", time.monotonic(), "cho_chon_khung")
+        return KetQua("cho_chon_khung", work, khung=cho.khung)
+
     def ap_dung(hash_artifact: str, moi: dict[str, str]) -> dict[str, str]:
         """Ghi tu moi trong mot transaction roi tra glossary nhom sau khi ap dung."""
         db.ap_dung_dich(con, vid, nid, hash_artifact, moi)
         return db.doc_thuat_ngu(con, nid) if nid else {}
 
-    tien("dich", 0.4)
+    tien("dich", 0.5)
     t0 = time.monotonic()
     try:
         giu_nguon, tk_vao, tk_ra = _buoc_dich(work, sub_goc, cues, tc, glossary, goi, bam, ap_dung)
@@ -290,26 +324,13 @@ def _chay(video: Path, work: Path, tc: TuyChon, tien: Callable, con, goi) -> Ket
     nhat_ky("dich", "suy_giam" if giu_nguon else "xong", t0,
             f"giu nguon {len(giu_nguon)} cue" if giu_nguon else None, tk_vao, tk_ra)
 
-    tien("vung_blur", 0.7)
-
-    def luu_nhom(hop: dict) -> None:
-        if nid:
-            with con:
-                db.ghi_hop(con, nid, hop)
-
-    try:
-        hop = _buoc_hop(video, work, tc, W, H, cues, bam, hop_nhom, luu_nhom)
-    except ChoChonKhung as cho:
-        nhat_ky("vung_blur", "bo_qua", time.monotonic(), "cho_chon_khung")
-        return KetQua("cho_chon_khung", work, khung=cho.khung, giu_nguon=giu_nguon)
-
-    tien("render", 0.8)
+    tien("render", 0.85)
     t0 = time.monotonic()
     ra = Path(tc.ra) if tc.ra else video.with_name(video.stem + HAU_TO)
     render = _nap("render")
     try:
-        render.ket_xuat(video, work / "sub_vi.srt", hop,
-                        render.khoang_mo(cues, thoi_luong) if hop else [],
+        render.ket_xuat(video, work / "sub_vi.srt",
+                        [(v, render.khoang_mo(_cue_cua(v, cues), thoi_luong)) for v in vung],
                         {"font_scale": tc.font_scale, "W": W, "H": H,
                          "FontSize": 22 if W / H >= 1.2 else 16,
                          "MarginV": 30 if W / H >= 1.2 else 90}, ra)
