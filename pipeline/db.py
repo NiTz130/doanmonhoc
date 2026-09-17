@@ -5,6 +5,9 @@ import sqlite3
 from pathlib import Path
 
 
+LOI_MAT_HO_SO = ("Tiến trình xử lý đã khởi động lại nên công việc này không còn theo dõi được. "
+                "Tải video lên lại để chạy tiếp; kết quả cũ đã tải xong vẫn giữ nguyên.")
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS nhom (
  id INTEGER PRIMARY KEY, ten TEXT NOT NULL UNIQUE,
@@ -48,10 +51,15 @@ CREATE TABLE IF NOT EXISTS cong_viec (
 """
 
 
-def mo(path: str | Path) -> sqlite3.Connection:
+def mo(path: str | Path, *, cung_thread: bool = True) -> sqlite3.Connection:
+    """`cung_thread=False` cho connection cua mot request FastAPI (LD-2).
+
+    Starlette chay route sync trong threadpool va co the doi thread giua cac phan
+    cua cung mot request; connection van chi thuoc mot request, khong dung chung.
+    """
     if str(path) != ":memory:":
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(str(path))
+    con = sqlite3.connect(str(path), check_same_thread=cung_thread)
     con.row_factory = sqlite3.Row
     try:
         con.execute("PRAGMA foreign_keys=ON")
@@ -212,3 +220,18 @@ def cap_nhat_cong_viec(con: sqlite3.Connection, cid: str, **cot: object) -> None
 
 def doc_cong_viec(con: sqlite3.Connection, cid: str) -> sqlite3.Row | None:
     return con.execute("SELECT * FROM cong_viec WHERE id=?", (cid,)).fetchone()
+
+
+def don_cong_viec_mat_ho_so(con: sqlite3.Connection, con_song: set[str]) -> int:
+    """LD-5: job khong-terminal mat chu so huu sau restart thi bao loi, khong treo.
+
+    Khong dong toi `xong`/`suy_giam`/`loi`, khong xoa `duong_dan_ra` cu.
+    """
+    cho = ("cho", "dang_chay", "cho_chon_khung")
+    hang = [r[0] for r in con.execute(
+        f"SELECT id FROM cong_viec WHERE trang_thai IN ({','.join('?' * len(cho))})", cho)]
+    mat = [cid for cid in hang if cid not in con_song]
+    con.executemany(
+        "UPDATE cong_viec SET trang_thai='loi',loi=?,cap_nhat_luc=datetime('now') WHERE id=?",
+        ((LOI_MAT_HO_SO, cid) for cid in mat))
+    return len(mat)

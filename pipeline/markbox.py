@@ -35,14 +35,40 @@ def kiem_hop(hop: dict, W: int | None = None, H: int | None = None) -> dict[str,
     return sach
 
 
+CHE_DO_VUNG = ("cong_them", "thay_the")
+CHE_DO_MAC_DINH = "cong_them"               # LD-7a: payload/JSON thieu mode la legacy
+VANG_MAT = object()                         # khac han voi `null` nguoi gui viet ra
+
+
+def kiem_che_do(che_do: object = VANG_MAT) -> str:
+    """Validator duy nhat cho discriminator vung; VANG_MAT = legacy cong_them.
+
+    Phan biet chu hoa chu thuong, va khong nhan bool/so/None. `null` tuong minh la
+    LOI chu khong phai vang mat: no la mot gia tri nguoi gui co y viet ra, ma mac
+    dinh lai la nghia NGUOC voi cai ho dang lam — im lang quy ve mac dinh o day la
+    lam mo sai cho ma khong bao gi (LD-7a).
+    """
+    if che_do is VANG_MAT:
+        return CHE_DO_MAC_DINH
+    if not isinstance(che_do, str) or che_do not in CHE_DO_VUNG:
+        raise ValueError(f"che_do_vung phai la {' hoac '.join(CHE_DO_VUNG)}, "
+                         f"nhan duoc {che_do!r}")
+    return che_do
+
+
 def kiem_vung(vung: object, W: int | None = None, H: int | None = None,
-              so_cue: int | None = None) -> list[dict]:
+              so_cue: int | None = None, che_do: object = VANG_MAT) -> list[dict]:
     """Chuan hoa danh sach vung mo; van di qua kiem_hop nen hinh hoc chi mot cho kiem.
 
     Moi phan tu co x, y, w, h va `cue`: danh sach chi so cau thoai hop nay ap vao,
     hoac None nghia la moi cau. Mot dict tran duoc coi la mot hop cho moi cau, nen
     CLI, khung mac dinh cua nhom va JSON cu deu di duoc duong nay.
+
+    `che_do` la `cong_them` (legacy: moi vung deu ap, cong don) hay `thay_the`
+    (vung rieng thay vung chung o dung cau duoc gan). Chi `thay_the` moi rang buoc
+    duy nhat, vi o do hai vung tranh nhau mot cau la mot cau hoi khong co dap an.
     """
+    che_do = kiem_che_do(che_do)
     if isinstance(vung, dict):
         vung = [vung]
     if not isinstance(vung, list) or not vung:
@@ -63,6 +89,19 @@ def kiem_vung(vung: object, W: int | None = None, H: int | None = None,
                     raise ValueError(f"Khong co cau thoai {i}; video chi co {so_cue} cau")
             cue = sorted(set(cue))
         ra.append({**hop, "cue": cue})
+    if che_do == "thay_the":
+        chung = [v for v in ra if v["cue"] is None]
+        if len(chung) > 1:
+            raise ValueError("Che do thay the chi nhan mot vung chung")
+        da_gan: set[int] = set()
+        for v in ra:
+            if v["cue"] is None:
+                continue
+            trung = da_gan.intersection(v["cue"])
+            if trung:
+                raise ValueError("Cau thoai " + ", ".join(str(i) for i in sorted(trung))
+                                 + " duoc gan cho nhieu vung rieng")
+            da_gan.update(v["cue"])
     return ra
 
 

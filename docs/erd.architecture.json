@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Thiết kế cơ sở dữ liệu — work/subtitles.db",
+    "output": "erd.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1340,
+      540
+    ]
+  },
+  "components": [
+    {
+      "id": "nhom",
+      "type": "database",
+      "label": "nhom",
+      "sublabel": "id PK · ten UNIQUE",
+      "pos": [
+        40,
+        190
+      ],
+      "size": [
+        320,
+        110
+      ]
+    },
+    {
+      "id": "video",
+      "type": "database",
+      "label": "video",
+      "sublabel": "id PK · nhom_id FK · duong_dan UNIQUE",
+      "pos": [
+        500,
+        50
+      ],
+      "size": [
+        320,
+        110
+      ]
+    },
+    {
+      "id": "thuat_ngu",
+      "type": "database",
+      "label": "thuat_ngu",
+      "sublabel": "id PK · nhom_id FK · UNIQUE(nhom_id, goc)",
+      "pos": [
+        500,
+        330
+      ],
+      "size": [
+        320,
+        110
+      ]
+    },
+    {
+      "id": "nhat_ky",
+      "type": "database",
+      "label": "nhat_ky",
+      "sublabel": "id PK · video_id FK",
+      "pos": [
+        950,
+        50
+      ],
+      "size": [
+        320,
+        110
+      ]
+    },
+    {
+      "id": "cong_viec",
+      "type": "database",
+      "label": "cong_viec",
+      "sublabel": "id TEXT PK · video_id FK",
+      "pos": [
+        950,
+        330
+      ],
+      "size": [
+        320,
+        110
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "r-nhom-video",
+      "from": "nhom",
+      "to": "video",
+      "label": "1 — N · SET NULL"
+    },
+    {
+      "id": "r-nhom-tu",
+      "from": "nhom",
+      "to": "thuat_ngu",
+      "label": "1 — N · CASCADE"
+    },
+    {
+      "id": "r-video-nk",
+      "from": "video",
+      "to": "nhat_ky",
+      "label": "1 — N · CASCADE"
+    },
+    {
+      "id": "r-video-cv",
+      "from": "video",
+      "to": "cong_viec",
+      "label": "1 — N · CASCADE"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Ràng buộc do schema giữ, không do mã ứng dụng",
+      "items": [
+        "trang_thai CHECK 6 giá trị: cho · dang_chay · cho_chon_khung · xong · suy_giam · loi",
+        "thuat_ngu.loai CHECK 3 giá trị: ten_nguoi · dia_danh · thuat_ngu",
+        "UNIQUE (nhom_id, goc): một nhóm không có hai bản dịch cho cùng một từ",
+        "PRAGMA foreign_keys=ON bật lại mỗi lần mở kết nối"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Cột còn lại của từng bảng",
+      "items": [
+        "nhom: ngon_ngu_goc · sub_style · blur_x/y/w/h · tao_luc",
+        "video: thu_muc_work UNIQUE · rong · cao · thoi_luong · them_luc · xong_luc",
+        "thuat_ngu: goc · dich · loai CHECK · so_lan · khoa",
+        "nhat_ky: buoc · ket_qua · giay · token_vao · token_ra · loi · luc",
+        "cong_viec: trang_thai CHECK · buoc · tien_do · duong_dan_ra · loi · cap_nhat_luc"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Hai điều dễ hiểu nhầm",
+      "items": [
+        "Bảng cong_viec CHỈ báo tiến độ cho frontend — resume quyết định bởi trang_thai.json trên đĩa",
+        "nhat_ky kiêm dấu đã-áp-glossary: hàng buoc='translate_apply' mang hash artifact ở cột loi",
+        "Xoá subtitles.db mất nhóm, thuật ngữ, nhật ký — KHÔNG mất artifact trong work/"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Vòng đời một công việc: từ tải video lên đến tải kết quả về",
+    "output": "sequence.html",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1360,
+      740
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "Người dùng"
+    },
+    {
+      "id": "web",
+      "type": "frontend",
+      "label": "Frontend"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "FastAPI"
+    },
+    {
+      "id": "nen",
+      "type": "backend",
+      "label": "Tác vụ nền"
+    },
+    {
+      "id": "dp",
+      "type": "backend",
+      "label": "Điều phối"
+    },
+    {
+      "id": "ds",
+      "type": "external",
+      "label": "DeepSeek"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 295,
+      "label": "Tải lên và nhận việc"
+    },
+    {
+      "from": 300,
+      "to": 450,
+      "label": "Dừng lại chờ người vẽ hộp"
+    },
+    {
+      "from": 455,
+      "to": 665,
+      "label": "Dịch và kết xuất"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m01",
+      "from": "user",
+      "to": "web",
+      "y": 185,
+      "label": "chọn video, đặt tên nhóm"
+    },
+    {
+      "id": "m02",
+      "from": "web",
+      "to": "api",
+      "y": 216,
+      "label": "POST /api/video",
+      "variant": "emphasis",
+      "note": "ffprobe kiểm · SHA256 nội dung · giành .lock trước khi công bố nguồn"
+    },
+    {
+      "id": "m03",
+      "from": "api",
+      "to": "nen",
+      "y": 247,
+      "label": "BackgroundTasks(chay_nen)"
+    },
+    {
+      "id": "m04",
+      "from": "api",
+      "to": "web",
+      "y": 278,
+      "label": "202 {id, trang_thai: cho}",
+      "variant": "return"
+    },
+    {
+      "id": "m05",
+      "from": "nen",
+      "to": "dp",
+      "y": 309,
+      "label": "chay(video, tc, da_khoa=True)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m06",
+      "from": "dp",
+      "to": "nen",
+      "y": 340,
+      "label": "cho_chon_khung + checkpoint",
+      "variant": "return",
+      "note": "đã qua nhan_dien → sub_goc → vung_blur; CHƯA hề gọi DeepSeek"
+    },
+    {
+      "id": "m07",
+      "from": "web",
+      "to": "api",
+      "y": 371,
+      "label": "GET /api/cong-viec/{cid} — lặp 1,5 s",
+      "variant": "dashed"
+    },
+    {
+      "id": "m08",
+      "from": "api",
+      "to": "web",
+      "y": 402,
+      "label": "cho_chon_khung",
+      "variant": "return"
+    },
+    {
+      "id": "m09",
+      "from": "web",
+      "to": "api",
+      "y": 433,
+      "label": "GET .../khung và .../khung/{i}"
+    },
+    {
+      "id": "m10",
+      "from": "user",
+      "to": "web",
+      "y": 464,
+      "label": "vẽ hộp trên khung hình thật"
+    },
+    {
+      "id": "m11",
+      "from": "web",
+      "to": "api",
+      "y": 495,
+      "label": "POST .../hop {che_do_vung: thay_the}",
+      "variant": "emphasis",
+      "note": "tiêu thụ checkpoint dưới lock: POST thứ hai ra 409"
+    },
+    {
+      "id": "m11b",
+      "from": "api",
+      "to": "nen",
+      "label": "xếp lịch chay_nen lượt 2",
+      "y": 526
+    },
+    {
+      "id": "m12",
+      "from": "nen",
+      "to": "dp",
+      "y": 557,
+      "label": "chay(...) lượt 2 · giành lại .lock"
+    },
+    {
+      "id": "m13",
+      "from": "dp",
+      "to": "ds",
+      "y": 588,
+      "label": "dịch lô 25 câu + glossary",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m14",
+      "from": "ds",
+      "to": "dp",
+      "y": 619,
+      "label": "JSON {lines, thuat_ngu_moi}",
+      "variant": "return"
+    },
+    {
+      "id": "m15",
+      "from": "dp",
+      "to": "nen",
+      "y": 650,
+      "label": "render một lần ffmpeg → xong",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "web",
+      "from": 211,
+      "to": 660,
+      "type": "frontend"
+    },
+    {
+      "participant": "api",
+      "from": 216,
+      "to": 535,
+      "type": "backend"
+    },
+    {
+      "participant": "nen",
+      "from": 242,
+      "to": 660,
+      "type": "backend"
+    },
+    {
+      "participant": "dp",
+      "from": 304,
+      "to": 655,
+      "type": "backend"
+    },
+    {
+      "participant": "ds",
+      "from": 583,
+      "to": 625,
+      "type": "external"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Ai là ai trong sơ đồ",
+      "items": [
+        "Frontend = web/app.js · FastAPI = api/app.py · Tác vụ nền = api/viec.py",
+        "Điều phối = pipeline/dieu_phoi.py — dùng chung cho cả web lẫn CLI main.py",
+        "DeepSeek = api.deepseek.com, gọi qua OpenAI SDK (timeout 120 s, retry 2)"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Vì sao có hai lượt chay()",
+      "items": [
+        "Lượt 1 dừng ở cho_chon_khung và NHẢ .lock để người dùng ngồi vẽ bao lâu cũng được",
+        "Lượt 2 giành lại .lock, dùng lại toàn bộ cache của lượt 1 nhờ manifest",
+        "checkpoint ghim nguồn phụ đề đã chọn nên gửi hộp không làm ASR chạy lại"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Những chỗ khoá chặt",
+      "items": [
+        "Claim .lock mở bằng chế độ \"x\": kiểm exists() rồi tạo sau là một khe hở, không phải claim",
+        "Checkpoint tiêu thụ nguyên tử dưới threading.Lock nên hai POST hộp không tạo hai tác vụ",
+        "Restart server: job dở bị đánh loi kèm hướng dẫn, không treo mãi ở dang_chay"
+      ]
+    }
+  ]
+}

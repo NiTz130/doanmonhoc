@@ -67,7 +67,7 @@ def _pipeline_gia(dem: Counter, sidecar: Path | None):
     """Thay sau module xu ly bang ban gia dem so lan goi; khong ffmpeg, khong mang."""
     # Validator that: hinh hoc phai duoc kiem that chu khong phai ban gia de lot.
     from pipeline.markbox import hop_chinh, kiem_hop, kiem_vung
-    from pipeline.render import cue_thanh_khoang
+    from pipeline.render import cue_thanh_khoang, gop_khoang
     from pipeline.srt import ghi_json
 
     def tach(video, ra, separate=False):
@@ -79,7 +79,10 @@ def _pipeline_gia(dem: Counter, sidecar: Path | None):
 
     def tim_phu_de(video, ra, lang="en"):
         dem["subs"] += 1
-        _srt(ra)
+        if sidecar and sidecar.is_file():
+            Path(ra).write_bytes(sidecar.read_bytes())
+        else:
+            _srt(ra)
         return True
 
     def nhan_dang(wav, ra, lang="en", model="large-v3", tao_model=None, vad=True):
@@ -93,11 +96,13 @@ def _pipeline_gia(dem: Counter, sidecar: Path | None):
         return SimpleNamespace(ban=[f"vi {s}" for s in lines], thuat_ngu_moi={"Hero": "Anh hùng"},
                                giu_nguon=[], token_vao=1, token_ra=1)
 
-    def ket_xuat(video, srt, vung, style, out):
+    def ket_xuat(video, srt, vung, style, out, *, loai_tru_chung=None):
         dem["render"] += 1
         Path(out).write_bytes(b"mp4")
         # Ghi lai de test doi chieu tung hop voi khoang thoi gian no duoc gan.
-        ghi_json(Path(srt).with_name("render_vung.json"), {"vung": vung})
+        ghi_json(Path(srt).with_name("render_vung.json"),
+                 {"vung": vung, "loai_tru_chung": loai_tru_chung,
+                  "hop_chinh": style.get("hop_chinh")})
 
     mods = {
         "audio": SimpleNamespace(tach=tach),
@@ -111,7 +116,8 @@ def _pipeline_gia(dem: Counter, sidecar: Path | None):
                                    hop_chinh=hop_chinh,
                                    trich_khung=lambda v, cues, work: [Path(work) / "khung_0.png"]),
         # khoang_mo that: no thuan tuy tinh toan, va test can thay dung cue nao vao hop nao.
-        "render": SimpleNamespace(ket_xuat=ket_xuat, khoang_mo=cue_thanh_khoang),
+        "render": SimpleNamespace(ket_xuat=ket_xuat, khoang_mo=cue_thanh_khoang,
+                                  gop_khoang=gop_khoang),
     }
     from pipeline import dieu_phoi
     with patch.object(dieu_phoi, "_nap", mods.__getitem__), \
@@ -268,6 +274,216 @@ def test_vung_mo_gan_tung_cau_thoai():
                 assert False, xau
             except ValueError:
                 pass
+
+
+def test_vung_rieng_thay_vung_chung():
+    """LD-7: che do thay_the tru cue rieng khoi vung chung, ca theo cue lan theo thoi gian."""
+    from pipeline import db, dieu_phoi
+    from pipeline.dieu_phoi import TuyChon
+    from pipeline.markbox import kiem_che_do, kiem_vung
+    from pipeline.render import gop_khoang
+    from pipeline.srt import doc_json, thu_muc_lam_viec
+
+    # Discriminator: vang mat la legacy, moi gia tri khac hai chuoi cho phep la loi.
+    # Vang mat la legacy; `null` tuong minh la loi chu khong phai vang mat (LD-7a).
+    assert kiem_che_do() == "cong_them" and kiem_che_do("thay_the") == "thay_the"
+    for xau in (None, "THAY_THE", "", True, 1, "replace"):
+        try:
+            kiem_che_do(xau)
+            assert False, xau
+        except ValueError:
+            pass
+
+    duoi = {"x": 0.3, "y": 0.85, "w": 0.4, "h": 0.09}
+    tren = {"x": 0.3, "y": 0.05, "w": 0.4, "h": 0.09}
+    # Rang buoc duy nhat chi ap cho thay_the; legacy van duoc cong don tu do.
+    hai_chung = [{**duoi, "cue": None}, {**tren, "cue": None}]
+    cheo = [{**duoi, "cue": [0]}, {**tren, "cue": [0, 1]}]
+    for xau in (hai_chung, cheo):
+        assert len(kiem_vung(xau, so_cue=2, che_do="cong_them")) == 2
+        try:
+            kiem_vung(xau, so_cue=2, che_do="thay_the")
+            assert False, xau
+        except ValueError:
+            pass
+
+    # Gop mat na chi gop khi cham/chong nhau, khong noi them gap nhu buoc gop cue.
+    assert gop_khoang([(2.0, 3.0), (0.0, 1.0), (1.0, 1.5)]) == [(0.0, 1.5), (2.0, 3.0)]
+
+    dem = Counter()
+    with _san() as (video, sidecar), closing(db.mo(":memory:")) as con, _pipeline_gia(dem, sidecar):
+        # Ban gia sinh 2 cue: cue 0 o 0.0-1.5s, cue 1 o 2.0-3.5s.
+        vung = [{**duoi, "cue": None}, {**tren, "cue": [1]}]
+        kq = dieu_phoi.chay(video, TuyChon(nhom="Phim", blur_box=vung, luu_hop_nhom=True,
+                                           che_do_vung="thay_the"),
+                            con=con, goi=lambda p: None)
+        assert kq.trang_thai == "xong"
+
+        work = thu_muc_lam_viec(video)
+        luu = doc_json(work / "vung_blur.json")
+        # Mode nam trong artifact: lan chay sau khong doc lai vung nay bang nghia khac.
+        assert luu["che_do_vung"] == "thay_the" and [v["cue"] for v in luu["vung"]] == [None, [1]]
+
+        goi = doc_json(work / "render_vung.json")
+        (h1, k1), (h2, k2) = goi["vung"]
+        assert {k: h1[k] for k in "xywh"} == duoi and {k: h2[k] for k in "xywh"} == tren
+        # Vung chung chi con cue 0; o che do cong_them no phu ca 0.0-3.9.
+        assert k1 == [[0.0, 1.9]], k1
+        assert k2 == [[1.6, 3.9]], k2
+        # Noi +-0.4s cua cue 0 cham vao khoang cua cue 1, nen phai co mat na thoi gian.
+        assert goi["loai_tru_chung"] == [[1.6, 3.9]], goi["loai_tru_chung"]
+        # Hop dai dien chon tren danh sach THO: tru cue khong duoc lam chu nhay cho.
+        assert {k: goi["hop_chinh"][k] for k in "xywh"} == duoi
+        assert dieu_phoi.nhom_hop(con, "Phim") == duoi
+
+
+def test_vung_edge_cases_and_raw_primary():
+    """V-02/LD-7: edge semantics, >50 exclusions, and primary before subtraction."""
+    import math
+    from pipeline import db, dieu_phoi
+    from pipeline.dieu_phoi import TuyChon
+    from pipeline.markbox import kiem_vung
+    from pipeline.render import gop_khoang
+    from pipeline.srt import Cue, doc_json, thu_muc_lam_viec
+
+    cues = [Cue(1, 0.0, 0.5, "zero"), Cue(2, 10.0, 10.5, "ten")]
+    common = {"x": 0.1, "y": 0.8, "w": 0.2, "h": 0.1, "cue": None}
+    private = {"x": 0.6, "y": 0.1, "w": 0.2, "h": 0.1, "cue": [1]}
+    assert [len(x) for _, x in dieu_phoi._phan_cue([common, private], cues, "thay_the")] == [1, 1]
+    assert [len(x) for _, x in dieu_phoi._phan_cue([private], cues, "thay_the")] == [1]
+    assert [len(x) for _, x in dieu_phoi._phan_cue(
+        [{**common, "cue": None}, {**private, "cue": [0, 1]}], cues, "thay_the")] == [0, 2]
+    assert [len(x) for _, x in dieu_phoi._phan_cue([common, private], cues, "cong_them")] == [2, 1]
+    assert len(gop_khoang([(i * 2.0, i * 2.0 + 0.5) for i in range(60)])) == 60
+
+    for bad in (math.nan, math.inf, -math.inf):
+        try:
+            kiem_vung([{**common, "x": bad}], 1920, 1080, 2)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(bad)
+
+    # Common is raw primary even when replacement removes all its effective cues.
+    dem = Counter()
+    with _san() as (video, sidecar), closing(db.mo(":memory:")) as con, _pipeline_gia(dem, sidecar):
+        vung = [common, {**private, "cue": [0, 1]}]
+        assert dieu_phoi.chay(
+            video, TuyChon(blur_box=vung, che_do_vung="thay_the"),
+            con=con, goi=lambda p: None).trang_thai == "xong"
+        luu = doc_json(thu_muc_lam_viec(video) / "render_vung.json")
+        assert luu["vung"][0][1] == [] and luu["vung"][1][1]
+        assert {k: luu["hop_chinh"][k] for k in "xywh"} == \
+               {k: common[k] for k in "xywh"}
+
+
+def test_vung_cue_source_invalidation_before_side_effect():
+    """V-06: checkpoint cue lech phai chan pipeline truoc khi doi artifact/DB."""
+    from pipeline import db, dieu_phoi
+    from pipeline.dieu_phoi import TuyChon
+    from pipeline.srt import bam_file, thu_muc_lam_viec
+
+    dem = Counter()
+    with _san() as (video, sidecar), closing(db.mo(":memory:")) as con, _pipeline_gia(dem, sidecar):
+        assert dieu_phoi.chay(video, TuyChon(blur="off"), con=con,
+                              goi=lambda p: None).trang_thai == "xong"
+        work = thu_muc_lam_viec(video)
+        old_cue = bam_file(work / "sub_goc.srt")
+        before_video = [tuple(row) for row in con.execute(
+            "SELECT duong_dan,thu_muc_work,xong_luc FROM video")]
+        before_log = con.execute("SELECT COUNT(*) FROM nhat_ky").fetchone()[0]
+        _srt(sidecar, so=3)
+
+        try:
+            dieu_phoi.chay(video, TuyChon(blur="off", ky_cue=old_cue),
+                           con=con, goi=lambda p: None)
+        except RuntimeError as exc:
+            assert "Phu de goc da doi" in str(exc)
+        else:
+            raise AssertionError("stale ky_cue duoc chap nhan")
+
+        assert dem["subs"] == 1, "stale checkpoint khong duoc chay lai buoc sub"
+        assert [tuple(row) for row in con.execute(
+            "SELECT duong_dan,thu_muc_work,xong_luc FROM video")] == before_video
+        assert con.execute("SELECT COUNT(*) FROM nhat_ky").fetchone()[0] == before_log
+        assert bam_file(work / "sub_goc.srt") == old_cue
+
+
+def test_vung_cue_signature_tracks_content_not_count():
+    """V-06/LD-4: text, moc thoi gian va thu tu doi thi cache sub/vung cung doi."""
+    from pipeline import db, dieu_phoi
+    from pipeline.dieu_phoi import TuyChon
+    from pipeline.srt import Cue, doc_srt, thu_muc_lam_viec, ghi_srt
+
+    dem = Counter()
+    with _san() as (video, sidecar), closing(db.mo(":memory:")) as con, _pipeline_gia(dem, sidecar):
+        assert dieu_phoi.chay(video, TuyChon(blur="off"), con=con,
+                              goi=lambda p: None).trang_thai == "xong"
+        base_subs = dem["subs"]
+        variants = (
+            [Cue(1, 0.0, 1.5, "changed text"), Cue(2, 2.0, 3.5, "line 2")],
+            [Cue(1, 0.2, 1.7, "changed text"), Cue(2, 2.0, 3.5, "line 2")],
+            [Cue(1, 2.0, 3.5, "line 2"), Cue(2, 0.2, 1.7, "changed text")],
+        )
+        for cues in variants:
+            ghi_srt(cues, sidecar)
+            assert dieu_phoi.chay(video, TuyChon(blur="off"), con=con,
+                                  goi=lambda p: None).trang_thai == "xong"
+        assert dem["subs"] == base_subs + len(variants)
+        assert len(doc_srt(thu_muc_lam_viec(video) / "sub_goc.srt")) == 2
+
+
+def test_cached_region_mode_is_authoritative():
+    """V-02/LD-7b: mode da luu duoc dung lai, khong bi default upload ghi de."""
+    from pipeline import db, dieu_phoi
+    from pipeline.dieu_phoi import TuyChon
+    from pipeline.srt import bam_file, doc_json, doc_srt, thu_muc_lam_viec
+
+    vung = [{"x": 0.3, "y": 0.85, "w": 0.4, "h": 0.09, "cue": None},
+            {"x": 0.3, "y": 0.05, "w": 0.4, "h": 0.09, "cue": [1]}]
+    with _san() as (video, sidecar), closing(db.mo(":memory:")) as con, _pipeline_gia(Counter(), sidecar):
+        dieu_phoi.chay(video, TuyChon(blur_box=vung, che_do_vung="thay_the"),
+                       con=con, goi=lambda p: None)
+        work = thu_muc_lam_viec(video)
+        assert doc_json(work / "vung_blur.json")["che_do_vung"] == "thay_the"
+        cues = doc_srt(work / "sub_goc.srt")
+        try:
+            got = dieu_phoi._buoc_hop(
+                video, work, TuyChon(blur="on", che_do_vung="cong_them"),
+                1920, 1080, cues, bam_file(work / "sub_goc.srt"), bam_file,
+                None, lambda hop: None)
+        except dieu_phoi.ChoChonKhung as exc:
+            raise AssertionError("cache mode thay_the bi default cong_them che") from exc
+        assert got[1] == "thay_the" and got[0] == vung
+
+
+def test_legacy_region_without_mode_is_not_valid_cache():
+    """V-02/LD-7b: artifact cu thieu mode phai chon lai, khong default cache im lang."""
+    from pipeline import db, dieu_phoi
+    from pipeline.dieu_phoi import TuyChon
+    from pipeline.srt import bam_file, chu_ky, doc_json, doc_srt, ghi_json, thu_muc_lam_viec
+
+    vung = [{"x": 0.3, "y": 0.85, "w": 0.4, "h": 0.09, "cue": None},
+            {"x": 0.3, "y": 0.05, "w": 0.4, "h": 0.09, "cue": [1]}]
+    with _san() as (video, sidecar), closing(db.mo(":memory:")) as con, _pipeline_gia(Counter(), sidecar):
+        dieu_phoi.chay(video, TuyChon(blur_box=vung), con=con, goi=lambda p: None)
+        work = thu_muc_lam_viec(video)
+        artifact = work / "vung_blur.json"
+        luu = doc_json(artifact)
+        luu.pop("che_do_vung")
+        ghi_json(artifact, luu)
+        _key = chu_ky(["vung_blur", bam_file(video), 1920, 1080,
+                       bam_file(work / "sub_goc.srt"), "cong_them"])
+        dieu_phoi._ghi_manifest(work, "vung_blur", _key, artifact)
+        cues = doc_srt(work / "sub_goc.srt")
+        try:
+            dieu_phoi._buoc_hop(
+                video, work, TuyChon(blur="on"), 1920, 1080, cues,
+                bam_file(work / "sub_goc.srt"), bam_file, None, lambda hop: None)
+        except dieu_phoi.ChoChonKhung:
+            pass
+        else:
+            raise AssertionError("artifact thieu mode bi coi la cache hop le")
 
 
 def test_batch_targets_and_cli():

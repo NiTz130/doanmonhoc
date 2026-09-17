@@ -1,12 +1,17 @@
 <!doctype html>
 <html lang="vi">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f5f3eb"><title>Dịch phụ đề — Bàn biên tập</title><link rel="icon" href="data:,"><link rel="stylesheet" href="style.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f9f8f4"><title>Dịch phụ đề — Phòng dựng</title><link rel="icon" href="data:,"><link rel="stylesheet" href="style.css"></head>
 <body>
 <a class="bo-qua" href="#noi-dung">Đến nội dung chính</a>
 <header class="sidebar">
   <a class="thuong-hieu" href="#tai-len" aria-label="Phụ đề Việt — Tải lên"><span class="bieu-trung" aria-hidden="true">[v]</span>phụ đề<span class="brand-dot">.</span></a>
-  <p class="eyebrow">BÀN BIÊN TẬP</p>
-  <nav aria-label="Điều hướng chính"><a href="#tai-len"><span aria-hidden="true">01</span>Tải lên</a><a href="#tien-do"><span aria-hidden="true">02</span>Tiến độ</a><a href="#khung"><span aria-hidden="true">03</span>Vùng làm mờ</a><a href="#nhom"><span aria-hidden="true">04</span>Nhóm &amp; thuật ngữ</a></nav>
+  <p class="eyebrow">PHÒNG DỰNG</p>
+  <nav aria-label="Điều hướng chính">
+    <a href="#tai-len"><svg class="bieu" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 13V3m-4 4 4-4 4 4"/><path d="M3 14v2a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2"/></svg><span aria-hidden="true">01</span>Tải lên</a>
+    <a href="#tien-do"><svg class="bieu" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10h3.2l2-5.5 3 11 2.2-5.5H18"/></svg><span aria-hidden="true">02</span>Tiến độ</a>
+    <a href="#khung"><svg class="bieu" viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="2"/><path d="M6.5 12.5h7"/></svg><span aria-hidden="true">03</span>Vùng làm mờ</a>
+    <a href="#nhom"><svg class="bieu" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4h8a2 2 0 0 1 2 2v10H6a2 2 0 0 0-2 2V4z"/><path d="M7 8h5M7 11h3"/></svg><span aria-hidden="true">04</span>Nhóm &amp; thuật ngữ</a>
+  </nav>
   <div class="sidebar-note"><span class="language-tag">EN ↗ VI</span></div>
 </header>
 <main id="noi-dung" tabindex="-1">
@@ -19,7 +24,7 @@
     <div class="workspace-grid">
       <form id="form-tai-len" class="paper" novalidate>
         <div class="section-heading"><h3>Thêm video của bạn</h3><span class="small-label">BƯỚC 01</span></div>
-        <label id="drop-zone" class="drop-zone" for="video-file"><span class="upload-mark" aria-hidden="true">↑</span><strong>Kéo video vào đây</strong><span>hoặc chọn tệp từ thiết bị</span><span class="file-picker">Chọn video ↗</span><input id="video-file" type="file" name="file" accept=".mp4,.mkv,.mov,.webm,.avi,.ts" aria-describedby="file-help file-name" required><small id="file-help">MP4, MKV, MOV, WEBM, AVI, TS · Tối đa 4 GiB</small></label>
+        <label id="drop-zone" class="drop-zone" for="video-file"><span class="upload-mark" aria-hidden="true"><svg class="bieu" viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg></span><strong>Kéo video vào đây</strong><span>hoặc chọn tệp từ thiết bị</span><span class="file-picker"><svg class="bieu" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5a1 1 0 0 1 1-1h3.5l1.5 2H16a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5z"/></svg>Chọn video ↗</span><input id="video-file" type="file" name="file" accept=".mp4,.mkv,.mov,.webm,.avi,.ts" aria-describedby="file-help file-name" required><small id="file-help"><span>MP4</span><span>MKV</span><span>MOV</span><span>WEBM</span><span>AVI</span><span>TS</span><em>Tối đa 4 GiB</em></small></label>
         <p id="file-name" class="file-name" aria-live="polite">Chưa chọn video.</p>
         <label>Nhóm <small>Không bắt buộc</small><input name="nhom" placeholder="Tên phim, series hoặc kênh" list="nhom-goi-y"><datalist id="nhom-goi-y"></datalist></label><p class="field-note">Dùng chung thuật ngữ và vùng làm mờ.</p>
         <details class="advanced"><summary>Tùy chọn nâng cao</summary><div class="hang"><label>Ngôn ngữ nguồn<input name="lang" value="en" required></label><label>Model nhận dạng<input name="model" value="large-v3" required></label><label>Hệ số cỡ chữ<input name="font_scale" type="number" step="0.01" min="0.01" value="0.42" required></label></div><label>Làm mờ phụ đề cứng<select name="blur"><option value="auto">Tự động — bật với video ngang</option><option value="on">Luôn bật — chọn vùng trước khi xuất</option><option value="off">Không làm mờ</option></select></label><label class="o"><input type="checkbox" name="separate">Tách giọng hát (cần Demucs)</label><label class="o"><input type="checkbox" name="force_asr">Bỏ phụ đề sẵn, nhận dạng lại bằng Whisper</label><label class="o"><input type="checkbox" name="force">Chạy lại mọi bước</label></details>
@@ -30,7 +35,9 @@
   </section>
   <section id="tien-do" hidden aria-labelledby="tieu-de-tien-do">
     <div class="page-heading"><p class="eyebrow">BƯỚC 02 / THEO DÕI</p><h2 id="tieu-de-tien-do">Tiến độ xử lý.</h2><p class="lead">Video lần lượt qua: nhận dạng lời thoại → khoanh vùng làm mờ (nếu cần) → dịch → kết xuất. Trang này cho biết đang ở bước nào và giữ liên kết tải bản hoàn thiện.</p></div>
-    <div class="paper progress-paper"><p class="small-label">VIDEO HIỆN TẠI</p><h3 id="video-name">Chưa có video</h3><p id="viec-id" class="mo"></p><div class="progress-heading"><p id="viec-trang-thai" role="status">Chưa có công việc nào.</p><span id="progress-label">—</span></div><div class="thanh" role="progressbar" aria-label="Tiến độ xử lý video" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="thanh-chay"></div></div><p id="connection-status" role="status" class="mo"></p><button id="poll-retry" type="button" hidden>Kiểm tra kết nối lại</button><p class="field-note">Cứ để trang này mở, trạng thái tự cập nhật. Đến bước khoanh vùng, màn <em>Vùng làm mờ</em> sẽ tự mở ra để bạn vẽ.</p><a id="tai-ket-qua" class="button primary" href="#" hidden download>Tải video kết quả ↓</a><a class="text-link" href="#tai-len">Về màn tải lên</a></div>
+    <div class="paper progress-paper"><p class="small-label">VIDEO HIỆN TẠI</p><h3 id="video-name">Chưa có video</h3><p id="viec-id" class="mo"></p><div class="progress-heading"><p id="viec-trang-thai" role="status">Chưa có công việc nào.</p><span id="progress-label">—</span></div><div class="thanh" role="progressbar" aria-label="Tiến độ xử lý video" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="thanh-chay"></div></div>
+      <ol id="tien-trinh" class="stepper" aria-label="Các bước xử lý"><li data-buoc="nhan_dien"><i aria-hidden="true"></i>Đọc video</li><li data-buoc="sub_goc"><i aria-hidden="true"></i>Phụ đề gốc</li><li data-buoc="vung_blur"><i aria-hidden="true"></i>Vùng làm mờ</li><li data-buoc="dich"><i aria-hidden="true"></i>Dịch</li><li data-buoc="render"><i aria-hidden="true"></i>Kết xuất</li></ol>
+      <p id="connection-status" role="status" class="mo"></p><button id="poll-retry" type="button" hidden>Kiểm tra kết nối lại</button><p class="field-note">Cứ để trang này mở, trạng thái tự cập nhật. Đến bước khoanh vùng, màn <em>Vùng làm mờ</em> sẽ tự mở ra để bạn vẽ.</p><a id="tai-ket-qua" class="button primary" href="#" hidden download>Tải video kết quả ↓</a><a class="text-link" href="#tai-len">Về màn tải lên</a></div>
   </section>
   <section id="khung" hidden aria-labelledby="tieu-de-khung">
     <div class="page-heading"><p class="eyebrow">TINH CHỈNH / PHỤ ĐỀ CỨNG</p><h2 id="tieu-de-khung">Chọn vùng làm mờ.</h2><p class="lead">Video gốc có sẵn phụ đề tiếng Anh in cứng vào hình. Làm mờ vùng đó để phụ đề tiếng Việt không chồng lên chữ cũ.</p></div>
@@ -47,7 +54,7 @@
     <div class="paper"><form id="form-nhom" class="hang"><label>Tạo nhóm mới<input name="ten" placeholder="Tên phim hoặc kênh" required></label><button class="primary">Tạo nhóm +</button></form><p class="field-note">Tạo nhóm tại đây, rồi chọn đúng tên nhóm đó ở ô <em>Nhóm</em> khi tải video lên.</p><ul id="nhom-ds" aria-live="polite"></ul></div>
     <div id="nhom-chi-tiet" class="paper glossary" hidden><p class="small-label">THUẬT NGỮ CỦA NHÓM</p><h3 id="nhom-ten"></h3><div class="table-wrap" tabindex="0" role="region" aria-label="Bảng thuật ngữ"><table id="bang-thuat-ngu"><thead><tr><th scope="col">Từ gốc</th><th scope="col">Bản dịch</th></tr></thead><tbody></tbody></table></div><form id="form-thuat-ngu" class="hang"><label>Từ gốc<input name="goc" placeholder="Ví dụ: Ironhold" required></label><label>Bản dịch<input name="dich" placeholder="Ví dụ: Thành Sắt" required></label><label class="o"><input type="checkbox" name="khoa">Khóa bản dịch</label><button class="primary">Lưu thuật ngữ</button></form><p class="field-note">Khóa để bản dịch tự động không đổi thuật ngữ này.</p><form id="form-hop-nhom" class="hang default-box"><label>Vùng làm mờ mặc định<input name="hop" placeholder="x,y,w,h — ví dụ 0.3,0.855,0.4,0.09" required></label><button>Lưu vùng mặc định</button></form></div>
   </section>
-  <footer class="page-footer"><span>phụ đề. <span class="mo">/ Bàn biên tập</span></span></footer>
+  <footer class="page-footer"><span>phụ đề. <span class="mo">/ Phòng dựng</span></span></footer>
 </main>
 <script src="app.js"></script>
 </body></html>

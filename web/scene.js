@@ -5,14 +5,15 @@ export function createScene(host, toggle) {
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   const fallback = host.querySelector(".scene-fallback");
   let renderer = null;
-  let world, camera, layers;
+  let world, camera, layers, vien;
   let visible = true, busy = false, paused = false, disposed = false;
   let frame = 0, previous = 0, elapsed = 0;
+  let tro_x = 0, tro_y = 0, dich_x = 0, dich_y = 0;   // goc nhin hien tai va dich cua no
   const resources = new Set();
 
-  function box(w, h, d, color, x, y, z, parent = layers) {
+  function box(w, h, d, color, x, y, z, parent = layers, them = {}) {
     const geometry = new THREE.BoxGeometry(w, h, d);
-    const material = new THREE.MeshStandardMaterial({color, roughness:0.75, metalness:0.08});
+    const material = new THREE.MeshStandardMaterial({color, roughness:0.88, metalness:0.02, ...them});
     resources.add(geometry); resources.add(material);
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z); parent.add(mesh);
@@ -60,8 +61,13 @@ export function createScene(host, toggle) {
     if (previous && time - previous < 1000 / 30) return;
     elapsed += previous ? Math.min((time - previous) / 1000, 0.1) : 0;
     previous = time;
-    layers.rotation.y = -0.32 + Math.sin(elapsed * 0.35) * 0.065;
+    // Giam chan: dai phim nghieng tu tu theo con tro chu khong giat theo chuot.
+    tro_x += (dich_x - tro_x) * 0.08;
+    tro_y += (dich_y - tro_y) * 0.08;
+    layers.rotation.y = -0.32 + Math.sin(elapsed * 0.35) * 0.065 + tro_x * 0.26;
+    layers.rotation.x = 0.2 + tro_y * 0.16;
     layers.position.y = Math.sin(elapsed * 0.55) * 0.055;
+    vien.position.set(4 - tro_x * 3.5, -1.6 + tro_y * 2.4, 5);
     renderer.render(world, camera);
   }
 
@@ -82,19 +88,24 @@ export function createScene(host, toggle) {
       camera = new THREE.OrthographicCamera(-4, 4, 2.35, -2.35, 0.1, 30);
       camera.position.set(0, 0, 10);
       layers = new THREE.Group(); layers.rotation.set(0.2, -0.32, -0.11); world.add(layers);
-      world.add(new THREE.AmbientLight(0xffffff, 2));
-      const sun = new THREE.DirectionalLight(0xfff3d7, 3); sun.position.set(-3, 6, 7); world.add(sun);
-      box(4.2, 2.3, 0.08, 0xd8dec9, 0.40, 0.35, -0.65);
-      box(4.2, 2.3, 0.08, 0xa1b493, 0.16, 0.12, -0.15);
-      box(4.2, 2.3, 0.13, 0x315d48, -0.14, -0.14, 0.4);
-      box(3.86, 1.63, 0.02, 0x284b3b, -0.14, 0.02, 0.48);
+      // Anh sang diu, vat lieu mo (roughness cao, metalness thap): khong bong loang.
+      world.add(new THREE.AmbientLight(0xffffff, 1.5));
+      const sun = new THREE.DirectionalLight(0xfff4e2, 1.4); sun.position.set(-3, 6, 7); world.add(sun);
+      // Den vien: quet doc canh phim nhua theo huong nhin, cho ra khoi vat the that.
+      vien = new THREE.DirectionalLight(0xfff2de, 0.9); vien.position.set(4, -1.6, 5); world.add(vien);
+      // Hai dai acetate sau de trong: xep lop moi doc ra, khong thanh ba tam dac chong nhau.
+      box(4.2, 2.3, 0.08, 0xd9d5c8, 0.40, 0.35, -0.65, layers, {transparent:true, opacity:0.55});
+      box(4.2, 2.3, 0.08, 0xc9c4b4, 0.16, 0.12, -0.15, layers, {transparent:true, opacity:0.78});
+      box(4.2, 2.3, 0.13, 0x2a2a28, -0.14, -0.14, 0.4);
+      box(3.86, 1.63, 0.02, 0x141412, -0.14, 0.02, 0.48);
       for (const x of [-1.8, -1.25, -0.7, -0.15, 0.4, 0.95, 1.5]) {
-        box(0.22, 0.11, 0.02, 0xbbc9a7, x, 0.87, 0.49);
+        box(0.22, 0.11, 0.02, 0xf5f2e8, x, 0.87, 0.49);      // lo keo phim
       }
-      box(2.65, 0.13, 0.03, 0xf0e8d1, -0.14, -0.56, 0.51);
-      box(1.8, 0.10, 0.03, 0xc0cdb3, -0.14, -0.81, 0.51);
+      // Hai thanh duoi la phu de: thanh tren mang mau nhan cua giao dien.
+      box(2.65, 0.13, 0.03, 0xc2362b, -0.14, -0.56, 0.51);
+      box(1.8, 0.10, 0.03, 0x8a867c, -0.14, -0.81, 0.51);
       const shape = new THREE.Shape(); shape.moveTo(-0.20, -0.22); shape.lineTo(0.24, 0.04); shape.lineTo(-0.20, 0.30); shape.closePath();
-      const geo = new THREE.ShapeGeometry(shape), mat = new THREE.MeshBasicMaterial({color:0xe6cc92});
+      const geo = new THREE.ShapeGeometry(shape), mat = new THREE.MeshBasicMaterial({color:0xf2efe6});
       resources.add(geo); resources.add(mat);
       const play = new THREE.Mesh(geo, mat); play.position.set(-0.13, 0.1, 0.52); layers.add(play);
       host.append(renderer.domElement);
@@ -110,6 +121,16 @@ export function createScene(host, toggle) {
     }
   }
 
+  // Chi doc layout khi canh dang chay that: dung, an tab hay giam chuyen dong
+  // thi frame = 0, handler thoat ngay, khong ton getBoundingClientRect nao.
+  function tro(event) {
+    if (!renderer || !frame) return;
+    const r = host.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    dich_x = Math.max(-1, Math.min(1, (event.clientX - r.left - r.width / 2) / r.width * 2));
+    dich_y = Math.max(-1, Math.min(1, (event.clientY - r.top - r.height / 2) / r.height * 2));
+  }
+
   const resizeObserver = new ResizeObserver(resize);
   function changeMotion() { if (reduced.matches) release(); else init(); sync(); }
   function click() { paused = !paused; sync(); }
@@ -117,12 +138,14 @@ export function createScene(host, toggle) {
   function dispose() {
     disposed = true; release();
     reduced.removeEventListener("change", changeMotion);
+    window.removeEventListener("pointermove", tro);
     toggle.removeEventListener("click", click);
     document.removeEventListener("visibilitychange", sync);
     window.removeEventListener("pagehide", pagehide);
     window.removeEventListener("pageshow", sync);
   }
   reduced.addEventListener("change", changeMotion);
+  window.addEventListener("pointermove", tro, {passive: true});
   toggle.addEventListener("click", click);
   document.addEventListener("visibilitychange", sync);
   window.addEventListener("pagehide", pagehide);

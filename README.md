@@ -107,6 +107,25 @@ khung của câu đó, chọn **Riêng câu đang xem**, vẽ vùng mới, rồi
 chép sang cả cảnh. Vùng chung của những câu còn lại không đổi. Ảnh nhỏ của câu có vùng
 riêng được đánh dấu `riêng`.
 
+Vùng riêng **thay thế** vùng chung ở đúng những câu được gán: câu 12 có vùng riêng
+trên đỉnh thì lúc câu 12 hiện, chỉ vùng trên mờ, vùng dưới tắt. Phép trừ đó diễn ra ở
+hai tầng — trừ theo câu, rồi trừ theo thời gian — vì bước nới ±0,4 s và gộp khoảng có
+thể bắc cầu từ câu bên cạnh sang đúng lúc câu 12 đang chiếu; thiếu tầng thứ hai thì
+câu đó mờ cả hai chỗ. Vùng riêng thắng ở cả hai biên của khoảng.
+
+Ở chế độ thay thế, một câu chỉ thuộc **một** vùng riêng và chỉ có **một** vùng chung;
+gửi lên hai vùng chung, hoặc một câu nằm trong hai vùng riêng, bị từ chối 400 trước khi
+đụng tới công việc hay nhóm. Cỡ chữ và khung mặc định của nhóm vẫn lấy *vùng chính* từ
+danh sách **thô**, trước khi trừ câu — trừ hết câu khỏi vùng chung không làm chữ nhảy
+sang chỗ khác.
+
+**Dữ liệu cũ giữ nguyên nghĩa cũ.** Payload và `vung_blur.json` không có trường
+`che_do_vung` là hàng legacy và vẫn **cộng dồn** như trước; chúng không bị đọc lại bằng
+nghĩa mới, cũng không bị migrate. Trường này chỉ nhận đúng hai giá trị `cong_them` và
+`thay_the`, phân biệt chữ hoa thường; vắng mặt là `cong_them`, giá trị lạ là 400. Giao
+diện web luôn gửi `thay_the`. Vùng đã lưu mang chế độ nào thì lần chạy sau đọc lại đúng
+chế độ đó.
+
 Mỗi vùng lấy thời gian từ các câu gán cho nó, nới ±0.4 s rồi gộp các khoảng gần nhau;
 vì vậy có thể làm mờ cả khoảng trống ngắn giữa câu. Kết xuất vẫn **một lần nén**: mỗi vùng thêm một nhánh `crop → gblur →
 overlay` nối tiếp trong cùng một filtergraph.
@@ -164,6 +183,15 @@ output làm input. Hai nguồn trùng đích thì nó từ chối **trước khi
 
 ## 4. Chạy lại và sửa tay
 
+Video tải lên web được cất theo **nội dung và nhóm**, không theo tên file:
+`work/tai_len/nguon/<băm nhóm>/<sha256 video>/nguon.media`. Tải lại cùng một video —
+kể cả sau khi đổi tên — vẫn dùng lại được phụ đề, bản dịch và vùng mờ đã tính; tải nó
+lên dưới nhóm khác thì là tài nguyên khác, vì thuật ngữ của nhóm làm đổi bản dịch. Mỗi
+lần tải lên vẫn là một **công việc mới** với id riêng: kết quả và khung mẫu nằm trong
+`work/tai_len/<id công việc>/`, nên hai lượt cùng một video không ghi đè nhau. Dữ liệu
+tải lên từ trước bản này **giữ nguyên tại chỗ**, không tự chuyển sang cách sắp xếp mới;
+lần đầu tải lại chúng có thể phải xử lý lại một lượt. CLI không đổi gì.
+
 `work/<tên>-<8 ký tự băm>/` giữ file trung gian của từng video; `vung_blur.json` giữ
 danh sách vùng kèm chỉ số câu của từng vùng; `trang_thai.json` lưu
 chữ ký nội dung và cấu hình của từng bước. **Hệ thống file là nguồn sự thật** — xoá
@@ -179,9 +207,20 @@ chữ ký nội dung và cấu hình của từng bước. **Hệ thống file l
 - Ngắt giữa chừng chỉ gây tính lại, không tạo file dở bị hiểu nhầm là hoàn tất, và
   không phá output tốt của lần trước.
 
+- Gửi vùng mờ lên là **chạy tiếp đúng lượt đang chờ**, không phải mở một lượt mới:
+  nguồn phụ đề đã chọn được giữ nguyên, nên `--force-asr` của lượt đó không làm Whisper
+  chạy lại lần nữa, còn ý định làm mới bản dịch thì vẫn giữ cho tới khi bước dịch của
+  chính lượt đó xong. Nếu phụ đề gốc đã đổi trong lúc bạn vẽ, web trả 409 và yêu cầu
+  tải lại video — chỉ số câu thoại của vùng cũ không còn ứng với câu nào nữa.
+
 **Lock sót sau khi máy treo:** mỗi thư mục làm việc có một `.lock`; tiến trình thứ hai
 bị từ chối (web trả 409). Nếu chắc chắn không còn tiến trình nào đang chạy thì xoá tay
-`work/<tên>-<băm>/.lock`. Hệ thống **không tự đoán** lock đã chết.
+`work/<tên>-<băm>/.lock`. Hệ thống **không tự đoán** lock đã chết, và tải video lên lại
+cũng không tự xoá lock giúp bạn.
+
+**Khởi động lại server:** công việc còn dở của tiến trình cũ không còn ai theo dõi, nên
+lúc khởi động chúng được đánh dấu **lỗi** kèm hướng dẫn tải lại, thay vì treo mãi ở
+`đang chạy`. Công việc đã xong giữ nguyên kết quả và vẫn tải xuống được.
 
 ## 5. Kiểm thử
 
@@ -229,10 +268,17 @@ liệu làm tham số, trả dữ liệu thuần. `dieu_phoi.py` dùng `db.py` c
 `cong_viec` qua callable `bao_tien_do`, còn CLI in ra màn hình.
 
 Việc chạy lâu chạy nền **trong chính tiến trình backend**, không Celery, không Redis,
-không WebSocket. `api/viec.py` giữ ánh xạ CID → video/tuỳ chọn trong RAM;
-khởi động lại server làm mất ánh xạ và tác vụ đang chạy. Bản ghi `cong_viec` và
-artifact trên đĩa còn, nhưng không tự khôi phục tác vụ; cần tải video lại để tạo
-công việc mới, tái dùng artifact nào còn hợp lệ.
+không WebSocket. `api/viec.py` giữ ánh xạ CID → video/tuỳ chọn/claim/checkpoint trong
+RAM; khởi động lại server làm mất ánh xạ và tác vụ đang chạy. Bản ghi `cong_viec` và
+artifact trên đĩa còn, nhưng không tự khôi phục tác vụ; lúc khởi động các công việc mất
+hồ sơ được đánh dấu lỗi, cần tải video lại để tạo công việc mới, tái dùng artifact nào
+còn hợp lệ.
+
+Quyền ghi vào một thư mục làm việc được **giành nguyên tử ngay lúc nhận upload** bằng
+chính `.lock` đó, chứ không phải kiểm tra file có tồn tại rồi tạo sau — hai lượt tải
+lên cùng lúc đều lọt qua cách kiểm đó. Claim được trao thẳng cho tác vụ nền, và được
+**nhả ra trong lúc chờ người vẽ vùng** rồi giành lại khi nhận vùng: không giữ khoá độc
+quyền suốt thời gian người dùng suy nghĩ.
 
 ## 7. Chưa làm
 

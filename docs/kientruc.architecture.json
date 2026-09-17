@@ -1,0 +1,298 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Kiến trúc hệ thống dịch phụ đề video Anh → Việt",
+    "output": "kientruc.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1360,
+      660
+    ]
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Trình duyệt",
+      "sublabel": "app.js · scene.js",
+      "pos": [
+        30,
+        250
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "FastAPI",
+      "sublabel": "app.py + nhom.py",
+      "pos": [
+        310,
+        180
+      ],
+      "size": [
+        205,
+        56
+      ]
+    },
+    {
+      "id": "viec",
+      "type": "backend",
+      "label": "Tác vụ nền",
+      "sublabel": "api/viec.py",
+      "pos": [
+        310,
+        300
+      ],
+      "size": [
+        205,
+        56
+      ]
+    },
+    {
+      "id": "dieuphoi",
+      "type": "backend",
+      "label": "Điều phối",
+      "sublabel": "dieu_phoi.py",
+      "pos": [
+        600,
+        240
+      ],
+      "size": [
+        205,
+        56
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "SQLite",
+      "sublabel": "subtitles.db · 5 bảng",
+      "pos": [
+        600,
+        470
+      ],
+      "size": [
+        205,
+        56
+      ]
+    },
+    {
+      "id": "media",
+      "type": "backend",
+      "label": "Media",
+      "sublabel": "audio · subs · render",
+      "pos": [
+        855,
+        40
+      ],
+      "size": [
+        205,
+        52
+      ]
+    },
+    {
+      "id": "asr",
+      "type": "backend",
+      "label": "Nhận dạng",
+      "sublabel": "asr.py · Whisper",
+      "pos": [
+        855,
+        130
+      ],
+      "size": [
+        205,
+        52
+      ]
+    },
+    {
+      "id": "translate",
+      "type": "backend",
+      "label": "Dịch",
+      "sublabel": "translate.py",
+      "pos": [
+        855,
+        220
+      ],
+      "size": [
+        205,
+        52
+      ]
+    },
+    {
+      "id": "markbox",
+      "type": "backend",
+      "label": "Vùng mờ",
+      "sublabel": "markbox.py",
+      "pos": [
+        855,
+        310
+      ],
+      "size": [
+        205,
+        52
+      ]
+    },
+    {
+      "id": "srt",
+      "type": "backend",
+      "label": "SRT & chữ ký",
+      "sublabel": "srt.py",
+      "pos": [
+        855,
+        400
+      ],
+      "size": [
+        205,
+        52
+      ]
+    },
+    {
+      "id": "ffmpeg",
+      "type": "external",
+      "label": "ffmpeg / ffprobe",
+      "sublabel": "subprocess",
+      "pos": [
+        1125,
+        36
+      ],
+      "size": [
+        205,
+        60
+      ]
+    },
+    {
+      "id": "deepseek",
+      "type": "external",
+      "label": "DeepSeek API",
+      "sublabel": "api.deepseek.com",
+      "pos": [
+        1125,
+        216
+      ],
+      "size": [
+        205,
+        60
+      ]
+    },
+    {
+      "id": "work",
+      "type": "database",
+      "label": "work/<stem>-<hash>",
+      "sublabel": "artifact + manifest",
+      "pos": [
+        1125,
+        396
+      ],
+      "size": [
+        205,
+        60
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "c-http",
+      "from": "browser",
+      "to": "api",
+      "label": "HTTP JSON",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c-bg",
+      "from": "api",
+      "to": "viec",
+      "label": "BackgroundTasks",
+      "labelDy": 52
+    },
+    {
+      "id": "c-nhom",
+      "from": "api",
+      "to": "dieuphoi",
+      "label": "nhom_*",
+      "variant": "dashed"
+    },
+    {
+      "id": "c-chay",
+      "from": "viec",
+      "to": "dieuphoi",
+      "label": "chay()",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c-db",
+      "from": "dieuphoi",
+      "to": "db",
+      "label": "đọc/ghi DB",
+      "labelDy": 100
+    },
+    {
+      "id": "c-media",
+      "from": "dieuphoi",
+      "to": "media"
+    },
+    {
+      "id": "c-asr",
+      "from": "dieuphoi",
+      "to": "asr"
+    },
+    {
+      "id": "c-dich",
+      "from": "dieuphoi",
+      "to": "translate"
+    },
+    {
+      "id": "c-markbox",
+      "from": "dieuphoi",
+      "to": "markbox"
+    },
+    {
+      "id": "c-srt",
+      "from": "dieuphoi",
+      "to": "srt"
+    },
+    {
+      "id": "c-ffmpeg",
+      "from": "media",
+      "to": "ffmpeg"
+    },
+    {
+      "id": "c-deepseek",
+      "from": "translate",
+      "to": "deepseek",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c-work",
+      "from": "srt",
+      "to": "work",
+      "label": "nguyên tử"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Ba ràng buộc giữ cho kiến trúc không lệch",
+      "items": [
+        "Tác vụ nền chạy bằng BackgroundTasks trong chính tiến trình backend, không hàng đợi ngoài",
+        "CS-6: api/ không gọi ffmpeg, không nạp model, không ghép filtergraph",
+        "IC-2: chỉ dieu_phoi.py được gọi db.py; module xử lý không biết HTTP lẫn SQLite",
+        "_nap('ten') nạp module muộn — điểm tiêm duy nhất để test chạy offline"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Hai kho dữ liệu, hai vai trò khác nhau",
+      "items": [
+        "work/<stem>-<hash>: artifact + trang_thai.json — nơi QUYẾT ĐỊNH resume",
+        "SQLite: nhóm, thuật ngữ, nhật ký, tiến độ — xoá đi không mất artifact",
+        "api/ đọc PNG khung mẫu thẳng từ thư mục của CID, không qua pipeline"
+      ]
+    }
+  ]
+}

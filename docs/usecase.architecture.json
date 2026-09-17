@@ -1,0 +1,364 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Sơ đồ Use Case — Hệ thống dịch phụ đề video Anh → Việt",
+    "output": "usecase.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1300,
+      640
+    ],
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "frontend": {
+          "label": "Use case do tác nhân trực tiếp thực hiện"
+        },
+        "backend": {
+          "label": "Use case hệ thống thực hiện, được «include»"
+        },
+        "external": {
+          "label": "Tác nhân"
+        }
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "editor",
+      "type": "external",
+      "label": "Người biên tập phụ đề",
+      "sublabel": "Tác nhân chính",
+      "pos": [
+        40,
+        246
+      ],
+      "size": [
+        140,
+        72
+      ]
+    },
+    {
+      "id": "dev",
+      "type": "external",
+      "label": "Người phát triển",
+      "sublabel": "Tác nhân phụ",
+      "pos": [
+        40,
+        502
+      ],
+      "size": [
+        140,
+        72
+      ]
+    },
+    {
+      "id": "translator",
+      "type": "external",
+      "label": "DeepSeek API",
+      "sublabel": "Hệ thống ngoài",
+      "pos": [
+        1110,
+        118
+      ],
+      "size": [
+        140,
+        72
+      ],
+      "tag": "trả tiền theo token"
+    },
+    {
+      "id": "uc01",
+      "type": "frontend",
+      "label": "UC-01 Tải video lên",
+      "sublabel": "và tạo công việc xử lý",
+      "pos": [
+        245,
+        66
+      ],
+      "size": [
+        205,
+        48
+      ]
+    },
+    {
+      "id": "uc02",
+      "type": "frontend",
+      "label": "UC-02 Theo dõi tiến độ",
+      "sublabel": "hỏi trạng thái 1,5 s một lần",
+      "pos": [
+        245,
+        130
+      ],
+      "size": [
+        205,
+        48
+      ]
+    },
+    {
+      "id": "uc03",
+      "type": "frontend",
+      "label": "UC-03 Khoanh vùng phụ đề cứng",
+      "sublabel": "vẽ hộp trên khung hình thật",
+      "pos": [
+        245,
+        194
+      ],
+      "size": [
+        205,
+        48
+      ]
+    },
+    {
+      "id": "uc06",
+      "type": "frontend",
+      "label": "UC-06 Tải về video kết quả",
+      "sublabel": "phụ đề Việt cháy vào hình",
+      "pos": [
+        245,
+        258
+      ],
+      "size": [
+        205,
+        48
+      ]
+    },
+    {
+      "id": "uc07",
+      "type": "frontend",
+      "label": "UC-07 Quản lý nhóm video",
+      "sublabel": "tạo và chọn nhóm",
+      "pos": [
+        245,
+        322
+      ],
+      "size": [
+        205,
+        48
+      ]
+    },
+    {
+      "id": "uc08",
+      "type": "frontend",
+      "label": "UC-08 Sửa bảng thuật ngữ",
+      "sublabel": "xem, sửa, khoá bản dịch",
+      "pos": [
+        245,
+        386
+      ],
+      "size": [
+        205,
+        48
+      ]
+    },
+    {
+      "id": "uc09",
+      "type": "frontend",
+      "label": "UC-09 Đặt vùng mặc định",
+      "sublabel": "dùng chung cho cả nhóm",
+      "pos": [
+        245,
+        450
+      ],
+      "size": [
+        205,
+        48
+      ]
+    },
+    {
+      "id": "uc11",
+      "type": "frontend",
+      "label": "UC-11 Xử lý hàng loạt",
+      "sublabel": "qua dòng lệnh nội bộ",
+      "pos": [
+        245,
+        514
+      ],
+      "size": [
+        205,
+        48
+      ]
+    },
+    {
+      "id": "uc12",
+      "type": "backend",
+      "label": "UC-12 Dịch phụ đề",
+      "sublabel": "lô 25 câu, giữ nguyên timestamp",
+      "pos": [
+        530,
+        130
+      ],
+      "size": [
+        205,
+        48
+      ]
+    },
+    {
+      "id": "uc10",
+      "type": "frontend",
+      "label": "UC-10 Chạy lại video",
+      "sublabel": "với cấu hình khác",
+      "pos": [
+        815,
+        66
+      ],
+      "size": [
+        205,
+        48
+      ]
+    },
+    {
+      "id": "uc04",
+      "type": "frontend",
+      "label": "UC-04 Gán vùng riêng",
+      "sublabel": "cho câu thoại nhảy chỗ",
+      "pos": [
+        815,
+        194
+      ],
+      "size": [
+        205,
+        48
+      ]
+    },
+    {
+      "id": "uc05",
+      "type": "frontend",
+      "label": "UC-05 Bỏ qua làm mờ",
+      "sublabel": "không xoá vùng của nhóm",
+      "pos": [
+        815,
+        258
+      ],
+      "size": [
+        205,
+        48
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Hệ thống dịch phụ đề video",
+      "wraps": [
+        "uc01",
+        "uc02",
+        "uc03",
+        "uc06",
+        "uc07",
+        "uc08",
+        "uc09",
+        "uc11",
+        "uc12",
+        "uc10",
+        "uc04",
+        "uc05"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "a-uc01",
+      "from": "editor",
+      "to": "uc01"
+    },
+    {
+      "id": "a-uc02",
+      "from": "editor",
+      "to": "uc02"
+    },
+    {
+      "id": "a-uc03",
+      "from": "editor",
+      "to": "uc03"
+    },
+    {
+      "id": "a-uc06",
+      "from": "editor",
+      "to": "uc06"
+    },
+    {
+      "id": "a-uc07",
+      "from": "editor",
+      "to": "uc07"
+    },
+    {
+      "id": "a-uc08",
+      "from": "editor",
+      "to": "uc08"
+    },
+    {
+      "id": "a-uc09",
+      "from": "editor",
+      "to": "uc09"
+    },
+    {
+      "id": "a-uc11",
+      "from": "dev",
+      "to": "uc11"
+    },
+    {
+      "id": "inc-uc01",
+      "from": "uc01",
+      "to": "uc12",
+      "label": "«include»",
+      "variant": "dashed"
+    },
+    {
+      "id": "inc-uc03",
+      "from": "uc03",
+      "to": "uc12",
+      "label": "«include»",
+      "variant": "dashed"
+    },
+    {
+      "id": "ext-uc10",
+      "from": "uc10",
+      "to": "uc01",
+      "label": "«extend»",
+      "variant": "dashed"
+    },
+    {
+      "id": "ext-uc04",
+      "from": "uc04",
+      "to": "uc03",
+      "label": "«extend»",
+      "variant": "dashed"
+    },
+    {
+      "id": "ext-uc05",
+      "from": "uc05",
+      "to": "uc03",
+      "label": "«extend»",
+      "variant": "dashed"
+    },
+    {
+      "id": "call-deepseek",
+      "from": "uc12",
+      "to": "translator",
+      "label": "gửi lô câu, nhận JSON",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Quy ước quan hệ",
+      "items": [
+        "Association tác nhân – use case: không mang nhãn, hai đầu đã nói hết nghĩa",
+        "«include»: hành vi LUÔN được thực hiện, mũi tên từ use case cơ sở sang use case được gộp",
+        "«extend»: hành vi CHỈ xảy ra khi có điều kiện, mũi tên từ phần mở rộng về use case cơ sở"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Vì sao UC-12 nằm sau UC-03",
+      "items": [
+        "DeepSeek chỉ được gọi khi đã có vùng làm mờ: bước dich (dieu_phoi.py:438) chạy sau buoc_hop (:411)",
+        "Video cần khoanh vùng thì UC-01 dừng ở cho_chon_khung và chưa hề gọi API",
+        "Người bỏ cuộc ở màn vẽ hộp không tốn một đồng tiền dịch"
+      ]
+    }
+  ]
+}

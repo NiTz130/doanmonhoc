@@ -1,0 +1,698 @@
+{
+  "components": {
+    "schemas": {
+      "Body_tai_len_api_video_post": {
+        "properties": {
+          "blur": {
+            "default": "auto",
+            "title": "Blur",
+            "type": "string"
+          },
+          "blur_box": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blur Box"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "font_scale": {
+            "default": 0.42,
+            "title": "Font Scale",
+            "type": "number"
+          },
+          "force": {
+            "default": false,
+            "title": "Force",
+            "type": "boolean"
+          },
+          "force_asr": {
+            "default": false,
+            "title": "Force Asr",
+            "type": "boolean"
+          },
+          "lang": {
+            "default": "en",
+            "title": "Lang",
+            "type": "string"
+          },
+          "model": {
+            "default": "large-v3",
+            "title": "Model",
+            "type": "string"
+          },
+          "model_dich": {
+            "default": "deepseek-v4-flash",
+            "title": "Model Dich",
+            "type": "string"
+          },
+          "nhom": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nhom"
+          },
+          "separate": {
+            "default": false,
+            "title": "Separate",
+            "type": "boolean"
+          },
+          "vad": {
+            "default": true,
+            "title": "Vad",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_tai_len_api_video_post",
+        "type": "object"
+      },
+      "Body_tao_api_nhom_post": {
+        "properties": {
+          "ten": {
+            "title": "Ten",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ten"
+        ],
+        "title": "Body_tao_api_nhom_post",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Dich phu de video Anh -> Viet",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/cong-viec/{cid}": {
+      "get": {
+        "operationId": "trang_thai_api_cong_viec__cid__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cid",
+            "required": true,
+            "schema": {
+              "title": "Cid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Trang Thai Api Cong Viec  Cid  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Trang Thai"
+      }
+    },
+    "/api/cong-viec/{cid}/hop": {
+      "post": {
+        "description": "Nhan hop da ve roi chay tiep tu buoc dich. Bo qua ve = blur off.",
+        "operationId": "nhan_hop_api_cong_viec__cid__hop_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cid",
+            "required": true,
+            "schema": {
+              "title": "Cid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Than",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Nhan Hop Api Cong Viec  Cid  Hop Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Nhan Hop"
+      }
+    },
+    "/api/cong-viec/{cid}/ket-qua": {
+      "get": {
+        "operationId": "ket_qua_api_cong_viec__cid__ket_qua_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cid",
+            "required": true,
+            "schema": {
+              "title": "Cid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ket Qua"
+      }
+    },
+    "/api/cong-viec/{cid}/khung": {
+      "get": {
+        "description": "Danh sach khung mau kem moc thoi gian va cau thoai de frontend hien len.",
+        "operationId": "khung_api_cong_viec__cid__khung_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cid",
+            "required": true,
+            "schema": {
+              "title": "Cid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Khung Api Cong Viec  Cid  Khung Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Khung"
+      }
+    },
+    "/api/cong-viec/{cid}/khung/{i}": {
+      "get": {
+        "operationId": "mot_khung_api_cong_viec__cid__khung__i__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cid",
+            "required": true,
+            "schema": {
+              "title": "Cid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "i",
+            "required": true,
+            "schema": {
+              "title": "I",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mot Khung"
+      }
+    },
+    "/api/nhom": {
+      "get": {
+        "operationId": "danh_sach_api_nhom_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Danh Sach Api Nhom Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Danh Sach",
+        "tags": [
+          "nhom"
+        ]
+      },
+      "post": {
+        "operationId": "tao_api_nhom_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_tao_api_nhom_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Tao Api Nhom Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Tao",
+        "tags": [
+          "nhom"
+        ]
+      }
+    },
+    "/api/nhom/{ten}/hop": {
+      "get": {
+        "operationId": "doc_hop_api_nhom__ten__hop_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ten",
+            "required": true,
+            "schema": {
+              "title": "Ten",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": true,
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Doc Hop Api Nhom  Ten  Hop Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Doc Hop",
+        "tags": [
+          "nhom"
+        ]
+      },
+      "post": {
+        "description": "Hop di qua dung validator cua CLI; frontend kiem them chi de bao som.",
+        "operationId": "dat_hop_api_nhom__ten__hop_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ten",
+            "required": true,
+            "schema": {
+              "title": "Ten",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Than",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Dat Hop Api Nhom  Ten  Hop Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dat Hop",
+        "tags": [
+          "nhom"
+        ]
+      }
+    },
+    "/api/nhom/{ten}/thuat-ngu": {
+      "get": {
+        "operationId": "doc_thuat_ngu_api_nhom__ten__thuat_ngu_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ten",
+            "required": true,
+            "schema": {
+              "title": "Ten",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Doc Thuat Ngu Api Nhom  Ten  Thuat Ngu Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Doc Thuat Ngu",
+        "tags": [
+          "nhom"
+        ]
+      },
+      "post": {
+        "operationId": "dat_thuat_ngu_api_nhom__ten__thuat_ngu_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ten",
+            "required": true,
+            "schema": {
+              "title": "Ten",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Than",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Dat Thuat Ngu Api Nhom  Ten  Thuat Ngu Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dat Thuat Ngu",
+        "tags": [
+          "nhom"
+        ]
+      }
+    },
+    "/api/video": {
+      "post": {
+        "operationId": "tai_len_api_video_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_tai_len_api_video_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Tai Len Api Video Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Tai Len"
+      }
+    }
+  }
+}

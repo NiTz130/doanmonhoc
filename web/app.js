@@ -110,6 +110,8 @@ $("form-tai-len").addEventListener("submit", async (e) => {
     dang_xu_ly = true;
     cho_hop = false;
     $("progress-label").textContent = "—";
+    buoc_i = -1;
+    ve_tien_trinh("cho", "");
     $("thanh-chay").style.width = "0%";
     $("thanh-chay").parentElement.setAttribute("aria-valuenow", "0");
     $("viec-trang-thai").textContent = "Đang lấy trạng thái công việc…";
@@ -144,6 +146,23 @@ $("form-tai-len").addEventListener("submit", async (e) => {
 
 // ------------------------------------------------------------ 2. tien do
 
+// Stepper bam theo enum `buoc` that cua dieu_phoi.py. "canh_bao" va moi ten moi
+// cho indexOf = -1; khi do giu nguyen buoc dang sang thay vi tat het den.
+const BUOC = ["nhan_dien", "sub_goc", "vung_blur", "dich", "render"];
+let buoc_i = -1;
+
+function ve_tien_trinh(trang_thai, buoc) {
+  if (["xong", "suy_giam"].includes(trang_thai)) buoc_i = BUOC.length;
+  else buoc_i = Math.max(buoc_i, BUOC.indexOf(buoc));
+  for (const li of $("tien-trinh").children) {
+    const v = BUOC.indexOf(li.dataset.buoc);
+    li.dataset.trangThai = v < buoc_i ? "xong"
+      : v === buoc_i ? (trang_thai === "loi" ? "loi" : "dang") : "cho";
+    if (li.dataset.trangThai === "dang") li.setAttribute("aria-current", "step");
+    else li.removeAttribute("aria-current");
+  }
+}
+
 const NHAN = {
   cho: "Đang xếp hàng…",
   dang_chay: "Đang xử lý",
@@ -170,10 +189,12 @@ async function hoi_tien_do() {
     $("viec-trang-thai").textContent =
       (NHAN[tt.trang_thai] || tt.trang_thai) +
       (tt.buoc ? " — bước " + tt.buoc : "") + (tt.loi ? " (" + tt.loi + ")" : "");
+    ve_tien_trinh(tt.trang_thai, tt.buoc);
     const tai = $("tai-ket-qua");
     tai.hidden = !tt.co_ket_qua;
     tai.href = "/api/cong-viec/" + cid + "/ket-qua";
     dang_xu_ly = !["xong", "suy_giam", "loi"].includes(tt.trang_thai);
+    $("thanh-chay").classList.toggle("chay", dang_xu_ly);
     cho_hop = tt.trang_thai === "cho_chon_khung";
     if (tt.trang_thai === "cho_chon_khung") {
       if (khung_cid !== cid) await nap_khung();
@@ -275,22 +296,58 @@ const NEO_TAY = [[0, 0], [.5, 0], [1, 0], [0, .5], [1, .5], [0, 1], [.5, 1], [1,
 const BAT_PX = 10;                  // ban kinh bat canh, tinh bang pixel tren man hinh
 const kep = (v, toi_da) => Math.min(toi_da, Math.max(0, v));
 
+// Mau neo duoi con tro phong to dan len 1.3x: keo dung canh tren mot o chi cao
+// vai pixel thi phai thay ro minh dang tom cai nao truoc khi bam.
+const IT_DONG = matchMedia("(prefers-reduced-motion: reduce)");
+let tay_hover = -1, tay_ti = 1, tay_frame = 0;
+
+function tay_dan() {
+  const dich = tay_hover >= 0 ? 1.3 : 1;
+  tay_ti += (dich - tay_ti) * 0.28;
+  if (Math.abs(dich - tay_ti) < 0.01) { tay_ti = dich; tay_frame = 0; }
+  else tay_frame = requestAnimationFrame(tay_dan);
+  ve_hop();
+}
+
+function dat_tay(i) {
+  if (i === tay_hover) return;
+  tay_hover = i;
+  if (IT_DONG.matches) { tay_ti = i >= 0 ? 1.3 : 1; ve_hop(); return; }
+  if (!tay_frame) tay_frame = requestAnimationFrame(tay_dan);
+}
+
+// Mau neo nao dang duoi con tro; khong cham cai nao thi -1.
+function tay_duoi(px, py) {
+  if (!hop || !canvas.width || !canvas.height) return -1;
+  for (let i = 0; i < NEO_TAY.length; i++) {
+    const [ax, ay] = NEO_TAY[i];
+    if (Math.abs((hop.x + hop.w * ax - px) * canvas.width) <= BAT_PX &&
+        Math.abs((hop.y + hop.h * ay - py) * canvas.height) <= BAT_PX) return i;
+  }
+  return -1;
+}
+
 function ve_hop() {
   canvas.width = anh.clientWidth;
   canvas.height = anh.clientHeight;
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (!hop) return;
-  ctx.strokeStyle = "#f2c765";
-  ctx.lineWidth = 2;
-  ctx.fillStyle = "rgba(242,199,101,.25)";
   const r = [hop.x * canvas.width, hop.y * canvas.height,
              hop.w * canvas.width, hop.h * canvas.height];
+  ctx.fillStyle = "rgba(194,54,43,.18)";
   ctx.fillRect(...r);
-  ctx.strokeRect(...r);
-  ctx.fillStyle = "#f2c765";
-  for (const [ax, ay] of NEO_TAY) {
-    ctx.fillRect(r[0] + r[2] * ax - 4, r[1] + r[3] * ay - 4, 8, 8);
+  // Vien trang lot duoi vien do son: canh toi thi trang noi, canh sang thi do son
+  // noi. Mot mau don le se chim o mot trong hai truong hop.
+  ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = 4; ctx.strokeRect(...r);
+  ctx.strokeStyle = "#c2362b"; ctx.lineWidth = 2; ctx.strokeRect(...r);
+  for (let i = 0; i < NEO_TAY.length; i++) {
+    const [ax, ay] = NEO_TAY[i];
+    const hx = r[0] + r[2] * ax, hy = r[1] + r[3] * ay;
+    const n = (i === tay_hover ? tay_ti : 1) * 4;      // nua canh mau neo
+    ctx.fillStyle = "#fff"; ctx.fillRect(hx - n - 1, hy - n - 1, n * 2 + 2, n * 2 + 2);
+    ctx.fillStyle = i === tay_hover ? "#e0483a" : "#c2362b";
+    ctx.fillRect(hx - n, hy - n, n * 2, n * 2);
   }
 }
 
@@ -342,7 +399,11 @@ canvas.addEventListener("pointerdown", (e) => {
 });
 canvas.addEventListener("pointermove", (e) => {
   const [x, y] = phan_tram(e);
-  if (!keo) { canvas.style.cursor = con_tro(x, y); return; }
+  if (!keo) {
+    canvas.style.cursor = con_tro(x, y);
+    dat_tay(anh_san_sang && cho_hop && !dang_gui_hop ? tay_duoi(x, y) : -1);
+    return;
+  }
   if (keo.che_do === "moi") {
     hop = { x: Math.min(keo.tu[0], x), y: Math.min(keo.tu[1], y),
             w: Math.abs(x - keo.tu[0]), h: Math.abs(y - keo.tu[1]) };
@@ -425,6 +486,7 @@ canvas.addEventListener("pointerup", () => {
   cap_nhat_hop();
 });
 canvas.addEventListener("pointercancel", () => { keo = null; cap_nhat_hop(); });
+canvas.addEventListener("pointerleave", () => dat_tay(-1));
 $("form-toa-do").addEventListener("submit", (e) => {
   e.preventDefault();
   if (!anh_san_sang || dang_gui_hop || !cho_hop) return;
@@ -465,8 +527,11 @@ async function gui_hop(gia_tri) {
     await goi(`/api/cong-viec/${cid}/hop`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      // che_do_vung tuong minh: backend mac dinh cong_them cho payload cu, nen
+      // frontend moi phai tu noi no dung nghia thay the ma man hinh nay mo ta.
       body: JSON.stringify(gia_tri === null ? { co_blur: false }
-        : { co_blur: true, vung: gia_tri, luu_nhom: $("hop-luu-nhom").checked }),
+        : { co_blur: true, che_do_vung: "thay_the", vung: gia_tri,
+            luu_nhom: $("hop-luu-nhom").checked }),
     });
     cho_hop = false;
     hien("tien-do");
