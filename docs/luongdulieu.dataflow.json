@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Luồng xử lý dữ liệu — từ video nguồn đến video có phụ đề Việt",
+    "output": "luongdulieu.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1340,
+      640
+    ]
+  },
+  "stages": [
+    {
+      "label": "Đầu vào"
+    },
+    {
+      "label": "Tách tiếng"
+    },
+    {
+      "label": "Phụ đề gốc"
+    },
+    {
+      "label": "Vùng mờ và bản dịch"
+    },
+    {
+      "label": "Kết xuất"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "video",
+      "type": "external",
+      "label": "Video nguồn",
+      "stage": 0,
+      "row": 1,
+      "width": 130,
+      "height": 56
+    },
+    {
+      "id": "sidecar",
+      "type": "external",
+      "label": "Phụ đề sidecar",
+      "stage": 0,
+      "row": 3,
+      "width": 130,
+      "height": 56
+    },
+    {
+      "id": "audio",
+      "type": "database",
+      "label": "audio.wav",
+      "stage": 1,
+      "row": 0,
+      "width": 130,
+      "height": 56
+    },
+    {
+      "id": "subgoc",
+      "type": "database",
+      "label": "sub_goc.srt",
+      "stage": 2,
+      "row": 2,
+      "width": 130,
+      "height": 56
+    },
+    {
+      "id": "khung",
+      "type": "database",
+      "label": "khung_<i>.png",
+      "stage": 3,
+      "row": 0,
+      "width": 130,
+      "height": 56
+    },
+    {
+      "id": "vung",
+      "type": "database",
+      "label": "vung_blur.json",
+      "stage": 3,
+      "row": 1,
+      "width": 130,
+      "height": 56
+    },
+    {
+      "id": "subvi",
+      "type": "database",
+      "label": "sub_vi.srt",
+      "stage": 3,
+      "row": 3,
+      "width": 130,
+      "height": 56
+    },
+    {
+      "id": "ra",
+      "type": "backend",
+      "label": "<ten>_vi.mp4",
+      "stage": 4,
+      "row": 2,
+      "width": 130,
+      "height": 56
+    }
+  ],
+  "flows": [
+    {
+      "id": "f-audio",
+      "from": "video",
+      "to": "audio",
+      "label": "tách tiếng",
+      "classification": "ffmpeg -ac 1 -ar 16000"
+    },
+    {
+      "id": "f-asr",
+      "from": "audio",
+      "to": "subgoc",
+      "label": "nhận dạng",
+      "classification": "faster-whisper large-v3"
+    },
+    {
+      "id": "f-sidecar",
+      "from": "sidecar",
+      "to": "subgoc",
+      "label": "rút thẳng, bỏ qua ASR",
+      "classification": "ưu tiên 1",
+      "variant": "dashed"
+    },
+    {
+      "id": "f-khung",
+      "from": "subgoc",
+      "to": "khung",
+      "label": "mốc thời gian mỗi cue",
+      "classification": "seek trên video gốc tại bat_dau + 0,3 s",
+      "labelDy": -30
+    },
+    {
+      "id": "f-ve",
+      "from": "khung",
+      "to": "vung",
+      "label": "người dùng vẽ hộp",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "f-dich",
+      "from": "subgoc",
+      "to": "subvi",
+      "label": "dịch lô 25 câu",
+      "classification": "DeepSeek + glossary của nhóm",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f-burn",
+      "from": "subvi",
+      "to": "ra",
+      "label": "cháy phụ đề vào hình",
+      "classification": "tự sinh ASS theo PlayRes thật",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f-blur",
+      "from": "vung",
+      "to": "ra",
+      "label": "crop → gblur → overlay",
+      "classification": "sigma 25"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Từng artifact là gì",
+      "items": [
+        "audio.wav mono 16 kHz PCM16 · sub_goc.srt phụ đề Anh utf-8",
+        "khung_<i>.png một khung mỗi câu · vung_blur.json vùng theo % 0–1",
+        "thuat_ngu (SQLite) vừa là đầu vào bắt buộc vừa nhận từ mới — xem sơ đồ CSDL"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Vì sao vùng mờ đứng trước bước dịch",
+      "items": [
+        "Bước duy nhất cần người, đặt sớm để máy và người chờ chồng lên nhau",
+        "Bỏ cuộc ở màn vẽ hộp thì không tốn một đồng tiền API",
+        "Thiếu hộp là trạng thái cho_chon_khung, KHÔNG phải lỗi"
+      ]
+    }
+  ]
+}

@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 const fs = require('node:fs');
 const base = process.env.UI_URL || 'http://127.0.0.1:8765';
 const file = {name:'video-mau.mp4',mimeType:'video/mp4',buffer:Buffer.from('sample')};
-const screenshotDir = 'docs/ketqua';
+const screenshotDir = process.env.SCREENSHOT_DIR || 'docs/ketqua';
 (async () => {
   const browser = await chromium.launch({headless:true});
   try {
@@ -14,7 +14,8 @@ const screenshotDir = 'docs/ketqua';
     const errors=[]; page.on('pageerror', e=>errors.push(e.message));
     let uploadDelay=120;
     let uploads=0, rejectUpload=true, state='dang_chay', polls=0, inFlight=0, maxInFlight=0;
-    let failPoll=false, failSave=false, failImage=false, boxPayload, termPayload;
+    let stepBuoc='dịch phụ đề';
+    let failPoll=false, failSave=false, failImage=false, staleHop=true, boxPayload, termPayload;
     const sampleImage = '<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"><rect width="1280" height="720" fill="#becfba"/><text x="100" y="220" font-size="55" fill="#234638">KHUNG MAU / DU LIEU GIA LAP</text><text x="320" y="620" font-size="40">This is a sample subtitle.</text></svg>';
     let imageWidth=1280, imageHeight=720;
     await page.route('**/api/**', async route => {
@@ -24,11 +25,15 @@ const screenshotDir = 'docs/ketqua';
         polls++; inFlight++; maxInFlight=Math.max(maxInFlight,inFlight);
         await new Promise(r=>setTimeout(r,100)); inFlight--;
         if(failPoll) return route.abort();
-        return route.fulfill({json:{id:'sample-job',trang_thai:state,tien_do:state==='dang_chay'?0.42:1,buoc:'dịch phụ đề',co_ket_qua:['xong','suy_giam'].includes(state)}});
+        return route.fulfill({json:{id:'sample-job',trang_thai:state,tien_do:state==='dang_chay'?0.42:1,buoc:stepBuoc,co_ket_qua:['xong','suy_giam'].includes(state)}});
       }
       if(path.endsWith('/khung')) return route.fulfill({json:Array.from({length:43},(_,i)=>({i,giay:i+0.3,text:'Dữ liệu mẫu để kiểm tra vùng phụ đề'}))});
       if(/\/khung\/\d+$/.test(path)) return failImage?route.abort():route.fulfill({contentType:'image/svg+xml',body:sampleImage.replace('width="1280" height="720"',`width="${imageWidth}" height="${imageHeight}"`)});
-      if(path.endsWith('/hop') && path.includes('/cong-viec/')) {boxPayload=req.postDataJSON();state='suy_giam';return route.fulfill({json:{id:'sample-job'}});}
+      if(path.endsWith('/hop') && path.includes('/cong-viec/')) {
+        boxPayload=req.postDataJSON();
+        if(staleHop) {staleHop=false;return route.fulfill({status:409,json:{detail:'Phụ đề gốc đã đổi'}});}
+        state='suy_giam';return route.fulfill({json:{id:'sample-job'}});
+      }
       if(path.endsWith('/ket-qua')) return route.fulfill({contentType:'video/mp4',headers:{'Content-Disposition':'attachment; filename="sample_vi.mp4"'},body:'sample-result'});
       if(path==='/api/nhom') return route.fulfill({json:req.method()==='POST'?{ten:'Mẫu'}:[{ten:'Nhóm mẫu',blur_x:null}]});
       if(path.endsWith('/thuat-ngu')) {
@@ -41,8 +46,17 @@ const screenshotDir = 'docs/ketqua';
     await page.goto(base);
     await page.evaluate(()=>document.fonts.ready);
     await page.waitForFunction(()=>document.getElementById('scene').dataset.scene==='webgl');
+    // Parallax bam con tro. Dung roi ma van doc layout thi moi lan re chuot o bat
+    // cu dau trong trang cung bat mot lan reflow, ca luc dang ve hop.
+    await page.evaluate(()=>{const el=document.getElementById('scene');window.__doc=0;
+      const goc=el.getBoundingClientRect.bind(el);el.getBoundingClientRect=()=>{window.__doc++;return goc();};});
+    await page.mouse.move(700,300); await page.mouse.move(760,340);
+    assert(await page.evaluate(()=>window.__doc)>0,'canh dang chay thi parallax phai bam con tro');
     await page.locator('#scene-toggle').click();
     assert.equal(await page.locator('#scene').getAttribute('data-motion'),'stopped');
+    await page.evaluate(()=>{window.__doc=0;});
+    await page.mouse.move(600,300); await page.mouse.move(650,350);
+    assert.equal(await page.evaluate(()=>window.__doc),0,'canh dung thi parallax khong duoc doc layout');
     fs.mkdirSync(screenshotDir,{recursive:true});
     for(const width of [1440,768,360]) {
       await page.setViewportSize({width,height:1000});
@@ -52,7 +66,7 @@ const screenshotDir = 'docs/ketqua';
       }
       await page.locator('nav a[href="#tai-len"]').click();
       await page.evaluate(()=>window.scrollTo(0,0));
-      await page.screenshot({path:`${screenshotDir}/B-upload-${width}.png`,fullPage:true});
+      await page.screenshot({path:`${screenshotDir}/B-upload-${width}.png`,fullPage:true,animations:'disabled'});
     }
     await page.setViewportSize({width:1440,height:1000});
     await page.locator('#video-file').setInputFiles(file);
@@ -75,11 +89,23 @@ const screenshotDir = 'docs/ketqua';
     await page.waitForFunction(()=>document.getElementById('bao').textContent.includes('Video không hợp lệ'));
     assert.equal(uploads,1,'Upload must not be duplicated');
     assert.equal(await page.locator('#video-file').evaluate(e=>e.files[0].name),file.name);
-    console.log('PASS validation, duplicate upload, upload failure, layouts 360/768/1440');
+    console.log('PASS validation, duplicate upload, upload failure, parallax va guard cua no, layouts 360/768/1440');
     rejectUpload=false;
     await page.locator('#upload-submit').click();
     await page.waitForFunction(()=>document.getElementById('progress-label').textContent==='42%');
     assert.equal(await page.locator('#scene').getAttribute('data-motion'),'stopped');
+    // Stepper bam theo enum `buoc` that cua dieu_phoi. Ten ngoai enum ("canh_bao",
+    // hay mot buoc moi them) chi duoc giu nguyen den dang sang, khong tat het.
+    const denBuoc=b=>page.locator(`#tien-trinh li[data-buoc=${b}]`).getAttribute('data-trang-thai');
+    stepBuoc='dich';
+    await page.waitForFunction(()=>document.querySelector('#tien-trinh li[data-buoc=dich]').dataset.trangThai==='dang');
+    assert(await page.locator('#thanh-chay').evaluate(e=>e.classList.contains('chay')),'dang chay thi thanh tien do phai co dai sang quet');
+    assert.equal(await denBuoc('sub_goc'),'xong','buoc da qua phai sang xanh');
+    assert.equal(await denBuoc('render'),'cho','buoc chua toi phai con tat');
+    stepBuoc='canh_bao';
+    const p0=polls; while(polls<p0+2) await page.waitForTimeout(150);
+    assert.equal(await denBuoc('dich'),'dang','buoc ngoai enum khong duoc keo stepper ve 0');
+    stepBuoc='dịch phụ đề';
     const before= polls;
     for(let i=0;i<20;i++) {
       await page.locator('nav a[href="#tai-len"]').click();
@@ -91,7 +117,7 @@ const screenshotDir = 'docs/ketqua';
     failPoll=true;
     await page.locator('#poll-retry').waitFor({state:'visible'});
     assert.equal(await page.locator('#progress-label').textContent(),'42%');
-    await page.screenshot({path:`screenshotDir/B-progress.png`.replace('screenshotDir',screenshotDir),fullPage:true});
+    await page.screenshot({path:`screenshotDir/B-progress.png`.replace('screenshotDir',screenshotDir),fullPage:true,animations:'disabled'});
     failPoll=false; state='cho_chon_khung';
     await page.locator('#poll-retry').click();
     await page.locator('#khung').waitFor({state:'visible'});
@@ -149,6 +175,20 @@ const screenshotDir = 'docs/ketqua';
     await gan({x:.9,y:.2,w:.05,h:.05},'keo ngoai hop phai ve hop moi');
     await datHop({x:.25,y:.65,w:.55,h:.30});
 
+    // Mau neo duoi con tro phai to len va sang mau: keo dung canh tren mot o cao
+    // vai pixel thi phai thay ro minh dang tom cai nao truoc khi bam. Doc thang
+    // pixel canvas vi mau neo khong phai phan tu DOM.
+    const neoDo=()=>page.locator('#khung-canvas').evaluate(c=>c.getContext('2d')
+      .getImageData(Math.round(c.width*.25),Math.round(c.height*.65),1,1).data[0]);
+    const choNeo=async(dk,ten)=>{for(let i=0;i<30;i++){if(dk(await neoDo()))return;await page.waitForTimeout(50);}
+      throw new Error(`${ten}: kenh do = ${await neoDo()}`);};
+    const bNeo=await page.locator('#khung-canvas').boundingBox();
+    await choNeo(d=>d<210,'chua cham phai la do son #c2362b');
+    await page.mouse.move(bNeo.x+bNeo.width*.25,bNeo.y+bNeo.height*.65);
+    await choNeo(d=>d>210,'cham vao goc tren-trai phai sang len #e0483a');
+    await page.mouse.move(5,5);
+    await choNeo(d=>d<210,'roi con tro ra phai tro lai nhu cu');
+
     // Phu de nhay cho: sang khung 11, chuyen sang pham vi rieng, ve vung tren dinh,
     // roi ap cho ca dai 11-13. Vung chung cua ca video phai khong bi dong vao.
     await page.locator('#khung-thumbnails button').nth(10).click();
@@ -177,7 +217,7 @@ const screenshotDir = 'docs/ketqua';
     assert((await page.locator('#bao').textContent()).includes('Vùng phải nằm'));
     await page.locator('#form-toa-do [name=w]').fill('.5');
     await page.locator('#form-toa-do button').click();
-    await page.screenshot({path:`${screenshotDir}/B-region.png`,fullPage:true});
+    await page.screenshot({path:`${screenshotDir}/B-region.png`,fullPage:true,animations:'disabled'});
     failImage=true;await page.locator('#khung-toi').click();
     await page.locator('#khung-anh').evaluate(img=>{img.src=img.src+'?failed=1'});
     await page.waitForFunction(()=>document.getElementById('image-status').textContent.includes('Không tải'));
@@ -186,20 +226,29 @@ const screenshotDir = 'docs/ketqua';
     await page.waitForFunction(()=>document.getElementById('image-status').textContent==='');
     await page.locator('#hop-luu-nhom').check();
     await page.locator('#hop-gui').click();
+    await page.waitForFunction(()=>document.getElementById('bao').textContent.includes('Phụ đề gốc đã đổi'));
+    assert(await page.locator('#hop-gui').isEnabled(),'409 stale phai cho phep gui lai');
+    await page.locator('#hop-gui').click();
     await page.waitForFunction(()=>document.getElementById('viec-trang-thai').textContent.includes('còn dòng'));
     assert.equal(boxPayload.vung.length,2,'mot hop chung + mot hop cho dai cau');
     const [chung,rieng]=boxPayload.vung;
     assert.equal(chung.cue,null,'hop chung phai mang cue=null');
     assert(Math.abs(chung.x-.25)<.015 && Math.abs(chung.w-.5)<.015);
     assert.deepEqual(rieng.cue,[10,11,12],'hop rieng phai mang dung chi so cau 11-13');
+    assert.equal(boxPayload.che_do_vung,'thay_the','Frontend moi phai gui ro mode replacement');
     assert(Math.abs(rieng.y-.05)<.015,'hop rieng phai giu toa do rieng cua no');
     assert.equal(boxPayload.luu_nhom,true,'Tich o mac dinh nhom phai di kem hop');
     assert.equal(await page.locator('#tai-ket-qua').getAttribute('href'),'/api/cong-viec/sample-job/ket-qua');
     await page.locator('#tai-ket-qua').evaluate(a=>{a.href='data:video/mp4;base64,c2FtcGxl';a.download='sample_vi.mp4'});
     const downloadPromise=page.waitForEvent('download'); await page.locator('#tai-ket-qua').click();
     const download=await downloadPromise;assert.equal(download.suggestedFilename(),'sample_vi.mp4');
-    await page.screenshot({path:`${screenshotDir}/B-result.png`,fullPage:true});
-    console.log('PASS polling recovery, 20 navigation cycles, 43 frames (one per cue, lazy), landscape/portrait coordinates, resize/move box, per-cue regions, group-default flag, image error, degraded result/download');
+    await page.screenshot({path:`${screenshotDir}/B-result.png`,fullPage:true,animations:'disabled'});
+    state='loi';
+    await page.locator('nav a[href="#tai-len"]').click();
+    await page.locator('nav a[href="#tien-do"]').click();
+    await page.waitForFunction(()=>document.getElementById('viec-trang-thai').textContent.startsWith('Lỗi'));
+    assert(await page.locator('#upload-submit').isEnabled(),'job loi phai mo lai thao tac tai len');
+    console.log('PASS polling recovery, stepper theo enum buoc, shimmer thanh tien do, mau neo bat con tro, 20 navigation cycles, 43 frames (one per cue, lazy), landscape/portrait coordinates, resize/move box, per-cue regions, group-default flag, image error, degraded result/download');
     rejectUpload=true;uploadDelay=1000;
     await page.locator('nav a[href="#tai-len"]').click();
     const terminalPolls=polls;
@@ -219,7 +268,7 @@ const screenshotDir = 'docs/ketqua';
     assert.equal(termPayload.khoa,true);
     failSave=false;await page.locator('#form-thuat-ngu button').click();
     await page.waitForFunction(()=>document.getElementById('bao').textContent==='Đã lưu thuật ngữ.');
-    await page.screenshot({path:`${screenshotDir}/B-glossary.png`,fullPage:true});
+    await page.screenshot({path:`${screenshotDir}/B-glossary.png`,fullPage:true,animations:'disabled'});
     await page.locator('nav a[href="#tai-len"]').click();
     await page.emulateMedia({reducedMotion:'reduce'});
     await page.waitForFunction(()=>document.getElementById('scene').dataset.scene==='static');

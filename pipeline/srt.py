@@ -117,17 +117,28 @@ def thu_muc_lam_viec(video: Path, goc: Path = Path("work")) -> Path:
     return Path(goc) / f"{p.stem}-{chu_ky(str(p))[:8]}"
 
 
-@contextmanager
-def khoa_work(work: Path) -> Iterator[None]:
+def gianh_khoa(work: Path) -> Path:
+    """Claim nguyen tu mot work directory; caller giu path va tu nha (LD-2, LD-6).
+
+    Tach khoi `khoa_work` vi web can giu claim tu luc nhan upload den khi tac vu
+    nen chay xong: kiem `.lock.exists()` roi tao sau la mot khe ho, khong phai claim.
+    """
+    work = Path(work)
     work.mkdir(parents=True, exist_ok=True)
     path = work / ".lock"
     try:
         f = path.open("x", encoding="utf-8")
     except FileExistsError:
         raise FileExistsError(f"Dang co lock {path}. Chi xoa sau khi xac minh tien trinh da dung.") from None
+    with f:
+        f.write(str(os.getpid()))
+    return path
+
+
+@contextmanager
+def khoa_work(work: Path) -> Iterator[None]:
+    path = gianh_khoa(work)
     try:
-        with f:
-            f.write(str(os.getpid()))
         yield
     finally:
-        path.unlink()
+        path.unlink(missing_ok=True)

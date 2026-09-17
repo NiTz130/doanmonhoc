@@ -11,7 +11,8 @@ from pathlib import Path
 from pipeline.markbox import hop_chinh, hop_sang_pixel   # LD-8: hinh hoc chi mot cho
 from pipeline.srt import Cue, doc_srt, file_tam
 
-__all__ = ["hop_sang_pixel", "cue_thanh_khoang", "khoang_mo", "kieu_chu", "ket_xuat"]
+__all__ = ["hop_sang_pixel", "cue_thanh_khoang", "khoang_mo", "gop_khoang",
+           "kieu_chu", "ket_xuat"]
 
 NGHI = 0.4          # noi bien moi phia; hardsub thuong hien som/tat muon hon cue
 GAP = 1.0           # gop hai khoang cach nhau duoi nguong nay
@@ -43,6 +44,22 @@ def cue_thanh_khoang(cues: list[Cue], thoi_luong: float | None = None,
 
 
 khoang_mo = cue_thanh_khoang                # ten dieu_phoi.py dang goi
+
+
+def gop_khoang(khoang: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Gop cac khoang CHONG hoac CHAM nhau, khong noi them gap nhu cue_thanh_khoang.
+
+    Dung cho mat na loai tru cua vung chung: noi rong o day se tat vung chung o
+    quang thoi gian khong co vung rieng nao that su dang bat, va TOI_DA cung khong
+    ap o day — cat bot mat na la lam mo hai lan dung cho vua loai tru.
+    """
+    ra: list[list[float]] = []
+    for a, b in sorted(khoang):
+        if ra and a <= ra[-1][1]:
+            ra[-1][1] = max(ra[-1][1], b)
+        else:
+            ra.append([a, b])
+    return [(a, b) for a, b in ra]
 
 
 def kieu_chu(W: int, H: int, px: tuple[int, int, int, int] | None = None,
@@ -114,12 +131,20 @@ def bo_ma_hoa() -> tuple[str, ...]:
 
 
 def ket_xuat(video: Path, srt: Path, vung: list[tuple[dict, list[tuple[float, float]]]],
-             style: dict, ra: Path) -> Path:
+             style: dict, ra: Path, *,
+             loai_tru_chung: list[tuple[float, float]] | None = None) -> Path:
     """Mot lan encode duy nhat; audio copy nguyen, output tam roi probe roi replace.
 
     `vung` la danh sach (hop, khoang): moi hop co khoang thoi gian bat lam mo rieng,
     nen phu de nhay cho giua cac canh van mo dung cho dung luc. Danh sach rong hoac
     moi hop deu khong co khoang nao thi khong lam mo gi ca.
+
+    `loai_tru_chung` la mat na thoi gian cua cac vung rieng o che do thay the: vung
+    chung tat trong nhung khoang do. Can den no vi buoc noi +-0.4s va gop khoang co
+    the bac cau qua dung cau da co vung rieng, lam cau do mo ca hai cho. Default
+    None giu nguyen moi loi goi cu; exclusion khong bao gio ap len vung rieng.
+    `style['hop_chinh']` neu co la hop dai dien THO do dieu phoi chon truoc khi tru
+    cue, de kieu chu khong nhay sang vung khac chi vi vung chung bi tru het cau.
     """
     for tool in ("ffmpeg", "ffprobe"):
         if shutil.which(tool) is None:
@@ -129,7 +154,8 @@ def ket_xuat(video: Path, srt: Path, vung: list[tuple[dict, list[tuple[float, fl
     dung = [(hop, khoang) for hop, khoang in vung if khoang]
     # Phu de Viet chi ve o MOT cho, nen kieu chu bam theo hop chinh — cung quy tac
     # ma dieu_phoi dung khi luu khung mac dinh cua nhom.
-    px = hop_sang_pixel(hop_chinh([h for h, _ in dung]), W, H) if dung else None
+    chinh = style.get("hop_chinh") or (hop_chinh([h for h, _ in dung]) if dung else None)
+    px = hop_sang_pixel(chinh, W, H) if chinh else None
     ass = srt.with_suffix(".ass")
     viet_ass(doc_srt(srt), kieu_chu(W, H, px, style.get("font_scale", 0.42), style), ass)
 
@@ -142,6 +168,11 @@ def ket_xuat(video: Path, srt: Path, vung: list[tuple[dict, list[tuple[float, fl
     for i, (hop, khoang) in enumerate(dung):
         p = hop_sang_pixel(hop, W, H)
         bat = "+".join(f"between(t\\,{a:.3f}\\,{b:.3f})" for a, b in khoang)
+        if loai_tru_chung and hop.get("cue") is None:
+            # Vung rieng thang ca o hai bien: vung chung chi bat khi khong mat na nao
+            # dang bat. Khong epsilon doan theo FPS, de ffmpeg so mocs nhu no so.
+            tru = "+".join(f"between(t\\,{a:.3f}\\,{b:.3f})" for a, b in loai_tru_chung)
+            bat = f"({bat})*not({tru})"
         giai_doan += [f"[{vao}]split[m{i}][c{i}]",
                       f"[c{i}]crop={p[2]}:{p[3]}:{p[0]}:{p[1]},gblur=sigma=25[b{i}]",
                       f"[m{i}][b{i}]overlay={p[0]}:{p[1]}:enable={bat}[v{i}]"]
