@@ -117,18 +117,17 @@ def _chay_batch(a: argparse.Namespace) -> int:
 def _chay_nhom(a: argparse.Namespace) -> int:
     with closing(db.mo(Path("work") / "subtitles.db")) as con, con:
         if a.viec == "list":
-            for row in con.execute("SELECT ten,blur_x,blur_y,blur_w,blur_h FROM nhom ORDER BY ten"):
+            for row in dieu_phoi.nhom_danh_sach(con):
                 hop = "chua co hop" if row["blur_x"] is None else \
                     "hop " + ",".join(f"{row[k]:g}" for k in ("blur_x", "blur_y", "blur_w", "blur_h"))
                 print(f"{row['ten']}\t{hop}")
         elif a.viec == "glossary":
-            for goc, dich in db.doc_thuat_ngu(con, db.lay_nhom(con, a.ten)).items():
+            for goc, dich in dieu_phoi.nhom_thuat_ngu(con, a.ten).items():
                 print(f"{goc}\t{dich}")
         elif a.viec == "set-term":
-            db.dat_thuat_ngu(con, db.lay_nhom(con, a.ten), a.goc, a.dich, a.lock)
+            dieu_phoi.nhom_dat_thuat_ngu(con, a.ten, a.goc, a.dich, a.lock)
         else:
-            from pipeline.dieu_phoi import _nap
-            db.ghi_hop(con, db.lay_nhom(con, a.ten), _nap("markbox").kiem_hop(a.hop, 1920, 1080))
+            dieu_phoi.nhom_dat_hop(con, a.ten, a.hop)
     return 0
 
 

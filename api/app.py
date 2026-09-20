@@ -256,6 +256,9 @@ def nhan_hop(con: Con, cid: str, nen: BackgroundTasks,
         raise HTTPException(409, "Khong con khung mau cua lan chon vung nay; tai video lai")
     vung = None
     try:
+        for ten in ("co_blur", "luu_nhom"):
+            if ten in than and not isinstance(than[ten], bool):
+                raise ValueError(f"{ten} phai la boolean")
         # Mode duoc kiem ca khi bo qua lam mo, va chi so cau thoai duoc kiem ngay o
         # day: sai pham nao cung phai thanh 400 TRUOC khi job/nhom/artifact doi
         # trang thai, chu khong vo ra trong tac vu nen (LD-7a).
@@ -269,7 +272,7 @@ def nhan_hop(con: Con, cid: str, nen: BackgroundTasks,
     try:
         # Tieu thu checkpoint: POST thu hai cho cung luot se ra 409 o day chu khong
         # tao task thu hai roi lam hong trang thai cua luot dang chay (LD-6).
-        viec.dat_hop(cid, vung, bool(than.get("luu_nhom")), che_do)
+        viec.dat_hop(cid, vung, than.get("luu_nhom", False), che_do)
     except (KeyError, LookupError):
         raise HTTPException(409, "Cong viec nay khong con cho ve vung; tai video lai") from None
     try:

@@ -529,7 +529,7 @@ if __name__ == "__main__":
             try:
                 ham()
                 print("PASS", ten)
-            except BaseException:
+            except Exception:
                 that_bai.append(ten)
                 print("FAIL", ten)
                 traceback.print_exc()

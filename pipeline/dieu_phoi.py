@@ -7,6 +7,7 @@ import logging
 import shutil
 import subprocess
 import time
+from collections import Counter
 from collections.abc import Callable
 from contextlib import nullcontext
 from dataclasses import dataclass, field
@@ -523,7 +524,7 @@ def dich_batch(thu_muc: Path) -> list[tuple[Path, Path]]:
         raise ValueError(f"Khong co video nao trong {thu_muc}")
     cap = [(p, p.with_name(p.stem + HAU_TO)) for p in nguon]
     dich = [r for _, r in cap]
-    trung = {r for r in dich if dich.count(r) > 1}
+    trung = {r for r, so in Counter(dich).items() if so > 1}
     if trung:
         raise ValueError("Trung dich dau ra: " + ", ".join(sorted(r.name for r in trung)))
     va_cham = [v.name for v, r in cap if v.resolve() == r.resolve()]

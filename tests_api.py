@@ -144,6 +144,19 @@ def test_api_cho_chon_khung_roi_chay_tiep():
         assert kq.status_code == 202, kq.text
         cid = kq.json()["id"]
 
+        for ten in ("co_blur", "luu_nhom"):
+            for value in ("false", "true", 0, 1, None, [], {}):
+                r = client.post(f"/api/cong-viec/{cid}/hop",
+                                json={"co_blur": False, ten: value})
+                assert r.status_code == 400, (ten, value, r.text)
+                assert client.get(f"/api/cong-viec/{cid}").json()["trang_thai"] == "cho_chon_khung"
+
+        for value in ("false", "true", 0, 1, None, [], {}):
+            r = client.post("/api/nhom/invalid-boolean/thuat-ngu",
+                            json={"goc": "hello", "dich": "chao", "khoa": value})
+            assert r.status_code == 400, (value, r.text)
+        assert not any(n["ten"] == "invalid-boolean" for n in client.get("/api/nhom").json())
+
         # Thieu khung mo la trang thai cho, khong phai loi.
         tt = client.get(f"/api/cong-viec/{cid}").json()
         assert tt["trang_thai"] == "cho_chon_khung" and tt["loi"] is None, tt

@@ -152,5 +152,5 @@ export function createScene(host, toggle) {
   window.addEventListener("pageshow", sync);
   host.dataset.scene = "static";
   init();
-  return {setVisible(value) { visible = value; sync(); }, setBusy(value) { busy = value; sync(); }, dispose};
+  return {setVisible(value) { visible = value; sync(); }, setBusy(value) { busy = value; sync(); }};
 }
