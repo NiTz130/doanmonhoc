@@ -117,7 +117,7 @@ const screenshotDir = process.env.SCREENSHOT_DIR || 'docs/ketqua';
     failPoll=true;
     await page.locator('#poll-retry').waitFor({state:'visible'});
     assert.equal(await page.locator('#progress-label').textContent(),'42%');
-    await page.screenshot({path:`screenshotDir/B-progress.png`.replace('screenshotDir',screenshotDir),fullPage:true,animations:'disabled'});
+    await page.screenshot({path:`${screenshotDir}/B-progress.png`,fullPage:true,animations:'disabled'});
     failPoll=false; state='cho_chon_khung';
     await page.locator('#poll-retry').click();
     await page.locator('#khung').waitFor({state:'visible'});

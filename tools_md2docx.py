@@ -1,6 +1,6 @@
 """Chuyen DAC_TA_YEU_CAU.md sang .docx, giu bang bieu va anh so do."""
 import re
-import sys
+import argparse
 from pathlib import Path
 
 from docx import Document
@@ -9,9 +9,6 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
-
-NGUON = [Path(p) for p in sys.argv[1:-1]]      # mot hoac nhieu file .md
-OUT = Path(sys.argv[-1])
 
 FONT = "Times New Roman"
 XANH = RGBColor(0x1F, 0x3B, 0x63)
@@ -74,7 +71,7 @@ def them_bang(doc, hang_ds):
     doc.add_paragraph().paragraph_format.space_after = Pt(6)
 
 
-def chay():
+def chay(nguon, out):
     doc = Document()
 
     s = doc.sections[0]
@@ -94,14 +91,14 @@ def chay():
         st.font.color.rgb, st.font.bold = XANH, True
         st.element.rPr.rFonts.set(qn("w:eastAsia"), FONT)
 
-    for k, src in enumerate(NGUON):
+    for k, src in enumerate(nguon):
         if k:                                     # moi tai lieu bat dau trang moi
             doc.add_page_break()
         nap(doc, src)
 
-    doc.save(OUT)
-    print(f"Da ghi {OUT} ({OUT.stat().st_size // 1024} KB)"
-          f" tu {len(NGUON)} nguon")
+    doc.save(out)
+    print(f"Da ghi {out} ({out.stat().st_size // 1024} KB)"
+          f" tu {len(nguon)} nguon")
 
 
 def nap(doc, src):
@@ -168,4 +165,21 @@ def nap(doc, src):
         i += 1
 
 
-chay()
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("nguon", type=Path, nargs="+", help="File Markdown nguon")
+    parser.add_argument("out", type=Path, help="File DOCX dau ra")
+    args = parser.parse_args(argv)
+    if args.out.suffix.lower() != ".docx":
+        parser.error("Dau ra phai la file .docx")
+    for src in args.nguon:
+        if not src.is_file():
+            parser.error(f"Khong tim thay nguon: {src}")
+        if (src.resolve() == args.out.resolve()
+                or (args.out.exists() and src.samefile(args.out))):
+            parser.error("Dau ra khong duoc trung file nguon")
+    chay(args.nguon, args.out)
+
+
+if __name__ == "__main__":
+    main()
