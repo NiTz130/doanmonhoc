@@ -3,6 +3,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
+    "test": "uv run python test_pipeline.py",
     "test:frontend": "node test/frontend.cjs"
   },
   "devDependencies": {
