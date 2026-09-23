@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lược đồ CSDL — work/subtitles.db</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Be Vietnam Pro', sans-serif; background: #f5f5f5; color: #2d3142;
+           min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    .frame { max-width: 960px; width: 100%; }
+    .eyebrow { font-family: 'Geist Mono', monospace; font-size: 0.66rem; font-weight: 500;
+               letter-spacing: 0.18em; text-transform: uppercase; color: #4f5d75; margin-bottom: 0.5rem; }
+    h1 { font-family: 'Be Vietnam Pro', sans-serif; font-size: clamp(1.4rem, 2vw + 0.75rem, 1.9rem);
+         font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 1.5rem; }
+    svg { width: 100%; min-width: 720px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Database schema · Tuần 3</p>
+    <h1>Lược đồ CSDL — work/subtitles.db</h1>
+    <svg viewBox="0 0 880 1064" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="erd-day-du-title erd-day-du-desc">
+      <title id="erd-day-du-title">Lược đồ CSDL — work/subtitles.db</title>
+      <desc id="erd-day-du-desc">Lược đồ cơ sở dữ liệu vật lý gồm năm bảng SQLite nhom, video, thuat_ngu, nhat_ky, cong_viec với kiểu cột, ràng buộc và khoá ngoại cấp cột, kèm các tệp trạng thái nằm ngoài cơ sở dữ liệu.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+      </defs>
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+      <!-- khoa ngoai (ve truoc bang) -->
+      <path d="M 264,104 H 432 Q 440,104 440,96 V 88 Q 440,80 448,80 H 464" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<path d="M 704,420 H 736 Q 744,420 744,412 V 88 Q 744,80 736,80 H 704" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M 264,420 H 392 Q 400,420 400,412 V 396 Q 400,388 408,388 H 464" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M 464,708 H 432 Q 424,708 424,700 V 412 Q 424,404 432,404 H 464" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+<rect x="296" y="112" width="104" height="12" rx="2" fill="#f5f5f5"/>
+<text x="348" y="121" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ON DELETE CASCADE</text>
+<rect x="752" y="236" width="108" height="12" rx="2" fill="#f5f5f5"/>
+<text x="756" y="245" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="start" letter-spacing="0.06em">ON DELETE SET NULL</text>
+<rect x="280" y="428" width="104" height="12" rx="2" fill="#f5f5f5"/>
+<text x="332" y="437" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ON DELETE CASCADE</text>
+<rect x="300" y="668" width="116" height="24" rx="2" fill="#f5f5f5"/>
+<text x="358" y="677" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ON DELETE CASCADE</text>
+<text x="358" y="689" fill="#4f5d75" font-size="8" font-family="'Be Vietnam Pro', sans-serif" text-anchor="middle" letter-spacing="0.06em">khai báo, chưa gán</text>
+      <!-- bang -->
+      <rect x="24" y="40" width="240" height="272" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<rect x="24" y="40" width="240" height="28" rx="6" fill="rgba(235,108,54,0.08)"/>
+<rect x="24" y="60" width="240" height="8" fill="rgba(235,108,54,0.08)"/>
+<line x1="24" y1="68" x2="264" y2="68" stroke="rgba(45,49,66,0.22)" stroke-width="1"/>
+<text x="36" y="58" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start" font-weight="600">thuat_ngu</text>
+<rect x="212" y="48" width="40" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+<text x="232" y="57" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.8" letter-spacing="0.08em">TABLE</text>
+<rect x="24" y="68" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="36" y="84" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">id</text>
+<text x="252" y="84" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">INTEGER</text>
+<rect x="185" y="76" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="195" y="85" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">PK</text>
+<text x="36" y="108" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">nhom_id</text>
+<text x="252" y="108" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">INTEGER</text>
+<rect x="185" y="100" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="195" y="109" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<rect x="161" y="100" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="171" y="109" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">FK</text>
+<rect x="24" y="116" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="36" y="132" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">goc</text>
+<text x="252" y="132" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="202" y="124" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="212" y="133" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<text x="36" y="156" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">dich</text>
+<text x="252" y="156" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="202" y="148" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="212" y="157" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<rect x="24" y="164" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="36" y="180" fill="#7a8399" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">loai*</text>
+<text x="252" y="180" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="202" y="172" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="212" y="181" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<text x="36" y="204" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">so_lan</text>
+<text x="252" y="204" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">INTEGER</text>
+<rect x="185" y="196" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="195" y="205" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<rect x="24" y="212" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="36" y="228" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">khoa</text>
+<text x="252" y="228" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">INTEGER</text>
+<rect x="185" y="220" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="195" y="229" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<line x1="24" y1="236" x2="264" y2="236" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="36" y="250" fill="#4f5d75" font-size="8" font-family="'Be Vietnam Pro', sans-serif" text-anchor="start" letter-spacing="0.14em">RÀNG BUỘC</text>
+<text x="36" y="266" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="start" xml:space="preserve">UNIQUE (nhom_id, goc)</text>
+<text x="36" y="282" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="start" xml:space="preserve">CHECK loai IN (ten_nguoi,</text>
+<text x="36" y="298" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="start" xml:space="preserve">  dia_danh, thuat_ngu)</text>
+<rect x="464" y="40" width="240" height="172" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<rect x="464" y="40" width="240" height="28" rx="6" fill="rgba(45,49,66,0.04)"/>
+<rect x="464" y="60" width="240" height="8" fill="rgba(45,49,66,0.04)"/>
+<line x1="464" y1="68" x2="704" y2="68" stroke="rgba(45,49,66,0.22)" stroke-width="1"/>
+<text x="476" y="58" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start" font-weight="600">nhom</text>
+<rect x="652" y="48" width="40" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+<text x="672" y="57" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.8" letter-spacing="0.08em">TABLE</text>
+<rect x="464" y="68" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="476" y="84" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">id</text>
+<text x="692" y="84" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">INTEGER</text>
+<rect x="625" y="76" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="635" y="85" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">PK</text>
+<text x="476" y="108" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">ten</text>
+<text x="692" y="108" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="642" y="100" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="652" y="109" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<rect x="618" y="100" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="628" y="109" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">UQ</text>
+<rect x="464" y="116" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="476" y="132" fill="#7a8399" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">ngon_ngu_goc*</text>
+<text x="692" y="132" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="642" y="124" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="652" y="133" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<text x="476" y="156" fill="#7a8399" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">sub_style*</text>
+<text x="692" y="156" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="464" y="164" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="476" y="180" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">blur_x · y · w · h</text>
+<text x="692" y="180" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">REAL</text>
+<text x="476" y="204" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">tao_luc</text>
+<text x="692" y="204" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="642" y="196" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="652" y="205" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<rect x="24" y="356" width="240" height="220" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<rect x="24" y="356" width="240" height="28" rx="6" fill="rgba(45,49,66,0.04)"/>
+<rect x="24" y="376" width="240" height="8" fill="rgba(45,49,66,0.04)"/>
+<line x1="24" y1="384" x2="264" y2="384" stroke="rgba(45,49,66,0.22)" stroke-width="1"/>
+<text x="36" y="374" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start" font-weight="600">nhat_ky</text>
+<rect x="212" y="364" width="40" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+<text x="232" y="373" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.8" letter-spacing="0.08em">TABLE</text>
+<rect x="24" y="384" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="36" y="400" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">id</text>
+<text x="252" y="400" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">INTEGER</text>
+<rect x="185" y="392" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="195" y="401" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">PK</text>
+<text x="36" y="424" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">video_id</text>
+<text x="252" y="424" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">INTEGER</text>
+<rect x="185" y="416" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="195" y="425" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<rect x="161" y="416" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="171" y="425" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">FK</text>
+<rect x="24" y="432" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="36" y="448" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">buoc</text>
+<text x="252" y="448" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="202" y="440" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="212" y="449" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<text x="36" y="472" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">ket_qua</text>
+<text x="252" y="472" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="202" y="464" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="212" y="473" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<rect x="24" y="480" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="36" y="496" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">giay</text>
+<text x="252" y="496" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">REAL</text>
+<text x="36" y="520" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">token_vao · token_ra</text>
+<text x="252" y="520" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">INTEGER</text>
+<rect x="24" y="528" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="36" y="544" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">loi</text>
+<text x="252" y="544" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<text x="36" y="568" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">luc</text>
+<text x="252" y="568" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="202" y="560" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="212" y="569" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<rect x="464" y="356" width="240" height="220" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<rect x="464" y="356" width="240" height="28" rx="6" fill="rgba(45,49,66,0.04)"/>
+<rect x="464" y="376" width="240" height="8" fill="rgba(45,49,66,0.04)"/>
+<line x1="464" y1="384" x2="704" y2="384" stroke="rgba(45,49,66,0.22)" stroke-width="1"/>
+<text x="476" y="374" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start" font-weight="600">video</text>
+<rect x="652" y="364" width="40" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+<text x="672" y="373" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.8" letter-spacing="0.08em">TABLE</text>
+<rect x="464" y="384" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="476" y="400" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">id</text>
+<text x="692" y="400" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">INTEGER</text>
+<rect x="625" y="392" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="635" y="401" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">PK</text>
+<text x="476" y="424" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">nhom_id</text>
+<text x="692" y="424" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">INTEGER</text>
+<rect x="625" y="416" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="635" y="425" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">FK</text>
+<rect x="464" y="432" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="476" y="448" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">duong_dan</text>
+<text x="692" y="448" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="642" y="440" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="652" y="449" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<rect x="618" y="440" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="628" y="449" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">UQ</text>
+<text x="476" y="472" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">thu_muc_work</text>
+<text x="692" y="472" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="642" y="464" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="652" y="473" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<rect x="618" y="464" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="628" y="473" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">UQ</text>
+<rect x="464" y="480" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="476" y="496" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">rong · cao</text>
+<text x="692" y="496" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">INTEGER</text>
+<text x="476" y="520" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">thoi_luong</text>
+<text x="692" y="520" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">REAL</text>
+<rect x="464" y="528" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="476" y="544" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">them_luc</text>
+<text x="692" y="544" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="642" y="536" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="652" y="545" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<text x="476" y="568" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">xong_luc</text>
+<text x="692" y="568" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="464" y="644" width="240" height="296" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<rect x="464" y="644" width="240" height="28" rx="6" fill="rgba(45,49,66,0.04)"/>
+<rect x="464" y="664" width="240" height="8" fill="rgba(45,49,66,0.04)"/>
+<line x1="464" y1="672" x2="704" y2="672" stroke="rgba(45,49,66,0.22)" stroke-width="1"/>
+<text x="476" y="662" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start" font-weight="600">cong_viec</text>
+<rect x="652" y="652" width="40" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+<text x="672" y="661" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.8" letter-spacing="0.08em">TABLE</text>
+<rect x="464" y="672" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="476" y="688" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">id</text>
+<text x="692" y="688" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="642" y="680" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="652" y="689" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">PK</text>
+<text x="476" y="712" fill="#7a8399" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">video_id*</text>
+<text x="692" y="712" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">INTEGER</text>
+<rect x="625" y="704" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="635" y="713" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">FK</text>
+<rect x="464" y="720" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="476" y="736" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">trang_thai</text>
+<text x="692" y="736" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="642" y="728" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="652" y="737" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<text x="476" y="760" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">buoc</text>
+<text x="692" y="760" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="464" y="768" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="476" y="784" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">tien_do</text>
+<text x="692" y="784" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">REAL</text>
+<rect x="642" y="776" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="652" y="785" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<text x="476" y="808" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">duong_dan_ra</text>
+<text x="692" y="808" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="464" y="816" width="240" height="24" fill="rgba(45,49,66,0.02)"/>
+<text x="476" y="832" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">loi</text>
+<text x="692" y="832" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<text x="476" y="856" fill="#2d3142" font-size="12" font-family="'Geist', sans-serif" text-anchor="start">tao_luc · cap_nhat_luc</text>
+<text x="692" y="856" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">TEXT</text>
+<rect x="642" y="848" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="652" y="857" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">NN</text>
+<line x1="464" y1="864" x2="704" y2="864" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="476" y="878" fill="#4f5d75" font-size="8" font-family="'Be Vietnam Pro', sans-serif" text-anchor="start" letter-spacing="0.14em">RÀNG BUỘC</text>
+<text x="476" y="894" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="start" xml:space="preserve">CHECK trang_thai IN (cho,</text>
+<text x="476" y="910" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="start" xml:space="preserve">  dang_chay, cho_chon_khung,</text>
+<text x="476" y="926" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="start" xml:space="preserve">  xong, suy_giam, loi)</text>
+      <!-- ngoai CSDL -->
+      <rect x="24" y="644" width="240" height="196" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="36" y="664" fill="#4f5d75" font-size="8" font-family="'Be Vietnam Pro', sans-serif" text-anchor="start" letter-spacing="0.14em">NGOÀI CSDL · TRÊN ĐĨA</text>
+<text x="36" y="684" fill="#2d3142" font-size="12" font-family="'Geist Mono', monospace" text-anchor="start" font-weight="500">work/&lt;stem&gt;-&lt;hash&gt;/</text>
+<text x="36" y="708" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace" text-anchor="start">trang_thai.json</text>
+<text x="36" y="722" fill="#4f5d75" font-size="9" font-family="'Be Vietnam Pro', sans-serif" text-anchor="start">chữ ký từng bước — resume</text>
+<text x="36" y="740" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace" text-anchor="start">vung_blur.json</text>
+<text x="36" y="754" fill="#4f5d75" font-size="9" font-family="'Be Vietnam Pro', sans-serif" text-anchor="start">vùng mờ gắn chỉ số câu</text>
+<text x="36" y="772" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace" text-anchor="start">sub_goc.srt · sub_vi.srt</text>
+<text x="36" y="786" fill="#4f5d75" font-size="9" font-family="'Be Vietnam Pro', sans-serif" text-anchor="start">phụ đề gốc và bản dịch</text>
+<text x="36" y="804" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace" text-anchor="start">audio.wav · .lock</text>
+<text x="36" y="818" fill="#4f5d75" font-size="9" font-family="'Be Vietnam Pro', sans-serif" text-anchor="start">âm thanh, khoá tiến trình</text>
+      <!-- chu thich -->
+      <line x1="24" y1="980" x2="856" y2="980" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="24" y="996" fill="#4f5d75" font-size="8" font-family="'Be Vietnam Pro', sans-serif" text-anchor="start" letter-spacing="0.18em">CHÚ THÍCH</text>
+<rect x="24" y="1008" width="20" height="12" rx="2" fill="none" stroke="rgba(45,49,66,0.35)" stroke-width="0.8"/>
+<text x="34" y="1017" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" opacity="0.75">PK</text>
+<text x="52" y="1016" fill="#4f5d75" font-size="9" font-family="'Be Vietnam Pro', sans-serif" text-anchor="start">PK khoá chính · FK khoá ngoại · UQ duy nhất · NN không rỗng</text>
+<line x1="464" y1="1013" x2="484" y2="1013" stroke="#eb6c36" stroke-width="1.2"/>
+<text x="492" y="1016" fill="#4f5d75" font-size="9" font-family="'Be Vietnam Pro', sans-serif" text-anchor="start">Xoá dây chuyền làm mất dữ liệu người dùng nhập</text>
+<line x1="24" y1="1037" x2="44" y2="1037" stroke="#4f5d75" stroke-width="1"/>
+<text x="52" y="1040" fill="#4f5d75" font-size="9" font-family="'Be Vietnam Pro', sans-serif" text-anchor="start">Khoá ngoại, nối cột với cột</text>
+<line x1="244" y1="1037" x2="264" y2="1037" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4"/>
+<text x="272" y="1040" fill="#4f5d75" font-size="9" font-family="'Be Vietnam Pro', sans-serif" text-anchor="start">Khai báo trong schema, mã chưa gán</text>
+<text x="492" y="1040" fill="#7a8399" font-size="9" font-family="'Be Vietnam Pro', sans-serif" text-anchor="start">cột* = khai báo nhưng mã chưa đọc/ghi</text>
+    </svg>
+  </div>
+</body>
+</html>

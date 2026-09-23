@@ -178,16 +178,18 @@ const screenshotDir = process.env.SCREENSHOT_DIR || 'docs/ketqua';
     // Mau neo duoi con tro phai to len va sang mau: keo dung canh tren mot o cao
     // vai pixel thi phai thay ro minh dang tom cai nao truoc khi bam. Doc thang
     // pixel canvas vi mau neo khong phai phan tu DOM.
-    const neoDo=()=>page.locator('#khung-canvas').evaluate(c=>c.getContext('2d')
-      .getImageData(Math.round(c.width*.25),Math.round(c.height*.65),1,1).data[0]);
-    const choNeo=async(dk,ten)=>{for(let i=0;i<30;i++){if(dk(await neoDo()))return;await page.waitForTimeout(50);}
-      throw new Error(`${ten}: kenh do = ${await neoDo()}`);};
+    // Doc kenh luc: Raspberry #d8246a co G=36, ban sang #ff5c92 co G=92, con vien
+    // trang quanh mau neo co G=255 — ba muc tach bach, khong nham duoc.
+    const neoLuc=()=>page.locator('#khung-canvas').evaluate(c=>c.getContext('2d')
+      .getImageData(Math.round(c.width*.25),Math.round(c.height*.65),1,1).data[1]);
+    const choNeo=async(dk,ten)=>{for(let i=0;i<30;i++){if(dk(await neoLuc()))return;await page.waitForTimeout(50);}
+      throw new Error(`${ten}: kenh luc = ${await neoLuc()}`);};
     const bNeo=await page.locator('#khung-canvas').boundingBox();
-    await choNeo(d=>d<210,'chua cham phai la do son #c2362b');
+    await choNeo(g=>g<60,'chua cham phai la hong Raspberry #d8246a');
     await page.mouse.move(bNeo.x+bNeo.width*.25,bNeo.y+bNeo.height*.65);
-    await choNeo(d=>d>210,'cham vao goc tren-trai phai sang len #e0483a');
+    await choNeo(g=>g>60&&g<150,'cham vao goc tren-trai phai sang len #ff5c92');
     await page.mouse.move(5,5);
-    await choNeo(d=>d<210,'roi con tro ra phai tro lai nhu cu');
+    await choNeo(g=>g<60,'roi con tro ra phai tro lai nhu cu');
 
     // Phu de nhay cho: sang khung 11, chuyen sang pham vi rieng, ve vung tren dinh,
     // roi ap cho ca dai 11-13. Vung chung cua ca video phai khong bi dong vao.
@@ -289,7 +291,6 @@ const screenshotDir = process.env.SCREENSHOT_DIR || 'docs/ketqua';
     console.log('PASS glossary failed-save retention and lock payload, reduced motion, context loss and missing module fallback; no uncaught JS errors');
   } finally { await browser.close(); }
 })().catch(error=>{console.error(error);process.exitCode=1;});
-
 
 
 

@@ -335,18 +335,18 @@ function ve_hop() {
   if (!hop) return;
   const r = [hop.x * canvas.width, hop.y * canvas.height,
              hop.w * canvas.width, hop.h * canvas.height];
-  ctx.fillStyle = "rgba(194,54,43,.18)";
+  ctx.fillStyle = "rgba(216,36,106,.22)";
   ctx.fillRect(...r);
-  // Vien trang lot duoi vien do son: canh toi thi trang noi, canh sang thi do son
+  // Vien trang lot duoi vien hong: canh toi thi trang noi, canh sang thi hong
   // noi. Mot mau don le se chim o mot trong hai truong hop.
   ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = 4; ctx.strokeRect(...r);
-  ctx.strokeStyle = "#c2362b"; ctx.lineWidth = 2; ctx.strokeRect(...r);
+  ctx.strokeStyle = "#d8246a"; ctx.lineWidth = 2; ctx.strokeRect(...r);
   for (let i = 0; i < NEO_TAY.length; i++) {
     const [ax, ay] = NEO_TAY[i];
     const hx = r[0] + r[2] * ax, hy = r[1] + r[3] * ay;
     const n = (i === tay_hover ? tay_ti : 1) * 4;      // nua canh mau neo
     ctx.fillStyle = "#fff"; ctx.fillRect(hx - n - 1, hy - n - 1, n * 2 + 2, n * 2 + 2);
-    ctx.fillStyle = i === tay_hover ? "#e0483a" : "#c2362b";
+    ctx.fillStyle = i === tay_hover ? "#ff5c92" : "#d8246a";
     ctx.fillRect(hx - n, hy - n, n * 2, n * 2);
   }
 }

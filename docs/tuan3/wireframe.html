@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wireframe bốn màn</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Wireframe tho: chi xam + mot mau nhan cho so chu thich. Bo cuc bam web/index.html. */
+  :root { --giay: #f5f5f5; --muc: #2d3142; --mo: #7a8399; --vien: #b9bdc6; --nen: #e6e7ea;
+          --nhat: #eef0f2; --nhan: #eb6c36; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--giay); color: var(--muc); font: 14px/1.45 'Be Vietnam Pro', sans-serif;
+         padding: 32px; display: grid; gap: 48px; justify-content: center; }
+  .wf { width: 1000px; background: #fff; border: 1.5px solid var(--muc); border-radius: 8px; overflow: hidden; }
+  .wf > header { display: flex; justify-content: space-between; align-items: baseline;
+                 padding: 10px 16px; border-bottom: 1.5px solid var(--muc); background: var(--nhat); }
+  .wf > header b { font-size: 16px; }
+  .ma { font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--mo); }
+  .than { display: grid; grid-template-columns: 148px 1fr 232px; min-height: 560px; }
+  nav { border-right: 1.5px dashed var(--vien); padding: 16px 12px; display: grid; align-content: start; gap: 8px; }
+  nav .logo { font-weight: 600; margin-bottom: 12px; }
+  nav span { display: block; padding: 6px 8px; border-radius: 4px; font-size: 13px; color: var(--mo); }
+  nav span.chon { background: var(--nen); color: var(--muc); font-weight: 600; }
+  main { padding: 20px; display: grid; align-content: start; gap: 14px; }
+  aside.ghi { border-left: 1.5px dashed var(--vien); padding: 16px 14px; background: #fafafa;
+              display: grid; align-content: start; gap: 12px; font-size: 13px; }
+  aside.ghi h4 { font-size: 12px; letter-spacing: .14em; color: var(--mo); font-weight: 500; }
+  aside.ghi p { display: grid; grid-template-columns: 22px 1fr; gap: 6px; }
+  .so { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+        background: var(--nhan); color: #fff; font: 600 11px 'Geist Mono', monospace; flex: none; }
+  h2 { font-size: 22px; font-weight: 600; }
+  .mo { color: var(--mo); font-size: 13px; }
+  .the { border: 1.5px solid var(--vien); border-radius: 6px; padding: 14px; display: grid; gap: 10px; }
+  .hang { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .o { border: 1.5px solid var(--vien); border-radius: 4px; padding: 7px 10px; color: var(--mo);
+       font-size: 13px; background: #fff; flex: 1; min-width: 90px; }
+  .nut { border: 1.5px solid var(--muc); border-radius: 4px; padding: 7px 14px; font-weight: 600;
+         font-size: 13px; background: #fff; white-space: nowrap; }
+  .nut.chinh { background: var(--muc); color: #fff; }
+  .nut.tat { border-color: var(--vien); color: var(--mo); background: var(--nhat); }
+  .anh { background: repeating-linear-gradient(45deg, var(--nhat) 0 10px, #f7f8f9 10px 20px);
+         border: 1.5px solid var(--vien); border-radius: 4px; display: grid; place-items: center; color: var(--mo); }
+  .chip { font: 11px 'Geist Mono', monospace; border: 1px solid var(--vien); border-radius: 3px; padding: 1px 5px; color: var(--mo); }
+  .ghim { position: relative; }
+  .ghim > .so { position: absolute; top: -9px; right: -9px; z-index: 2; }
+  .thanh { height: 10px; border-radius: 5px; background: var(--nhat); border: 1px solid var(--vien); overflow: hidden; }
+  .thanh i { display: block; height: 100%; width: 40%; background: var(--mo); }
+  .buoc { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; font-size: 12px; text-align: center; }
+  .buoc span:not(.so) { border-top: 4px solid var(--vien); padding-top: 4px; color: var(--mo); }
+  .buoc span.xong { border-color: var(--mo); }
+  .buoc span.dang { border-color: var(--nhan); color: var(--muc); font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { border: 1px solid var(--vien); padding: 5px 8px; text-align: left; }
+  th { background: var(--nhat); font-weight: 600; }
+  .khung { position: relative; height: 230px; }
+  .khung .hop { position: absolute; left: 30%; top: 80%; width: 40%; height: 12%;
+                border: 2px dashed var(--nhan); background: rgba(235,108,54,.08); }
+  .khung .hop i { position: absolute; width: 8px; height: 8px; background: #fff; border: 1.5px solid var(--nhan); }
+  .khung .dong { position: absolute; left: 34%; top: 83%; width: 32%; height: 5%; background: var(--vien); border-radius: 2px; }
+  .nho { display: flex; gap: 6px; }
+  .nho .anh { width: 56px; height: 32px; }
+  .nho .anh.rieng { outline: 2px solid var(--nhan); outline-offset: 1px; }
+  .nho .anh.dang { outline: 2px solid var(--muc); outline-offset: 1px; }
+</style>
+</head>
+<body>
+
+<!-- ================= 01 TAI LEN ================= -->
+<section class="wf" id="wf-01">
+  <header><b>Màn 01 · Tải lên</b><span class="ma">#tai-len · POST /api/video</span></header>
+  <div class="than">
+    <nav><div class="logo">[v] phụ đề.</div>
+      <span class="chon">01 Tải lên</span><span>02 Tiến độ</span><span>03 Vùng làm mờ</span><span>04 Nhóm &amp; thuật ngữ</span></nav>
+    <main>
+      <div class="hang" style="align-items:stretch">
+        <div style="flex:1.3"><h2>Phụ đề tiếng Việt cho video của bạn.</h2><p class="mo">Tải video lên, nhận bản dịch.</p></div>
+        <div class="anh ghim" style="flex:1;height:96px">hoạt cảnh 3D (tắt được)<span class="so">5</span></div>
+      </div>
+      <div class="hang" style="align-items:start">
+        <div class="the" style="flex:1.6">
+          <div class="hang"><b style="flex:1">Thêm video của bạn</b><span class="ma">BƯỚC 01</span></div>
+          <div class="anh ghim" style="height:118px;border-style:dashed">
+            <div style="text-align:center"><b style="color:var(--muc)">Kéo video vào đây</b><br>hoặc <u>Chọn video ↗</u><br>
+              <span class="chip">MP4</span> <span class="chip">MKV</span> <span class="chip">MOV</span> <span class="chip">WEBM</span> <span class="chip">AVI</span> <span class="chip">TS</span> <span class="mo">· tối đa 4 GiB</span></div>
+            <span class="so">1</span></div>
+          <div class="ghim"><div class="mo" style="margin-bottom:4px">Nhóm <i>(không bắt buộc)</i></div>
+            <div class="o">Tên phim, series hoặc kênh ▾</div><span class="so">2</span></div>
+          <div class="o ghim" style="flex:none">▸ Tùy chọn nâng cao — ngôn ngữ nguồn, model nhận dạng, cỡ chữ, chế độ làm mờ, tách giọng hát, nhận dạng lại, chạy lại mọi bước<span class="so">3</span></div>
+          <div class="hang"><span class="mo" style="flex:1">Mỗi lần xử lý một video.</span><span class="nut tat ghim">Bắt đầu ↗<span class="so">4</span></span></div>
+        </div>
+        <div class="the" style="flex:1">
+          <b>Ba bước.</b>
+          <div class="mo">01 Chọn video<br>02 Theo dõi &amp; tinh chỉnh<br>03 Tải bản hoàn thiện</div>
+          <u class="mo">Quản lý thuật ngữ ↗</u>
+        </div>
+      </div>
+    </main>
+    <aside class="ghi"><h4>GHI CHÚ</h4>
+      <p><span class="so">1</span><span>Kéo thả hoặc chọn tệp. Đuôi và dung lượng được kiểm sớm ở trình duyệt; máy chủ kiểm lại bằng ffprobe.</span></p>
+      <p><span class="so">2</span><span>Gợi ý từ danh sách nhóm đã có. Để trống thì video chạy lẻ, không dùng thuật ngữ.</span></p>
+      <p><span class="so">3</span><span>Mọi tùy chọn có giá trị mặc định dùng được ngay; người mới không cần mở.</span></p>
+      <p><span class="so">4</span><span>Chỉ bật khi đã chọn tệp. Thành công → tự sang màn 02. Lỗi 400/409 hiện ngay trên màn này.</span></p>
+      <p><span class="so">5</span><span>Trang trí, có nút dừng chuyển động; không có WebGL vẫn dùng được.</span></p>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= 02 TIEN DO ================= -->
+<section class="wf" id="wf-02">
+  <header><b>Màn 02 · Tiến độ</b><span class="ma">#tien-do · GET /api/cong-viec/{cid} mỗi 1,5 s</span></header>
+  <div class="than">
+    <nav><div class="logo">[v] phụ đề.</div>
+      <span>01 Tải lên</span><span class="chon">02 Tiến độ</span><span>03 Vùng làm mờ</span><span>04 Nhóm &amp; thuật ngữ</span></nav>
+    <main>
+      <div><p class="ma">BƯỚC 02 / THEO DÕI</p><h2>Tiến độ xử lý.</h2>
+        <p class="mo">Video lần lượt qua: nhận dạng lời thoại → khoanh vùng làm mờ (nếu cần) → dịch → kết xuất.</p></div>
+      <div class="the">
+        <span class="ma">VIDEO HIỆN TẠI</span><b>tap_01.mp4</b><span class="ma">Công việc 3f9c…</span>
+        <div class="hang ghim" style="padding-right:24px"><span style="flex:1">Đang chạy — bước dich</span><b>50%</b><span class="so">1</span></div>
+        <div class="thanh"><i style="width:50%"></i></div>
+        <div class="buoc ghim" style="padding-right:24px"><span class="xong">Đọc video</span><span class="xong">Phụ đề gốc</span><span class="xong">Vùng làm mờ</span><span class="dang">Dịch</span><span>Kết xuất</span><span class="so">2</span></div>
+        <div class="hang ghim"><span class="mo" style="flex:1">Không cập nhật được: … Thông tin công việc vẫn được giữ.</span><span class="nut">Kiểm tra kết nối lại</span><span class="so">3</span></div>
+        <p class="mo">Cứ để trang này mở. Đến bước khoanh vùng, màn Vùng làm mờ sẽ tự mở ra.</p>
+        <div class="hang"><span class="nut chinh ghim">Tải video kết quả ↓<span class="so">4</span></span><u class="mo">Về màn tải lên</u></div>
+      </div>
+    </main>
+    <aside class="ghi"><h4>GHI CHÚ</h4>
+      <p><span class="so">1</span><span>Trạng thái đọc từ bảng cong_viec: cho, dang_chay, cho_chon_khung, xong, suy_giam, loi.</span></p>
+      <p><span class="so">2</span><span>Năm bước khớp các mốc của dieu_phoi. Bước đã qua không bị tắt lại khi dừng chờ vẽ hộp rồi chạy tiếp.</span></p>
+      <p><span class="so">3</span><span>Chỉ hiện khi mất kết nối; mã công việc vẫn giữ, bấm để hỏi lại.</span></p>
+      <p><span class="so">4</span><span>Ẩn cho tới khi co_ket_qua = true (xong hoặc suy_giam).</span></p>
+      <p><span class="so">!</span><span>Gặp cho_chon_khung → tự chuyển sang màn 03.</span></p>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= 03 VUNG LAM MO ================= -->
+<section class="wf" id="wf-03">
+  <header><b>Màn 03 · Vùng làm mờ</b><span class="ma">#khung · GET …/khung · POST …/hop</span></header>
+  <div class="than">
+    <nav><div class="logo">[v] phụ đề.</div>
+      <span>01 Tải lên</span><span>02 Tiến độ</span><span class="chon">03 Vùng làm mờ</span><span>04 Nhóm &amp; thuật ngữ</span></nav>
+    <main>
+      <div><p class="ma">TINH CHỈNH / PHỤ ĐỀ CỨNG</p><h2>Chọn vùng làm mờ.</h2></div>
+      <div class="hang"><span class="nut">←</span><span class="mo" style="flex:1;text-align:center">khung 3/43 · 12.4s · "Where is the gate?"</span><span class="nut">→</span></div>
+      <div class="anh khung ghim">khung hình của câu đang xem
+        <div class="dong"></div>
+        <div class="hop"><i style="left:-5px;top:-5px"></i><i style="right:-5px;top:-5px"></i><i style="left:-5px;bottom:-5px"></i><i style="right:-5px;bottom:-5px"></i></div>
+        <span class="so">1</span></div>
+      <div class="nho ghim"><span class="anh"></span><span class="anh"></span><span class="anh dang"></span><span class="anh"></span><span class="anh rieng"></span><span class="anh"></span><span class="anh"></span><span class="anh"></span><span class="so">2</span></div>
+      <div class="hang ghim"><span class="mo">Vùng đang vẽ áp cho:</span><span>◉ Mọi câu thoại</span><span>○ Riêng câu đang xem</span><span class="so">3</span></div>
+      <div class="hang"><span class="mo">x</span><span class="o">0.3</span><span class="mo">y</span><span class="o">0.855</span><span class="mo">w</span><span class="o">0.4</span><span class="mo">h</span><span class="o">0.09</span><span class="nut">Áp dụng vùng</span></div>
+      <div class="o" style="flex:none">▸ Phụ đề cứng nhảy chỗ giữa phim? — Từ câu … Đến câu … [Áp cho dải câu]</div>
+      <div class="hang"><span style="flex:1">☐ Đặt làm vùng mặc định cho nhóm</span><span class="nut ghim">Bỏ qua làm mờ<span class="so">4</span></span><span class="nut chinh">Xong, kết xuất ↗</span></div>
+    </main>
+    <aside class="ghi"><h4>GHI CHÚ</h4>
+      <p><span class="so">1</span><span>Kéo trên ảnh để vẽ; kéo cạnh/góc để chỉnh, kéo giữa để dời. Hộp giữ nguyên khi lật khung. Toạ độ lưu theo phần trăm 0–1.</span></p>
+      <p><span class="so">2</span><span>Một khung cho mỗi câu thoại. Khung viền cam = câu đã có vùng riêng.</span></p>
+      <p><span class="so">3</span><span>Riêng câu đang xem: vùng mới thay vùng chung ở đúng câu đó (che_do_vung = thay_the).</span></p>
+      <p><span class="so">4</span><span>Bỏ qua = gửi co_blur: false. Cả hai nút gửi xong đều quay về màn 02; máy chạy tiếp từ bước dịch.</span></p>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= 04 NHOM ================= -->
+<section class="wf" id="wf-04">
+  <header><b>Màn 04 · Nhóm &amp; thuật ngữ</b><span class="ma">#nhom · /api/nhom · /api/nhom/{ten}/thuat-ngu · /hop</span></header>
+  <div class="than">
+    <nav><div class="logo">[v] phụ đề.</div>
+      <span>01 Tải lên</span><span>02 Tiến độ</span><span>03 Vùng làm mờ</span><span class="chon">04 Nhóm &amp; thuật ngữ</span></nav>
+    <main>
+      <div><p class="ma">TỪ NGỮ / NHẤT QUÁN</p><h2>Nhóm &amp; thuật ngữ.</h2>
+        <p class="mo">Nhóm gom các tập của cùng một phim; thuật ngữ khai ở đây được giữ nguyên khi dịch.</p></div>
+      <div class="the">
+        <div class="hang ghim"><span class="o">Tạo nhóm mới — tên phim hoặc kênh</span><span class="nut chinh">Tạo nhóm +</span><span class="so">1</span></div>
+        <div class="hang"><span style="flex:1">Thành Sắt (series)</span><span class="nut">Xem thuật ngữ</span></div>
+        <div class="hang"><span style="flex:1">Kênh tài liệu</span><span class="nut">Xem thuật ngữ</span></div>
+      </div>
+      <div class="the ghim"><span class="ma">THUẬT NGỮ CỦA NHÓM</span><b>Thành Sắt (series)</b>
+        <table><tr><th>Từ gốc</th><th>Bản dịch</th></tr><tr><td>Ironhold</td><td>Thành Sắt</td></tr><tr><td>Warden</td><td>Quản ngục</td></tr><tr><td>Lady Ash</td><td>Phu nhân Ash</td></tr></table>
+        <div class="hang"><span class="o">Từ gốc</span><span class="o">Bản dịch</span><span>☐ Khóa bản dịch</span><span class="nut chinh">Lưu thuật ngữ</span></div>
+        <div class="hang ghim"><span class="o">Vùng làm mờ mặc định — x,y,w,h</span><span class="nut">Lưu vùng mặc định</span><span class="so">3</span></div>
+        <span class="so">2</span></div>
+    </main>
+    <aside class="ghi"><h4>GHI CHÚ</h4>
+      <p><span class="so">1</span><span>Tên nhóm là duy nhất. Nhóm tạo ở đây rồi chọn đúng tên ở ô Nhóm của màn 01.</span></p>
+      <p><span class="so">2</span><span>Bảng hiện cặp gốc → dịch của nhóm. Thuật ngữ máy học được từ lần dịch trước cũng hiện ở đây.</span></p>
+      <p><span class="so">3</span><span>Vùng mặc định đi qua cùng bộ kiểm hình học với màn 03 và CLI.</span></p>
+      <p><span class="so">!</span><span>Máy dịch không bao giờ ghi đè bản dịch đã có trong bảng; chỉ người dùng sửa mới thay được.</span></p>
+    </aside>
+  </div>
+</section>
+
+</body>
+</html>
