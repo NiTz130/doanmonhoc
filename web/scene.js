@@ -89,23 +89,23 @@ export function createScene(host, toggle) {
       camera.position.set(0, 0, 10);
       layers = new THREE.Group(); layers.rotation.set(0.2, -0.32, -0.11); world.add(layers);
       // Anh sang diu, vat lieu mo (roughness cao, metalness thap): khong bong loang.
-      world.add(new THREE.AmbientLight(0xffffff, 1.5));
+      world.add(new THREE.AmbientLight(0xffffff, 1.9));
       const sun = new THREE.DirectionalLight(0xfff4e2, 1.4); sun.position.set(-3, 6, 7); world.add(sun);
       // Den vien: quet doc canh phim nhua theo huong nhin, cho ra khoi vat the that.
       vien = new THREE.DirectionalLight(0xfff2de, 0.9); vien.position.set(4, -1.6, 5); world.add(vien);
       // Hai dai acetate sau de trong: xep lop moi doc ra, khong thanh ba tam dac chong nhau.
-      box(4.2, 2.3, 0.08, 0xd9d5c8, 0.40, 0.35, -0.65, layers, {transparent:true, opacity:0.55});
-      box(4.2, 2.3, 0.08, 0xc9c4b4, 0.16, 0.12, -0.15, layers, {transparent:true, opacity:0.78});
-      box(4.2, 2.3, 0.13, 0x2a2a28, -0.14, -0.14, 0.4);
-      box(3.86, 1.63, 0.02, 0x141412, -0.14, 0.02, 0.48);
+      box(4.2, 2.3, 0.08, 0xe8e6da, 0.40, 0.35, -0.65, layers, {transparent:true, opacity:0.62});  // Cannoli
+      box(4.2, 2.3, 0.08, 0x00593b, 0.16, 0.12, -0.15, layers, {transparent:true, opacity:0.80});  // Amazon
+      box(4.2, 2.3, 0.13, 0x062f20, -0.14, -0.14, 0.4);
+      box(3.86, 1.63, 0.02, 0x04180f, -0.14, 0.02, 0.48);
       for (const x of [-1.8, -1.25, -0.7, -0.15, 0.4, 0.95, 1.5]) {
-        box(0.22, 0.11, 0.02, 0xf5f2e8, x, 0.87, 0.49);      // lo keo phim
+        box(0.22, 0.11, 0.02, 0xf3f1e8, x, 0.87, 0.49);      // lo keo phim
       }
-      // Hai thanh duoi la phu de: thanh tren mang mau nhan cua giao dien.
-      box(2.65, 0.13, 0.03, 0xc2362b, -0.14, -0.56, 0.51);
-      box(1.8, 0.10, 0.03, 0x8a867c, -0.14, -0.81, 0.51);
+      // Hai thanh duoi la phu de: thanh cue mang mau Raspberry.
+      box(2.65, 0.13, 0.03, 0xd8246a, -0.14, -0.56, 0.51);
+      box(1.8, 0.10, 0.03, 0x6f9480, -0.14, -0.81, 0.51);
       const shape = new THREE.Shape(); shape.moveTo(-0.20, -0.22); shape.lineTo(0.24, 0.04); shape.lineTo(-0.20, 0.30); shape.closePath();
-      const geo = new THREE.ShapeGeometry(shape), mat = new THREE.MeshBasicMaterial({color:0xf2efe6});
+      const geo = new THREE.ShapeGeometry(shape), mat = new THREE.MeshBasicMaterial({color:0xd8246a});
       resources.add(geo); resources.add(mat);
       const play = new THREE.Mesh(geo, mat); play.position.set(-0.13, 0.1, 0.52); layers.add(play);
       host.append(renderer.domElement);

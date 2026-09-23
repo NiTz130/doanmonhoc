@@ -15,6 +15,8 @@ ràng buộc CS/IC/LD được nhắc trong comment mã nguồn.
 
 ## Lệnh
 
+Cần Python 3.12, `uv`, ffmpeg 6+. Không có formatter/linter.
+
 ```bash
 py=.venv/Scripts/python.exe          # Windows; repo dùng uv, không dùng pip trực tiếp
 
@@ -40,7 +42,8 @@ hàm `test_*`. Gọi trực tiếp:
 Test offline nằm rải ở `tests_api.py` · `tests_db.py` · `tests_media.py` ·
 `tests_translate.py` (mỗi thành viên một file, đánh số `V-n` trỏ về plan), được
 `test_pipeline.py` gom bằng `from tests_x import *`. **Thêm file test mới phải thêm
-dòng import đó**, không thì runner không thấy.
+dòng import đó**, không thì runner không thấy. Ngoại lệ có chủ ý: `tests_docx.py`
+(kiểm `tools_md2docx.py`, cần `python-docx`) và `tests_smoke.py` chạy riêng.
 
 CLI nội bộ (`main.py`) — **không phải sản phẩm**, dùng để gỡ lỗi và xử lý hàng loạt;
 nó đi qua đúng `pipeline/dieu_phoi.py` như web nên cho cùng kết quả:

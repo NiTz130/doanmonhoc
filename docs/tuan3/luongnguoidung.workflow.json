@@ -1,0 +1,52 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Luồng người dùng qua bốn màn",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "frontend": { "label": "Người dùng thao tác" },
+        "backend": { "label": "Máy tự chạy" },
+        "database": { "label": "Dữ liệu nhóm" },
+        "security": { "label": "Lỗi / từ chối" }
+      }
+    }
+  },
+  "lanes": [
+    { "id": "man_tai", "label": "Tải lên" },
+    { "id": "man_tien_do", "label": "Tiến độ" },
+    { "id": "man_khung", "label": "Vùng làm mờ" },
+    { "id": "man_nhom", "label": "Nhóm & thuật ngữ (tùy chọn)" },
+    { "id": "ngoai_le", "label": "Lỗi và từ chối", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "chuan_bi", "label": "Chuẩn bị", "fromCol": 0, "toCol": 1 },
+    { "id": "may_xu_ly", "label": "Máy xử lý", "fromCol": 2, "toCol": 2 },
+    { "id": "nguoi_tinh_chinh", "label": "Người tinh chỉnh", "fromCol": 3, "toCol": 4, "variant": "emphasis" },
+    { "id": "nhan_ket_qua", "label": "Nhận kết quả", "fromCol": 5, "toCol": 5 }
+  ],
+  "mainPath": ["chon_video", "bat_dau", "theo_doi", "khoanh", "gui_vung", "tai_ve"],
+  "nodes": [
+    { "id": "chon_video", "lane": "man_tai", "col": 0, "type": "frontend", "label": "Chọn video", "sublabel": "tên nhóm · tùy chọn", "width": 150 },
+    { "id": "bat_dau", "lane": "man_tai", "col": 1, "type": "frontend", "label": "Bắt đầu", "sublabel": "POST /api/video", "width": 150 },
+    { "id": "theo_doi", "lane": "man_tien_do", "col": 2, "type": "backend", "label": "Theo dõi tiến độ", "sublabel": "hỏi lại mỗi 1,5 s", "width": 150 },
+    { "id": "tai_ve", "lane": "man_tien_do", "col": 5, "type": "frontend", "label": "Tải video kết quả", "sublabel": "GET …/ket-qua", "width": 150 },
+    { "id": "khoanh", "lane": "man_khung", "col": 3, "type": "frontend", "label": "Khoanh vùng mờ", "sublabel": "chung hoặc riêng từng câu", "width": 150 },
+    { "id": "gui_vung", "lane": "man_khung", "col": 4, "type": "frontend", "label": "Gửi vùng", "sublabel": "hoặc bỏ qua làm mờ", "width": 150 },
+    { "id": "tao_nhom", "lane": "man_nhom", "col": 0, "type": "database", "label": "Tạo nhóm", "sublabel": "thuật ngữ · vùng mặc định", "width": 150 },
+    { "id": "tu_choi", "lane": "ngoai_le", "col": 1, "type": "security", "label": "Bị từ chối", "sublabel": "400 sai file · 409 trùng", "width": 150 },
+    { "id": "cong_viec_loi", "lane": "ngoai_le", "col": 3, "type": "security", "label": "Công việc lỗi", "sublabel": "hiện lý do, tải lại", "width": 150 }
+  ],
+  "edges": [
+    { "id": "gui_file", "from": "chon_video", "to": "bat_dau", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "nhan_ma", "from": "bat_dau", "to": "theo_doi", "label": "202 + mã việc", "variant": "emphasis", "fromSide": "right", "toSide": "top" },
+    { "id": "cho_ve", "from": "theo_doi", "to": "khoanh", "label": "cho_chon_khung", "variant": "emphasis", "fromSide": "right", "toSide": "top" },
+    { "id": "ve_xong", "from": "khoanh", "to": "gui_vung", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "chay_tiep", "from": "gui_vung", "to": "tai_ve", "label": "dịch → kết xuất", "variant": "emphasis", "fromSide": "right", "toSide": "bottom" },
+    { "id": "khong_can_ve", "from": "theo_doi", "to": "tai_ve", "label": "đã có vùng / không mờ", "variant": "dashed", "role": "branch", "fromSide": "top", "toSide": "top" },
+    { "id": "nhom_cho_video", "from": "tao_nhom", "to": "chon_video", "label": "chọn tên nhóm", "variant": "dashed", "role": "branch", "toSide": "left" },
+    { "id": "file_hong", "from": "bat_dau", "to": "tu_choi", "variant": "security", "role": "error", "fromSide": "bottom", "toSide": "top" },
+    { "id": "viec_hong", "from": "theo_doi", "to": "cong_viec_loi", "label": "trạng thái loi", "variant": "security", "role": "error" }
+  ]
+}
