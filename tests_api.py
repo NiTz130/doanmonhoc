@@ -151,12 +151,6 @@ def test_api_cho_chon_khung_roi_chay_tiep():
                 assert r.status_code == 400, (ten, value, r.text)
                 assert client.get(f"/api/cong-viec/{cid}").json()["trang_thai"] == "cho_chon_khung"
 
-        for value in ("false", "true", 0, 1, None, [], {}):
-            r = client.post("/api/nhom/invalid-boolean/thuat-ngu",
-                            json={"goc": "hello", "dich": "chao", "khoa": value})
-            assert r.status_code == 400, (value, r.text)
-        assert not any(n["ten"] == "invalid-boolean" for n in client.get("/api/nhom").json())
-
         # Thieu khung mo la trang thai cho, khong phai loi.
         tt = client.get(f"/api/cong-viec/{cid}").json()
         assert tt["trang_thai"] == "cho_chon_khung" and tt["loi"] is None, tt
@@ -374,8 +368,7 @@ def test_api_resume_claim_is_single_winner():
             assert release.wait(5), "claim dau khong duoc giai phong"
             return path
 
-        body = {"x": 0.3, "y": 0.85, "w": 0.4, "h": 0.09,
-                "che_do_vung": "thay_the"}
+        body = {"x": 0.3, "y": 0.85, "w": 0.4, "h": 0.09}
         with patch.object(viec, "gianh_khoa", hold_claim):
             with ThreadPoolExecutor(max_workers=2) as pool:
                 first = pool.submit(client.post, f"/api/cong-viec/{cid}/hop", json=body)
@@ -425,30 +418,12 @@ def test_api_cue_index_out_of_range_is_rejected():
         checkpoint = ho_so.checkpoint.copy()
         response = client.post(
             f"/api/cong-viec/{cid}/hop",
-            json={"che_do_vung": "thay_the",
-                  "vung": [{"x": 0.3, "y": 0.85, "w": 0.4, "h": 0.09,
+            json={"vung": [{"x": 0.3, "y": 0.85, "w": 0.4, "h": 0.09,
                             "cue": [99]}]},
         )
         assert response.status_code == 400, response.text
         assert viec.lay(cid).checkpoint == checkpoint
         assert client.get(f"/api/cong-viec/{cid}").json()["trang_thai"] == "cho_chon_khung"
-
-
-def test_api_mode_validation_before_mutation():
-    """V-02/LD-7a: mode co mat nhung loi bi tu choi truoc khi doi job."""
-    from api import viec
-
-    for value in (None, True, 1, "THAY_THE"):
-        with _san() as (client, video):
-            cid = _tai_len(client, video, blur="on").json()["id"]
-            ho_so = viec.lay(cid)
-            assert ho_so is not None and ho_so.checkpoint
-            before = ho_so.checkpoint.copy()
-            body = {"co_blur": False, "che_do_vung": value}
-            r = client.post(f"/api/cong-viec/{cid}/hop", json=body)
-            assert r.status_code == 400, (value, r.status_code, r.text)
-            assert viec.lay(cid).checkpoint == before
-            assert client.get(f"/api/cong-viec/{cid}").json()["trang_thai"] == "cho_chon_khung"
 
 
 def test_api_stale_cid_snapshot():
@@ -466,8 +441,7 @@ def test_api_stale_cid_snapshot():
         _srt(thu_muc_lam_viec(ho_so.video) / "sub_goc.srt", so=4)
         assert bam_file(snap) == old_snapshot_hash
         stale = client.post(f"/api/cong-viec/{cid}/hop",
-                            json={"x": 0.3, "y": 0.85, "w": 0.4, "h": 0.09,
-                                  "che_do_vung": "thay_the"})
+                            json={"x": 0.3, "y": 0.85, "w": 0.4, "h": 0.09})
         assert stale.status_code == 409, stale.text
         assert len(client.get(f"/api/cong-viec/{cid}/khung").json()) == 3
         assert client.get(f"/api/cong-viec/{cid}").json()["trang_thai"] == "cho_chon_khung"
@@ -529,8 +503,7 @@ def test_api_force_resume_keeps_source_and_does_not_repeat_asr():
 
         resumed = client.post(
             f"/api/cong-viec/{cid}/hop",
-            json={"x": 0.3, "y": 0.85, "w": 0.4, "h": 0.09,
-                  "che_do_vung": "thay_the"})
+            json={"x": 0.3, "y": 0.85, "w": 0.4, "h": 0.09})
         assert resumed.status_code == 200, resumed.text
         assert (dem["audio"], dem["asr"], dem["dich"], dem["render"]) == (1, 1, 1, 1), \
             (dem, client.get(f"/api/cong-viec/{cid}").text)
@@ -544,6 +517,70 @@ def test_api_force_resume_keeps_source_and_does_not_repeat_asr():
         assert (dem["audio"], dem["asr"], dem["dich"]) == (1, 1, 1)
         assert _tai_len(client, video, blur="off", force="true").status_code == 202
         assert (dem["audio"], dem["asr"], dem["dich"]) == (2, 2, 2)
+
+
+def test_api_suy_giam_bao_ly_do_phu_de_thieu():
+    """AC-4: suy_giam vi phu de phu it phai co ly do trong `loi`, khong de NULL."""
+    from pipeline import dieu_phoi
+
+    with _san(co_sidecar=False) as (client, video), \
+            patch.object(dieu_phoi, "nhan_dien", lambda v: (1920, 1080, 100.0)):
+        r = _tai_len(client, video, blur="off")
+        assert r.status_code == 202, r.text
+        st = client.get(f"/api/cong-viec/{r.json()['id']}").json()
+        assert st["trang_thai"] == "suy_giam", st
+        assert "phu de nhan dang chi phu" in (st["loi"] or ""), st
+        assert "/ 100s video" in st["loi"], st
+
+
+# Bao ve: trang web la POST form toi 127.0.0.1 (khong preflight) hay DNS rebinding.
+def test_api_tu_choi_origin_va_host_la():
+    with _san() as (client, _):
+        la = {"Origin": "http://evil.example"}
+        assert client.post("/api/nhom", json={"ten": "A"}, headers=la).status_code == 403
+        assert client.post("/api/nhom", json={"ten": "B"},
+                           headers={"Origin": "http://testserver"}).status_code != 403
+        assert client.post("/api/nhom", json={"ten": "C"}).status_code != 403
+        assert client.get("/api/nhom", headers=la).status_code == 200
+        assert client.get("/api/nhom", headers={"Host": "evil.example"}).status_code == 400
+
+
+def test_api_nha_khoa_truoc_khi_mo_checkpoint():
+    # Bao ve LD-2/LD-6: checkpoint chi mo sau khi file lock da nha, khong thi POST /hop chen vao khe ho.
+    from api import viec
+    from pipeline import db, dieu_phoi
+    from pipeline.dieu_phoi import KetQua, TuyChon
+
+    with tempfile.TemporaryDirectory() as d:
+        khoa = Path(d) / "phim.lock"
+        khoa.write_text("x")
+        cid = "cid-khoa-checkpoint"
+        cp = {"nguon_sub": "asr", "ky_cue": "k", "force_dich": False}
+        lan_mo = []
+        that = viec._cap_nhat
+
+        def cap_nhat(c, **kw):
+            if kw.get("checkpoint") is not None:
+                lan_mo.append(khoa.exists())
+            return that(c, **kw)
+
+        def chay(*a, **k):
+            return KetQua("cho_chon_khung", Path(d), checkpoint=cp)
+
+        with patch.object(viec, "DB", Path(d) / "t.db"), \
+                patch.object(dieu_phoi, "chay", chay), \
+                patch.object(viec, "tao_goi", lambda tc: None), \
+                patch.object(viec, "_cap_nhat", cap_nhat):
+            with closing(db.mo(viec.DB)) as con:
+                with con:
+                    db.tao_cong_viec(con, cid)
+            viec.dat(cid, Path(d) / "phim.mp4", TuyChon(), khoa)
+            try:
+                viec.chay_nen(cid)
+            finally:
+                with viec._KHOA:
+                    viec._HO_SO.pop(cid, None)
+        assert lan_mo == [False], f"checkpoint mo khi lock con (lan_mo={lan_mo})"
 
 
 if __name__ == "__main__":

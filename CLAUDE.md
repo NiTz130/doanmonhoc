@@ -24,7 +24,7 @@ uv sync                              # cài môi trường
 $py -m uvicorn api.app:app --reload  # chạy web app → http://127.0.0.1:8000
 start_system.bat                     # tương đương, kèm mở trình duyệt
 
-$py test_pipeline.py                 # 34 test offline, không cần mạng/GPU/ffmpeg
+$py test_pipeline.py                 # 41 test offline, không cần mạng/GPU/ffmpeg (= `npm test`)
 $py test_pipeline.py --smoke         # CHỈ test media (tests_smoke.smoke_media), cần ffmpeg
 $py test/runtime_logic.py            # V-11: uvicorn + ffmpeg + SQLite thật, không nằm trong runner trên
 npm ci && npx playwright install chromium          # chuẩn bị một lần
@@ -43,7 +43,7 @@ Test offline nằm rải ở `tests_api.py` · `tests_db.py` · `tests_media.py`
 `tests_translate.py` (mỗi thành viên một file, đánh số `V-n` trỏ về plan), được
 `test_pipeline.py` gom bằng `from tests_x import *`. **Thêm file test mới phải thêm
 dòng import đó**, không thì runner không thấy. Ngoại lệ có chủ ý: `tests_docx.py`
-(kiểm `tools_md2docx.py`, cần `python-docx`) và `tests_smoke.py` chạy riêng.
+(kiểm `tools_md2docx.py`, cần `uv sync --extra docs`) và `tests_smoke.py` chạy riêng.
 
 CLI nội bộ (`main.py`) — **không phải sản phẩm**, dùng để gỡ lỗi và xử lý hàng loạt;
 nó đi qua đúng `pipeline/dieu_phoi.py` như web nên cho cùng kết quả:
@@ -51,7 +51,7 @@ nó đi qua đúng `pipeline/dieu_phoi.py` như web nên cho cùng kết quả:
 ```bash
 $py main.py phim.mp4 --nhom "Tên phim" --blur-box 0.3,0.855,0.4,0.09
 $py main.py batch ./thu_muc --nhom "Tên phim"
-$py main.py nhom set-term "Tên phim" "Ironhold" "Thành Sắt" --lock
+$py main.py nhom set-term "Tên phim" "Ironhold" "Thành Sắt"
 ```
 
 Mã thoát: `0` xong · `1` có lỗi/có cue giữ nguyên bản gốc/còn video chờ vẽ hộp · `130` Ctrl+C.
@@ -82,7 +82,7 @@ là manifest giữ chữ ký từng bước (phiên bản bước + SHA256 nội
 bao giờ báo xong nhầm. Bảng `cong_viec` trong SQLite chỉ báo tiến độ cho frontend.
 Xoá `work/subtitles.db` mất nhóm/thuật ngữ/nhật ký, **không** mất artifact.
 
-Đổi cách sinh artifact của một bước → tăng số trong `VER` (`dieu_phoi.py`); đổi prompt
+Đổi cách sinh artifact của một bước → tăng số trong `VER` (`dieu_phoi.py:24`); đổi prompt
 dịch → tăng `PROMPT_VER`. Không tăng thì manifest cũ vẫn tính là cache hit.
 
 **Tác vụ nền chạy trong chính tiến trình backend** qua `BackgroundTasks`. `api/viec.py`

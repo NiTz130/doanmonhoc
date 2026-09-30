@@ -86,7 +86,7 @@ Nguyên tắc chia: mỗi người đi theo **lĩnh vực của mình xuyên su�
 
 | | G0–G1 | G2–G3 | G4–G5 |
 |---|---|---|---|
-| **TV1** | Chốt phạm vi và hợp đồng; lớp SRT, ghi file an toàn; SQLite 5 bảng, khóa từ, transaction thuật ngữ | Ghép luồng, cache/chạy lại, khóa tiến trình, xử lý hàng loạt; duyệt để `api/` không chứa logic | Khung trang và điều hướng; README, tổng hợp báo cáo và slide |
+| **TV1** | Chốt phạm vi và hợp đồng; lớp SRT, ghi file an toàn; SQLite 5 bảng, transaction thuật ngữ | Ghép luồng, cache/chạy lại, khóa tiến trình, xử lý hàng loạt; duyệt để `api/` không chứa logic | Khung trang và điều hướng; README, tổng hợp báo cáo và slide |
 | **TV2** | Kiểm `ffmpeg`/GPU/web server, chuẩn bị video mẫu; tìm sidecar và track chữ, tách audio, chạy Whisper, lui về CPU khi lỗi CUDA | Kiểm video có/không phụ đề sẵn, không audio, đo thời gian; route tải lên, công việc chạy nền, tiến độ, mã lỗi | Trang tải lên và bảng tiến độ; chương nhận dạng, kiểm cài lại theo README |
 | **TV3** | Đọc tài liệu API, chuẩn bị dữ liệu phản hồi giả; chia lô, ánh xạ dòng, kiểm JSON trả về, thử lại có giới hạn | Kiểm phản hồi sai/rỗng và lỗi mạng, thuật ngữ qua nhiều video, đo chi phí thật; route nhóm và thuật ngữ | Trang quản lý nhóm và thuật ngữ; chương dịch, ví dụ trước/sau, bảng chi phí |
 | **TV4** | Kiểm NVENC bằng encode thật, chuẩn bị video synthetic; trích 8 khung, kiểm tra hộp, gộp khoảng mờ, lệnh `ffmpeg` một lần encode | Kiểm chữ Việt và vùng mờ ở 720p/1080p, ngang/dọc; route khung ảnh và nhận hộp | Canvas vẽ hộp và trang kết quả; kiểm thử media, ma trận kết quả, video demo |

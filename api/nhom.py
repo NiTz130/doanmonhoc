@@ -48,11 +48,8 @@ def doc_thuat_ngu(con: Con, ten: str) -> dict[str, str]:
 @router.post("/{ten}/thuat-ngu")
 def dat_thuat_ngu(con: Con, ten: str, than: Annotated[dict, Body()]) -> dict[str, str]:
     try:
-        if "khoa" in than and not isinstance(than["khoa"], bool):
-            raise ValueError("khoa phai la boolean")
         with con:
-            dieu_phoi.nhom_dat_thuat_ngu(con, ten, than.get("goc"), than.get("dich"),
-                                         than.get("khoa", False))
+            dieu_phoi.nhom_dat_thuat_ngu(con, ten, than.get("goc"), than.get("dich"))
             return dieu_phoi.nhom_thuat_ngu(con, ten)
     except (ValueError, TypeError, sqlite3.IntegrityError) as exc:
         raise _400(exc) from None

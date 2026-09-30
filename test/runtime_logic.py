@@ -311,11 +311,11 @@ def runtime() -> None:
             assert (before["audio"], before["asr"], before["dich"]) == (1, 1, 0), before
             box = {"x": 0.3, "y": 0.75, "w": 0.4, "h": 0.15}
             posted = _post_json(base, f"/api/cong-viec/{first}/hop", {
-                "co_blur": True, "che_do_vung": "thay_the",
+                "co_blur": True,
                 "vung": [{**box, "cue": None},
                          {"x": 0.3, "y": 0.05, "w": 0.4, "h": 0.15, "cue": [1]}],
             })
-            assert posted[0] == 200 and posted[1]["che_do_vung"] == "thay_the", posted
+            assert posted[0] == 200 and "che_do_vung" not in posted[1], posted
             finished = _poll(base, first, results["poll"])
             assert finished["trang_thai"] in {"xong", "suy_giam"}, finished
             status, output, raw = _get(base, f"/api/cong-viec/{first}/ket-qua")
@@ -382,10 +382,10 @@ def runtime() -> None:
             hold.write_text("1", encoding="utf-8")
             with ThreadPoolExecutor(max_workers=1) as pool:
                 first_post = pool.submit(_post_json, base, f"/api/cong-viec/{post_race}/hop", {
-                    "x": 0.3, "y": 0.75, "w": 0.4, "h": 0.15, "che_do_vung": "thay_the"})
+                    "x": 0.3, "y": 0.75, "w": 0.4, "h": 0.15})
                 _wait_file(started)
                 second_post = _post_json(base, f"/api/cong-viec/{post_race}/hop", {
-                    "x": 0.3, "y": 0.75, "w": 0.4, "h": 0.15, "che_do_vung": "thay_the"})
+                    "x": 0.3, "y": 0.75, "w": 0.4, "h": 0.15})
                 assert second_post[0] == 409, second_post
                 release.write_text("1", encoding="utf-8")
                 assert first_post.result(timeout=30)[0] == 200
@@ -405,8 +405,7 @@ def runtime() -> None:
             ghi_srt([Cue(1, 0.5, 1.2, "changed"), Cue(2, 2.0, 2.7, "second"),
                      Cue(3, 3.0, 3.4, "third")], stale_sub)
             stale_post = _post_json(base, f"/api/cong-viec/{stale}/hop", {
-                "x": 0.3, "y": 0.75, "w": 0.4, "h": 0.15,
-                "che_do_vung": "thay_the"})
+                "x": 0.3, "y": 0.75, "w": 0.4, "h": 0.15})
             assert stale_post[0] == 409, stale_post
             assert _sha(stale_snapshot) == snapshot_hash
 

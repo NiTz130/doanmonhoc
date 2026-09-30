@@ -31,7 +31,11 @@ def nhan_dang(wav: Path, ra: Path, lang: str = 'en', model: str = 'large-v3',
         try:
             segments, _ = recognizer.transcribe(str(wav), language=lang, vad_filter=vad,
                 vad_parameters={'min_silence_duration_ms':500})
-            return [Cue(i+1,s.start,s.end,s.text.strip()) for i,s in enumerate(segments)]
+            tat_ca = list(segments)
+            tot = [s for s in tat_ca if s.text.strip() and s.end > s.start]
+            if len(tot) < len(tat_ca):
+                logging.warning('Bo %d segment rong hoac end<=start cua Whisper', len(tat_ca) - len(tot))
+            return [Cue(i+1,s.start,s.end,s.text.strip()) for i,s in enumerate(tot)]
         finally:
             del recognizer
 

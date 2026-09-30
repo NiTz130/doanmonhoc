@@ -178,16 +178,16 @@ const screenshotDir = process.env.SCREENSHOT_DIR || 'docs/ketqua';
     // Mau neo duoi con tro phai to len va sang mau: keo dung canh tren mot o cao
     // vai pixel thi phai thay ro minh dang tom cai nao truoc khi bam. Doc thang
     // pixel canvas vi mau neo khong phai phan tu DOM.
-    // Doc kenh luc: Raspberry #d8246a co G=36, ban sang #ff5c92 co G=92, con vien
-    // trang quanh mau neo co G=255 — ba muc tach bach, khong nham duoc.
+    // Doc kenh lam: vang #f5c518 co B=24, ban sang #fff0a0 co B=160 — hai muc
+    // tach bach, khong nham duoc.
     const neoLuc=()=>page.locator('#khung-canvas').evaluate(c=>c.getContext('2d')
-      .getImageData(Math.round(c.width*.25),Math.round(c.height*.65),1,1).data[1]);
+      .getImageData(Math.round(c.width*.25),Math.round(c.height*.65),1,1).data[2]);
     const choNeo=async(dk,ten)=>{for(let i=0;i<30;i++){if(dk(await neoLuc()))return;await page.waitForTimeout(50);}
-      throw new Error(`${ten}: kenh luc = ${await neoLuc()}`);};
+      throw new Error(`${ten}: kenh lam = ${await neoLuc()}`);};
     const bNeo=await page.locator('#khung-canvas').boundingBox();
-    await choNeo(g=>g<60,'chua cham phai la hong Raspberry #d8246a');
+    await choNeo(g=>g<60,'chua cham phai la vang #f5c518');
     await page.mouse.move(bNeo.x+bNeo.width*.25,bNeo.y+bNeo.height*.65);
-    await choNeo(g=>g>60&&g<150,'cham vao goc tren-trai phai sang len #ff5c92');
+    await choNeo(g=>g>100&&g<220,'cham vao goc tren-trai phai sang len #fff0a0');
     await page.mouse.move(5,5);
     await choNeo(g=>g<60,'roi con tro ra phai tro lai nhu cu');
 
@@ -231,13 +231,12 @@ const screenshotDir = process.env.SCREENSHOT_DIR || 'docs/ketqua';
     await page.waitForFunction(()=>document.getElementById('bao').textContent.includes('Phụ đề gốc đã đổi'));
     assert(await page.locator('#hop-gui').isEnabled(),'409 stale phai cho phep gui lai');
     await page.locator('#hop-gui').click();
-    await page.waitForFunction(()=>document.getElementById('viec-trang-thai').textContent.includes('còn dòng'));
+    await page.waitForFunction(()=>document.getElementById('viec-trang-thai').textContent.includes('có cảnh báo'));
     assert.equal(boxPayload.vung.length,2,'mot hop chung + mot hop cho dai cau');
     const [chung,rieng]=boxPayload.vung;
     assert.equal(chung.cue,null,'hop chung phai mang cue=null');
     assert(Math.abs(chung.x-.25)<.015 && Math.abs(chung.w-.5)<.015);
     assert.deepEqual(rieng.cue,[10,11,12],'hop rieng phai mang dung chi so cau 11-13');
-    assert.equal(boxPayload.che_do_vung,'thay_the','Frontend moi phai gui ro mode replacement');
     assert(Math.abs(rieng.y-.05)<.015,'hop rieng phai giu toa do rieng cua no');
     assert.equal(boxPayload.luu_nhom,true,'Tich o mac dinh nhom phai di kem hop');
     assert.equal(await page.locator('#tai-ket-qua').getAttribute('href'),'/api/cong-viec/sample-job/ket-qua');
@@ -263,11 +262,10 @@ const screenshotDir = process.env.SCREENSHOT_DIR || 'docs/ketqua';
     await page.getByRole('cell',{name:'Thành Sắt',exact:true}).waitFor();
     await page.locator('#form-thuat-ngu [name=goc]').fill('Ironhold');
     await page.locator('#form-thuat-ngu [name=dich]').fill('Thành Sắt');
-    await page.locator('#form-thuat-ngu [name=khoa]').check();failSave=true;
+    failSave=true;
     await page.locator('#form-thuat-ngu button').click();
     await page.waitForFunction(()=>document.getElementById('bao').textContent==='Lưu thất bại');
     assert.equal(await page.locator('#form-thuat-ngu [name=dich]').inputValue(),'Thành Sắt');
-    assert.equal(termPayload.khoa,true);
     failSave=false;await page.locator('#form-thuat-ngu button').click();
     await page.waitForFunction(()=>document.getElementById('bao').textContent==='Đã lưu thuật ngữ.');
     await page.screenshot({path:`${screenshotDir}/B-glossary.png`,fullPage:true,animations:'disabled'});

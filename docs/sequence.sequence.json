@@ -144,7 +144,7 @@
       "from": "web",
       "to": "api",
       "y": 495,
-      "label": "POST .../hop {che_do_vung: thay_the}",
+      "label": "POST .../hop {vung}",
       "variant": "emphasis",
       "note": "tiêu thụ checkpoint dưới lock: POST thứ hai ra 409"
     },

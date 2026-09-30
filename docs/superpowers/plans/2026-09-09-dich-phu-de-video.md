@@ -1,5 +1,7 @@
 # Kế hoạch triển khai: Hệ thống dịch phụ đề video Anh → Việt
 
+> **Sửa đổi ngày 30/09/2026.** Hệ thống đã gỡ: chế độ vùng `cong_them` cùng trường `che_do_vung` (mọi vùng nay dùng nghĩa thay thế; `VER["vung_blur"]` tăng lên 4); cờ khóa thuật ngữ (`khoa`, `--lock`); các cột `nhom.ngon_ngu_goc`, `nhom.sub_style`, `thuat_ngu.loai`, `thuat_ngu.so_lan`. Những đoạn dưới đây còn nhắc tới các mục đó được giữ nguyên làm lịch sử quyết định.
+
 ## Plan Metadata
 
 - Plan ID: dich-phu-de-video-2026-09-09; Version: 3; Status: DRAFT.

@@ -18,17 +18,17 @@ from typing import Annotated
 
 from fastapi import (APIRouter, BackgroundTasks, Body, Depends, FastAPI, File,
                      Form, HTTPException, UploadFile)
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from api import nhom, viec
 from api.viec import ket_noi
 from pipeline import db, dieu_phoi
-from pipeline.dieu_phoi import TuyChon
+from pipeline.dieu_phoi import DUOI_VIDEO, TuyChon
 from pipeline.srt import (bam_file, chu_ky, doc_srt, gianh_khoa,
                           thu_muc_lam_viec)
 
-DUOI_VIDEO = {".mp4", ".mkv", ".mov", ".webm", ".avi", ".ts"}
 TOI_DA_BYTE = 4 * 1024**3
 TAI_LEN = Path("work") / "tai_len"
 NGUON = TAI_LEN / "nguon"
@@ -50,6 +50,23 @@ async def vong_doi(app: FastAPI):
 
 app = FastAPI(title="Dich phu de video Anh -> Viet", lifespan=vong_doi)
 api = APIRouter(prefix="/api")
+# Ranh gioi tin cay, khong phai logic xu ly: trang web la khong duoc kich hoat
+# upload/dich ton tien (form POST khong preflight) va chan DNS rebinding.
+# "testserver" la Host cua TestClient.
+app.add_middleware(TrustedHostMiddleware,
+                   allowed_hosts=["127.0.0.1", "localhost", "testserver"])
+
+
+@app.middleware("http")
+async def chan_khac_nguon(request, call_next):
+    # Trinh duyet luon gui Origin voi POST khac nguon; CLI/TestClient/curl thi khong.
+    goc = request.headers.get("origin")
+    if (request.method not in {"GET", "HEAD", "OPTIONS"} and goc is not None
+            and goc != f"{request.url.scheme}://{request.headers['host']}"):
+        return JSONResponse({"detail": "Tu choi request khac nguon"}, status_code=403)
+    return await call_next(request)
+
+
 Con = Annotated[sqlite3.Connection, Depends(ket_noi)]
 
 
@@ -248,7 +265,7 @@ def nhan_hop(con: Con, cid: str, nen: BackgroundTasks,
         # LD-4: chi so cau thoai cua vung chi co nghia tren dung bo cue da chup.
         raise HTTPException(409, "Phu de goc da doi so voi luc chon vung; "
                                  "tai video lai va chon lai vung")
-    from pipeline.markbox import VANG_MAT, kiem_che_do, kiem_vung
+    from pipeline.markbox import kiem_vung
     # So cue lay tu dung ban snapshot ma nguoi dung vua ve len, khong phai tu ban
     # sub_goc dung chung co the da bi CID khac lam moi.
     snap = _snapshot(cid) / "sub_goc.srt"
@@ -259,20 +276,17 @@ def nhan_hop(con: Con, cid: str, nen: BackgroundTasks,
         for ten in ("co_blur", "luu_nhom"):
             if ten in than and not isinstance(than[ten], bool):
                 raise ValueError(f"{ten} phai la boolean")
-        # Mode duoc kiem ca khi bo qua lam mo, va chi so cau thoai duoc kiem ngay o
-        # day: sai pham nao cung phai thanh 400 TRUOC khi job/nhom/artifact doi
-        # trang thai, chu khong vo ra trong tac vu nen (LD-7a).
-        che_do = kiem_che_do(than.get("che_do_vung", VANG_MAT))
+        # Chi so cau thoai duoc kiem ngay o day: sai pham nao cung phai thanh 400 TRUOC
+        # khi job/nhom/artifact doi trang thai, chu khong vo ra trong tac vu nen.
         if than.get("co_blur", True):
             # `vung` la danh sach hop kem cue; thieu thi coi than la mot hop cho moi cau.
-            vung = kiem_vung(than.get("vung", than), so_cue=len(doc_srt(snap)),
-                             che_do=che_do)                  # validator LD-8 cua CLI
+            vung = kiem_vung(than.get("vung", than), so_cue=len(doc_srt(snap)))  # validator LD-8 cua CLI
     except (ValueError, TypeError) as exc:
         raise HTTPException(400, str(exc)) from None
     try:
         # Tieu thu checkpoint: POST thu hai cho cung luot se ra 409 o day chu khong
         # tao task thu hai roi lam hong trang thai cua luot dang chay (LD-6).
-        viec.dat_hop(cid, vung, than.get("luu_nhom", False), che_do)
+        viec.dat_hop(cid, vung, than.get("luu_nhom", False))
     except (KeyError, LookupError):
         raise HTTPException(409, "Cong viec nay khong con cho ve vung; tai video lai") from None
     try:
@@ -283,7 +297,7 @@ def nhan_hop(con: Con, cid: str, nen: BackgroundTasks,
         # Khong xep lich duoc thi tra checkpoint lai de nguoi dung con gui vung lan nua.
         viec.tra_checkpoint(cid, cp)
         raise
-    return {"id": cid, "trang_thai": "cho", "vung": vung, "che_do_vung": che_do}
+    return {"id": cid, "trang_thai": "cho", "vung": vung}
 
 
 @api.get("/cong-viec/{cid}/ket-qua")

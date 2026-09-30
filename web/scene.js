@@ -94,18 +94,18 @@ export function createScene(host, toggle) {
       // Den vien: quet doc canh phim nhua theo huong nhin, cho ra khoi vat the that.
       vien = new THREE.DirectionalLight(0xfff2de, 0.9); vien.position.set(4, -1.6, 5); world.add(vien);
       // Hai dai acetate sau de trong: xep lop moi doc ra, khong thanh ba tam dac chong nhau.
-      box(4.2, 2.3, 0.08, 0xe8e6da, 0.40, 0.35, -0.65, layers, {transparent:true, opacity:0.62});  // Cannoli
-      box(4.2, 2.3, 0.08, 0x00593b, 0.16, 0.12, -0.15, layers, {transparent:true, opacity:0.80});  // Amazon
-      box(4.2, 2.3, 0.13, 0x062f20, -0.14, -0.14, 0.4);
-      box(3.86, 1.63, 0.02, 0x04180f, -0.14, 0.02, 0.48);
+      box(4.2, 2.3, 0.08, 0xe2ddcf, 0.40, 0.35, -0.65, layers, {transparent:true, opacity:0.62});  // giay
+      box(4.2, 2.3, 0.08, 0x3a382f, 0.16, 0.12, -0.15, layers, {transparent:true, opacity:0.80});  // muc nhat
+      box(4.2, 2.3, 0.13, 0x17160f, -0.14, -0.14, 0.4);
+      box(3.86, 1.63, 0.02, 0x2a281f, -0.14, 0.02, 0.48);
       for (const x of [-1.8, -1.25, -0.7, -0.15, 0.4, 0.95, 1.5]) {
-        box(0.22, 0.11, 0.02, 0xf3f1e8, x, 0.87, 0.49);      // lo keo phim
+        box(0.22, 0.11, 0.02, 0xf3f0e8, x, 0.87, 0.49);      // lo keo phim
       }
       // Hai thanh duoi la phu de: thanh cue mang mau Raspberry.
-      box(2.65, 0.13, 0.03, 0xd8246a, -0.14, -0.56, 0.51);
-      box(1.8, 0.10, 0.03, 0x6f9480, -0.14, -0.81, 0.51);
+      box(2.65, 0.13, 0.03, 0xf5c518, -0.14, -0.56, 0.51);
+      box(1.8, 0.10, 0.03, 0xa8a393, -0.14, -0.81, 0.51);
       const shape = new THREE.Shape(); shape.moveTo(-0.20, -0.22); shape.lineTo(0.24, 0.04); shape.lineTo(-0.20, 0.30); shape.closePath();
-      const geo = new THREE.ShapeGeometry(shape), mat = new THREE.MeshBasicMaterial({color:0xd8246a});
+      const geo = new THREE.ShapeGeometry(shape), mat = new THREE.MeshBasicMaterial({color:0xf5c518});
       resources.add(geo); resources.add(mat);
       const play = new THREE.Mesh(geo, mat); play.position.set(-0.13, 0.1, 0.52); layers.add(play);
       host.append(renderer.domElement);

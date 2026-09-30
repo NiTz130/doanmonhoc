@@ -43,7 +43,7 @@ Quy mô mã (dòng, không tính test):
 | F5 | Gửi vùng đã vẽ, chạy tiếp | `api/app.py:236` `nhan_hop` | Xong |
 | F6 | Tải video kết quả | `api/app.py:287` `ket_qua` | Xong |
 | F7 | Tạo/liệt kê nhóm | `api/nhom.py:24,29` | Xong |
-| F8 | Đọc/ghi thuật ngữ nhóm, khóa bản dịch | `api/nhom.py:39,48` | Xong |
+| F8 | Đọc/ghi thuật ngữ nhóm | `api/nhom.py:39,48` | Xong |
 | F9 | Đọc/ghi vùng làm mờ mặc định của nhóm | `api/nhom.py:59,68` | Xong |
 | F10 | Lấy phụ đề sidecar / track nhúng | `pipeline/subs.py:36` `tim_phu_de` | Xong |
 | F11 | Nhận dạng Whisper, có đường lui CPU | `pipeline/asr.py:19` `nhan_dang` | Xong |
@@ -69,11 +69,11 @@ hàng đợi ngoài (Celery/Redis), WebSocket, ORM, framework test, xử lý nhi
 | Một tiến trình cho một work dir | Lock file mở bằng chế độ `"x"` (tạo độc quyền), không phải `exists()` rồi tạo | `srt.py:120` `gianh_khoa` |
 | Lock sót không tự đoán là chết | `gianh_khoa` không có timeout, không tự xóa; người dùng xóa tay | `srt.py:132` |
 | Timestamp không phụ thuộc model | Cue kết quả dựng lại từ `c.bat_dau/c.ket_thuc` của cue nguồn | `dieu_phoi.py:233` |
-| Toạ độ độc lập phân giải | Hộp lưu phần trăm 0–1, chỉ đổi sang pixel lúc render | `markbox.py:132` `hop_sang_pixel` |
-| Một validator hình học duy nhất | `kiem_hop`/`kiem_vung`/`kiem_che_do` phục vụ CLI, thân request, JSON trên đĩa và DB | `markbox.py` |
+| Toạ độ độc lập phân giải | Hộp lưu phần trăm 0–1, chỉ đổi sang pixel lúc render | `markbox.py:107` `hop_sang_pixel` |
+| Một validator hình học duy nhất | `kiem_hop`/`kiem_vung` phục vụ CLI, thân request, JSON trên đĩa và DB | `markbox.py` |
 | `api/` không chứa logic xử lý | Không `subprocess`, không nạp model, không ghép filtergraph trong `api/`; validate video bằng cách gọi `dieu_phoi.nhan_dien()` | `api/app.py:103`; kiểm bằng `grep -rn subprocess api/` |
 | Phụ thuộc một chiều | `asr/audio/subs/translate/markbox/render/srt` không import `db`, không biết `fastapi` | kiểm bằng `grep -ln "import db\|fastapi" pipeline/*.py` |
-| Job không treo sau restart | Lifespan quét job không-terminal mất chủ sở hữu → `loi` kèm hướng dẫn | `api/app.py:42` + `db.py:225` |
+| Job không treo sau restart | Lifespan quét job không-terminal mất chủ sở hữu → `loi` kèm hướng dẫn | `api/app.py:42` + `db.py:221` |
 
 ---
 
@@ -207,8 +207,7 @@ Bảng này là bản đồ để tra khi cần sửa: mỗi hàm ghi rõ nó nh
 | Hàm | Vào → Ra | Điều cần biết |
 |---|---|---|
 | `kiem_hop(hop, W?, H?)` | dict → dict đã chuẩn hoá | `x, y ∈ [0,1)`, `w, h > 0`, `x+w ≤ 1`; `bool` **không** được coi là số |
-| `kiem_che_do(che_do?)` | → `cong_them` hoặc `thay_the` | vắng mặt là legacy; `null` tường minh là **lỗi**, không quy về mặc định |
-| `kiem_vung(vung, W?, H?, so_cue?, che_do?)` | dict/list → `list[dict]` có khoá `cue` | `thay_the` thêm hai ràng buộc: tối đa một vùng chung, một câu không thuộc hai vùng riêng |
+| `kiem_vung(vung, W?, H?, so_cue?)` | dict/list → `list[dict]` có khoá `cue` | luôn áp hai ràng buộc: tối đa một vùng chung, một câu không thuộc hai vùng riêng |
 | `hop_chinh(vung)` | → một hộp | hộp chung thắng; không có thì lấy hộp phủ nhiều câu nhất |
 | `hop_sang_pixel(hop, W, H)` | → `(x, y, w, h)` pixel chẵn | dưới 2×2 pixel là `ValueError` |
 | `tach_hop("x,y,w,h")` | → dict | **chỉ tách chuỗi**; validate vẫn là việc của `kiem_hop` |
@@ -301,7 +300,7 @@ viết luôn bên dưới bảng.
 |---|---|---|---|
 | A1 | Chữ ký nội dung quyết định chạy lại bước nào | `dieu_phoi._cache` | mục 9 |
 | A2 | Gộp khoảng bật mờ với ngưỡng tự nới | `render.cue_thanh_khoang` | ngay dưới |
-| A3 | Mặt nạ loại trừ cho chế độ `thay_the` | `dieu_phoi._phan_cue` + `render.ket_xuat` | mục 10, 11 |
+| A3 | Mặt nạ loại trừ khi có vùng riêng | `dieu_phoi._phan_cue` + `render.ket_xuat` | mục 10, 11 |
 | A4 | Chia đôi lô khi bản dịch hỏng | `translate.dich` | ngay dưới |
 | A5 | Chọn hộp đại diện cho kiểu chữ | `markbox.hop_chinh` | ngay dưới |
 | A6 | Chuyển phần trăm sang pixel chẵn | `markbox.hop_sang_pixel` | ngay dưới |
@@ -428,13 +427,13 @@ phụ thuộc, và hash artifact còn nguyên (`dieu_phoi.py:113` `_cache`).
 | `audio` | `audio.wav` / `vocals.wav` | `["audio", sha256(video), separate]` |
 | `sub_goc` | `sub_goc.srt` | `["sub_goc", chế_độ_nguồn, sha256(phụ_thuộc), lang, model, vad]` |
 | `sub_vi` | `sub_vi.srt` | `["sub_vi", sha256(sub_goc), model_dich, PROMPT_VER, glossary]` |
-| `vung_blur` | `vung_blur.json` | `["vung_blur", sha256(video), W, H, ky_cue, chế_độ_vùng]` |
+| `vung_blur` | `vung_blur.json` | `["vung_blur", sha256(video), W, H, ky_cue]` |
 
 `ky_cue` = SHA256 của `sub_goc.srt` lúc chụp khung. Nó có trong chữ ký vùng mờ vì **chỉ số câu thoại chỉ có
 nghĩa trên đúng bộ cue đã chụp**: đổi thứ tự cue mà giữ nguyên số lượng vẫn phải chọn lại vùng.
 
-**Phiên bản bước hiện tại:** `VER = {"audio": 1, "sub_goc": 1, "sub_vi": 1, "vung_blur": 3}`,
-`PROMPT_VER = 2` (`dieu_phoi.py:22-23`). Đổi cách sinh artifact của một bước phải tăng số trong `VER`;
+**Phiên bản bước hiện tại:** `VER = {"audio": 1, "sub_goc": 1, "sub_vi": 1, "vung_blur": 4}`,
+`PROMPT_VER = 2` (`dieu_phoi.py:24-25`). Đổi cách sinh artifact của một bước phải tăng số trong `VER`;
 đổi prompt dịch phải tăng `PROMPT_VER`. Không tăng thì manifest cũ vẫn tính là cache hit.
 
 Ba tính chất đáng đưa vào báo cáo:
@@ -444,7 +443,7 @@ Ba tính chất đáng đưa vào báo cáo:
   **thật sự** của nhóm sau khi áp dụng (`dieu_phoi.py:237-241`).
 - **Sửa tay `sub_vi.srt` được tôn trọng.** `_sua_tay` (`dieu_phoi.py:203`) chấp nhận artifact có hash khác
   manifest nếu số cue và toàn bộ timestamp vẫn khớp `sub_goc` — người dịch sửa lời không bị ghi đè.
-- **Áp glossary là nguyên tử.** `db.ap_dung_dich` (`db.py:123`) dùng `BEGIN IMMEDIATE` + `SAVEPOINT`, và
+- **Áp glossary là nguyên tử.** `db.ap_dung_dich` (`db.py:119`) dùng `BEGIN IMMEDIATE` + `SAVEPOINT`, và
   đánh dấu đã áp bằng một hàng `nhat_ky` mang hash artifact, nên crash giữa "ghi artifact" và "ghi DB"
   được hoàn tất nốt ở lần chạy sau chứ không áp hai lần.
 
@@ -460,43 +459,35 @@ Một vùng là `{"x","y","w","h","cue"}`, toạ độ phần trăm 0–1. `cue 
 câu; `cue = [i, …]` là hộp riêng gắn đúng những câu đó (chỉ số 0-based). Một `dict` trần được coi là một hộp
 chung, nên CLI `--blur-box x,y,w,h`, khung mặc định của nhóm và JSON cũ đều đi được cùng một đường.
 
-### 10.2 Hai chế độ — điểm mới của nhánh này
+### 10.2 Vùng riêng thay vùng chung
 
-`che_do_vung` (`markbox.py:38`), validator duy nhất là `kiem_che_do`:
+Mọi vùng dùng **một** nghĩa: vùng riêng **thay** vùng chung ở đúng những câu được gán. Câu 12 có vùng riêng
+trên đỉnh thì lúc câu 12 hiện, chỉ vùng trên mờ, vùng dưới tắt. Không còn trường `che_do_vung`; payload nào
+gửi trường này thì bị bỏ qua như mọi khoá lạ, và response `/hop` không trả nó.
 
-| Chế độ | Nghĩa | Ai dùng |
-|---|---|---|
-| `cong_them` (mặc định) | Mọi vùng đều áp, cộng dồn | CLI, mọi payload cũ không nói gì về mode |
-| `thay_the` | Vùng riêng **thay** vùng chung ở đúng câu được gán | Frontend hiện tại (`web/app.js:471`) |
+`kiem_vung` (`markbox.py:38`) luôn áp hai ràng buộc: nhiều nhất **một** vùng chung, và một câu không được
+gán cho hai vùng riêng. `_phan_cue` luôn trừ câu đã có vùng riêng ra khỏi vùng chung, và mặt nạ loại trừ theo
+thời gian luôn được tính khi có vùng riêng (mục 11).
 
-Mặc định phải là `cong_them` vì đó là nghĩa của mọi dữ liệu đã tồn tại. `null` tường minh là **lỗi 400**,
-không phải "vắng mặt": nó là giá trị người gửi có ý viết ra, mà mặc định lại là nghĩa ngược với việc họ đang
-làm — im lặng quy về mặc định ở đó là làm mờ sai chỗ mà không báo gì (`markbox.py:43-56`).
+### 10.3 Artifact vùng của VER cũ phải chọn lại
 
-Chế độ `thay_the` có hai ràng buộc riêng (`markbox.py:92-104`): nhiều nhất **một** vùng chung, và một câu
-không được gán cho hai vùng riêng.
+`VER["vung_blur"]` là **4**. Trong `_buoc_hop`, chữ ký cache của `vung_blur.json` gồm cả phiên bản bước, nên
+artifact ghi bởi VER cũ luôn là cache miss.
 
-### 10.3 Chế độ đã lưu là authoritative
-
-Trong `_buoc_hop` (`dieu_phoi.py:302-310`), chữ ký cache được tính theo mode **đã lưu trong
-`vung_blur.json`**, không theo mode mặc định của lần tải lên sau. Nếu tính theo mặc định thì một upload không
-nói gì về mode sẽ làm vùng `thay_the` cũ thành cache miss rồi bị vẽ lại bằng nghĩa khác. Mode mất, hỏng, hay
-là giá trị lạ đều là **không chứng minh được** → chọn lại, chứ không đoán.
-
-Và khi còn vùng gắn chỉ số câu mà không chứng minh được nó ứng với bộ cue nào, `_buoc_hop` **không** lặng lẽ
-lấy hộp nhóm thay vào — vì như thế là xoá vùng riêng cũ bằng một hộp chung duy nhất; nó dừng ở
-`cho_chon_khung` (`dieu_phoi.py:311-320`).
+Khi còn vùng gắn chỉ số câu mà không chứng minh được nó ứng với bộ cue nào — kể cả artifact của VER cũ —
+`_buoc_hop` **không** lặng lẽ lấy hộp nhóm thay vào, vì như thế là xoá vùng riêng cũ bằng một hộp chung duy
+nhất; nó dừng ở `cho_chon_khung`. Test canh giữ: `test_vung_blur_ver_cu_phai_chon_lai`.
 
 ### 10.4 Hình học
 
-`hop_sang_pixel` (`markbox.py:132`) đổi phần trăm → pixel **chẵn** (yêu cầu của `crop`), kẹp trong khung
-hình, và từ chối hộp làm tròn còn dưới 2×2 pixel. `hop_chinh` (`markbox.py:108`) chọn **một** hộp đại diện
+`hop_sang_pixel` (`markbox.py:107`) đổi phần trăm → pixel **chẵn** (yêu cầu của `crop`), kẹp trong khung
+hình, và từ chối hộp làm tròn còn dưới 2×2 pixel. `hop_chinh` (`markbox.py:83`) chọn **một** hộp đại diện
 — hộp chung thắng, không có thì lấy hộp phủ nhiều câu nhất — và cả kiểu chữ phụ đề Việt lẫn khung mặc định
 của nhóm đều dùng đúng hàm này, nên hai chỗ không thể lệch quy tắc.
 
 ### 10.5 Khung mẫu
 
-`trich_khung` (`markbox.py:143`) trích **một khung cho mỗi câu thoại**, seek tại `bat_dau + 0.3 s`, không lấy
+`trich_khung` (`markbox.py:118`) trích **một khung cho mỗi câu thoại**, seek tại `bat_dau + 0.3 s`, không lấy
 mẫu. Lý do: lấy mẫu 8 khung thì không ai kiểm được hộp đã phủ hết chưa — phụ đề nhảy chỗ ở đúng câu không
 nằm trong mẫu là lọt lưới, mà đó mới là câu cần nhìn. Chi phí đã ghi rõ trong mã dưới dạng ghi chú
 `ponytail:`: tuần tự một lần `ffmpeg` seek mỗi cue, ~0,2 s ở 640×360 (~9 s cho 43 cue); phim hai tiếng
@@ -511,7 +502,7 @@ nằm trong mẫu là lọt lưới, mà đó mới là câu cần nhìn. Chi ph
 1. **Khoảng bật**. `cue_thanh_khoang` (`render.py:22`) nới mỗi cue ±`NGHI = 0.4 s` (hardsub thường hiện sớm
    tắt muộn hơn cue), gộp hai khoảng cách nhau dưới `GAP = 1.0 s`. Quá `TOI_DA = 50` khoảng thì **nới ngưỡng
    gộp lên gấp đôi rồi lặp lại**, vì chuỗi `enable` quá dài làm vỡ filtergraph; cùng lắm thì làm mờ cả phim.
-2. **Mặt nạ loại trừ** (chỉ ở `thay_the`). `gop_khoang` (`render.py:49`) gộp các khoảng **chồng hoặc chạm**
+2. **Mặt nạ loại trừ** (khi có vùng riêng). `gop_khoang` (`render.py:49`) gộp các khoảng **chồng hoặc chạm**
    nhau, không nới thêm, và **không** áp `TOI_DA`. Vùng chung nhận thêm `*not(…)` để tắt trong những khoảng
    có vùng riêng đang bật — cần nó vì bước nới ±0,4 s và gộp khoảng của vùng chung có thể bắc cầu qua đúng
    câu đã có vùng riêng, làm câu đó mờ cả hai chỗ (`dieu_phoi.py:462-467`, `render.py:171-179`).
@@ -557,8 +548,8 @@ lần chi phí. Đổi model thì phải đo lại (`translate.py:37-42`).
 - **Transport.** `OpenAI(base_url="https://api.deepseek.com", timeout=120, max_retries=2)`. Import module này
   không mở client; `tao_goi` mới mở (`translate.py:108`).
 
-`db.ghi_thuat_ngu` chỉ **đếm số lần gặp** (`so_lan + 1`), không thay bản dịch đã có — dù có khoá hay không.
-Chỉ `dat_thuat_ngu` (người dùng sửa tường minh) mới được ghi đè, kể cả từ đang khoá (`db.py:106`).
+`db.ghi_thuat_ngu` chỉ **thêm từ mới học được** (`ON CONFLICT(nhom_id, goc) DO NOTHING`), không bao giờ thay
+bản dịch đã có. Chỉ `dat_thuat_ngu` (người dùng sửa tường minh) mới được ghi đè (`db.py:102`).
 
 ---
 
@@ -574,11 +565,11 @@ Chỉ `dat_thuat_ngu` (người dùng sửa tường minh) mới được ghi đ
 | GET | `/api/cong-viec/{cid}` | — | `{id, trang_thai, buoc, tien_do, loi, co_ket_qua}` | `404` |
 | GET | `/api/cong-viec/{cid}/khung` | — | `[{i, giay, text}]` | `404` · `409` chưa có phụ đề gốc |
 | GET | `/api/cong-viec/{cid}/khung/{i}` | — | `image/png` | `404` · `409` |
-| POST | `/api/cong-viec/{cid}/hop` | `{co_blur, che_do_vung, vung, luu_nhom}` | `{id, trang_thai, vung, che_do_vung}` | `400` hình học / chỉ số câu / mode sai · `409` đang chạy, chưa tới bước chọn vùng, phụ đề gốc đã đổi, không còn khung mẫu, đã gửi vùng rồi |
+| POST | `/api/cong-viec/{cid}/hop` | `{co_blur, vung, luu_nhom}` | `{id, trang_thai, vung}` | `400` hình học / chỉ số câu · `409` đang chạy, chưa tới bước chọn vùng, phụ đề gốc đã đổi, không còn khung mẫu, đã gửi vùng rồi |
 | GET | `/api/cong-viec/{cid}/ket-qua` | — | `video/mp4` (`FileResponse`) | `404` chưa có kết quả |
 
 `trang_thai` thuộc tập khoá cứng bằng `CHECK` trong schema: `cho`, `dang_chay`, `cho_chon_khung`, `xong`,
-`suy_giam`, `loi` (`db.py:45`).
+`suy_giam`, `loi` (`db.py:41`).
 
 ### 13.2 Nhóm
 
@@ -586,7 +577,7 @@ Chỉ `dat_thuat_ngu` (người dùng sửa tường minh) mới được ghi đ
 |---|---|---|
 | GET | `/api/nhom` | `[{ten, blur_x, blur_y, blur_w, blur_h}]` |
 | POST | `/api/nhom` | `{ten}` → `201` |
-| GET/POST | `/api/nhom/{ten}/thuat-ngu` | POST nhận `{goc, dich, khoa}`, trả về cả bảng sau khi ghi |
+| GET/POST | `/api/nhom/{ten}/thuat-ngu` | POST nhận `{goc, dich}`, trả về cả bảng sau khi ghi |
 | GET/POST | `/api/nhom/{ten}/hop` | POST đi qua `markbox.kiem_hop`, mặc định kiểm trên 1920×1080 |
 
 Mọi lỗi dữ liệu ở router nhóm quy về `400` (`api/nhom.py:20`). `web/` được `mount` ở `/` bằng `StaticFiles`
@@ -653,26 +644,26 @@ bước dịch của chính lượt đó chạy xong (`api/viec.py:96-102`, `die
 
 **Kết nối SQLite.** Một connection cho một request (`api/viec.py:ket_noi` qua `Depends`), mở với
 `check_same_thread=False` vì Starlette chạy route sync trong threadpool và có thể đổi thread giữa các phần
-của cùng một request; connection vẫn không rời khỏi request đó (`db.py:54`).
+của cùng một request; connection vẫn không rời khỏi request đó (`db.py:50`).
 
 ---
 
 ## 15. Cơ sở dữ liệu
 
-`work/subtitles.db`, 5 bảng, schema đầy đủ ở `db.py:11-51`. Bảng `cong_viec` **chỉ báo tiến độ cho
+`work/subtitles.db`, 5 bảng, schema đầy đủ ở `db.py:11-47`. Bảng `cong_viec` **chỉ báo tiến độ cho
 frontend** — nó không quyết định resume.
 
 | Bảng | Khoá/ràng buộc đáng nói | Dùng để làm gì |
 |---|---|---|
 | `nhom` | `ten` UNIQUE; `blur_x/y/w/h` | Gom các tập cùng một phim; giữ vùng mờ mặc định |
 | `video` | `duong_dan` UNIQUE, `thu_muc_work` UNIQUE; FK `nhom_id ON DELETE SET NULL` | W, H, thời lượng, mốc `xong_luc` |
-| `thuat_ngu` | UNIQUE `(nhom_id, goc)`; `loai` CHECK 3 giá trị; `so_lan`, `khoa`; FK CASCADE | Giữ tên riêng nhất quán qua nhiều tập |
+| `thuat_ngu` | UNIQUE `(nhom_id, goc)`; FK CASCADE | Giữ tên riêng nhất quán qua nhiều tập |
 | `nhat_ky` | FK `video_id` CASCADE | Thời gian và token từng bước; cũng là **dấu đã-áp-glossary** (`buoc='translate_apply'`, `loi` = hash artifact) |
 | `cong_viec` | `id` TEXT PK (UUID4); `trang_thai` CHECK 6 giá trị | Tiến độ cho frontend |
 
-`PRAGMA foreign_keys=ON` được bật mỗi lần mở (`db.py:65`). `cap_nhat_cong_viec` chỉ nhận 6 cột trong danh
-sách trắng, cột lạ là `ValueError` — không ghép SQL từ khoá tuỳ ý (`db.py:209`).
-`ghi_nhat_ky` đóng `video.xong_luc` khi và chỉ khi bước `render` thành công (`db.py:197`).
+`PRAGMA foreign_keys=ON` được bật mỗi lần mở (`db.py:61`). `cap_nhat_cong_viec` chỉ nhận 6 cột trong danh
+sách trắng, cột lạ là `ValueError` — không ghép SQL từ khoá tuỳ ý (`db.py:205`).
+`ghi_nhat_ky` đóng `video.xong_luc` khi và chỉ khi bước `render` thành công (`db.py:193`).
 
 ---
 
@@ -685,7 +676,7 @@ Một file `web/index.html` với **4 `<section>`** ẩn/hiện theo hash — kh
 | `tai-len` | Tải lên | Drop zone, chọn nhóm, tuỳ chọn nâng cao; `scene.js` vẽ hoạt cảnh Three.js (vendored, có fallback CSS) |
 | `tien-do` | Tiến độ | Thanh tiến độ ARIA, nhãn bước, nút thử lại kết nối, liên kết tải kết quả |
 | `khung` | Vùng làm mờ | Canvas vẽ hộp trên khung thật, 8 tay nắm, lật khung bằng ← →, phạm vi chung/riêng, áp cho dải câu |
-| `nhom` | Nhóm & thuật ngữ | Tạo nhóm, bảng thuật ngữ, khoá bản dịch, vùng mặc định |
+| `nhom` | Nhóm & thuật ngữ | Tạo nhóm, bảng thuật ngữ, vùng mặc định |
 
 - **Polling 1 500 ms**, chỉ khi trạng thái là `cho` hoặc `dang_chay` (`web/app.js:181`). Tới
   `cho_chon_khung` thì tự nạp khung và dừng hỏi; mất mạng thì hiện thông báo + nút thử lại, **không** mất
@@ -710,7 +701,7 @@ Một file `web/index.html` với **4 `<section>`** ẩn/hiện theo hash — kh
 py=.venv/Scripts/python.exe
 $py main.py phim.mp4 --nhom "Tên phim" --blur-box 0.3,0.855,0.4,0.09
 $py main.py batch ./thu_muc --nhom "Tên phim"
-$py main.py nhom list | glossary <tên> | set-term <tên> <gốc> <dịch> [--lock] | set-box <tên> x,y,w,h
+$py main.py nhom list | glossary <tên> | set-term <tên> <gốc> <dịch> | set-box <tên> x,y,w,h
 ```
 
 - `main.py <video>` không cần chữ `video`: argv được chèn subcommand nếu đối số đầu không phải lệnh đã biết
@@ -780,15 +771,14 @@ xử lý **không bao giờ bị giả** — đó chính là những chỗ cần
 | I-1 | `test_resume_dependencies_and_atomic_write` | chạy lại cùng tham số; đổi `blur`/`font`; sửa tay `sub_vi.srt`; ngắt giữa artifact và manifest; `--force-asr`; đổi nội dung cùng đường dẫn; đổi `--vad` | lượt y nguyên chỉ chạy lại `render`; đổi blur/font không kéo theo dịch hay ASR; bản sửa tay hợp lệ được giữ; ngắt giữa chừng **không** tính cache hit; `--force-asr` bỏ cả sidecar lẫn cache; đổi nội dung hoặc `--vad` làm mới bước phụ thuộc | PASS |
 | I-2 | `test_hop_nhom_khong_bi_ghi_de_am_tham` | video có hộp riêng, nhóm đã có hộp mặc định | hộp riêng của video thắng hộp nhóm; hộp nhóm **không** bị ghi đè âm thầm | PASS |
 | I-3 | `test_vung_mo_gan_tung_cau_thoai` | 2 cue; một hộp chung + một hộp gán riêng cue 1; gán vào cue không tồn tại | mỗi hộp chỉ bật đúng cue của nó; khung mặc định nhóm lấy hộp áp cho **mọi** câu; cue không tồn tại bị **từ chối**, không bỏ qua im lặng | PASS |
-| I-4 | `test_vung_rieng_thay_vung_chung` | chế độ `thay_the`; mode vắng mặt; mode `null`; hai vùng riêng tranh một câu | `thay_the` trừ cue riêng khỏi vùng chung theo **cả** cue lẫn thời gian; vắng mặt là legacy; `null` là lỗi; tranh câu là lỗi; mặt nạ chỉ gộp khi chạm/chồng | PASS |
+| I-4 | `test_vung_rieng_thay_vung_chung` | một vùng chung + một vùng riêng; hai vùng chung; hai vùng riêng tranh một câu | vùng riêng trừ cue riêng khỏi vùng chung theo **cả** cue lẫn thời gian; hai vùng chung là lỗi; tranh câu là lỗi; mặt nạ chỉ gộp khi chạm/chồng | PASS |
 | I-5 | `test_vung_edge_cases_and_raw_primary` | vùng chung bị trừ hết cue; hơn 50 khoảng loại trừ | vùng chung vẫn là hộp đại diện **thô** dù không còn cue hiệu lực; mặt nạ không bị cắt theo `TOI_DA` | PASS |
 | I-6 | `test_vung_cue_source_invalidation_before_side_effect` | checkpoint có `ky_cue` cũ, `sub_goc.srt` đã đổi | chặn **trước** `ffprobe`, trước ghi bảng `video`, trước nhật ký; không artifact nào bị đổi | PASS |
 | I-7 | `test_vung_cue_signature_tracks_content_not_count` | đổi text, đổi mốc thời gian, **đổi thứ tự** mà giữ nguyên số cue | cả ba đều làm cache `sub_vi` và `vung_blur` miss | PASS |
-| I-8 | `test_cached_region_mode_is_authoritative` | `vung_blur.json` lưu `thay_the`, lần tải lên sau không nói gì về mode | chữ ký tính theo mode **đã lưu**; vùng cũ vẫn là cache hit, không bị đọc lại bằng nghĩa khác | PASS |
-| I-9 | `test_legacy_region_without_mode_is_not_valid_cache` | artifact cũ có vùng gán cue nhưng thiếu `che_do_vung` | **chọn lại vùng**, không mặc định hoá im lặng và không lấy hộp nhóm thay vào | PASS |
+| I-9 | `test_vung_blur_ver_cu_phai_chon_lai` | artifact `vung_blur` của VER cũ có vùng gán cue; nhóm có hộp mặc định | **chọn lại vùng** (`ChoChonKhung`), không lấy hộp nhóm thay vào | PASS |
 | I-10 | `test_batch_targets_and_cli` | thư mục có `a.mp4`, `b.mkv`, `a_vi.mp4`, rồi thêm `a.mov`; `batch -o x.mp4` | `*_vi.mp4` không được làm đầu vào; trùng đích bị từ chối **trước** mọi side effect; `batch` nhận `-o` thì thoát mã 2 | PASS |
 | I-11 | `test_kieu_chu_bam_hop_ap_cho_moi_cau` | nhiều vùng, đảo thứ tự danh sách | kiểu chữ luôn bám hộp `cue=None`, không phụ thuộc thứ tự phần tử | PASS |
-| I-12 | `test_glossary_transaction_resume` | ghi thuật ngữ rồi cho marker thất bại; ghi lồng trong transaction của caller | thất bại thì **cuộn ngược** thuật ngữ trong cùng thao tác; ghi lồng không commit transaction của caller; `so_lan` tăng mà bản dịch cũ không bị thay | PASS |
+| I-12 | `test_glossary_transaction_resume` | ghi thuật ngữ rồi cho marker thất bại; ghi lồng trong transaction của caller | thất bại thì **cuộn ngược** thuật ngữ trong cùng thao tác; ghi lồng không commit transaction của caller; bản dịch cũ không bị thay | PASS |
 
 **Qua HTTP (`tests_api.py`, dùng `TestClient`)**
 
@@ -805,7 +795,6 @@ xử lý **không bao giờ bị giả** — đó chính là những chỗ cần
 | I-21 | `test_api_resume_claim_is_single_winner` | hai POST hộp cho **cùng** một CID | chỉ một POST qua được admission; POST thứ hai 409, không tạo tác vụ thứ hai | PASS |
 | I-22 | `test_api_scheduler_failure_cleans_admission` | lỗi xảy ra ngay trước `add_task` | không để lại claim trên đĩa, không để job nằm mãi ở `cho`; không còn `*.tmp` | PASS |
 | I-23 | `test_api_cue_index_out_of_range_is_rejected` | vùng gán cue có chỉ số vượt số cue thật | **400** ở tầng HTTP, không bỏ qua im lặng | PASS |
-| I-24 | `test_api_mode_validation_before_mutation` | `che_do_vung` có mặt nhưng sai giá trị | từ chối **trước khi** job, nhóm hay artifact đổi trạng thái | PASS |
 | I-25 | `test_api_stale_cid_snapshot` | CID cũ gửi hộp sau khi `sub_goc.srt` đã đổi | 409 kèm hướng dẫn tải lại; không chạy với bộ cue đã lệch | PASS |
 | I-26 | `test_api_restart_marks_only_orphans_and_keeps_completed_output` | restart khi có job ở `cho`, `dang_chay`, `cho_chon_khung`, `xong`, `suy_giam`, `loi`; lock sót | chỉ job mất hồ sơ bị đánh `loi` kèm hướng dẫn; job terminal và link tải **giữ nguyên**; lock sót **không** bị tự xoá | PASS |
 | I-27 | `test_api_force_resume_keeps_source_and_does_not_repeat_asr` | `--force-asr` rồi POST hộp tiếp tục | lượt force làm mới thật mọi bước phụ thuộc; POST hộp chỉ tiếp tục checkpoint đã ghim, **không** chạy lại ASR; nguồn nhúng không bị chọn nhầm | PASS |
@@ -814,7 +803,7 @@ xử lý **không bao giờ bị giả** — đó chính là những chỗ cần
 
 | # | Bộ test | Input | Expected | Actual (đo 2026-09-17) |
 |---|---|---|---|---|
-| S-1 | `tests_smoke.smoke_media` | video sinh bằng `ffmpeg lavfi` ở 1280×720 và 1920×1080, có tiếng; một hộp, hai hộp, chế độ thay thế | tách được `audio.wav`; ra video đúng độ phân giải, đúng 5,00 s, **còn audio**; vùng riêng mờ rõ hơn hẳn nền | PASS — độ lệch vùng riêng **8,56–15,24** so với nền **1,29–1,44**; 8 ảnh khung để kiểm bằng mắt |
+| S-1 | `tests_smoke.smoke_media` | video sinh bằng `ffmpeg lavfi` ở 1280×720 và 1920×1080, có tiếng; một hộp, hai hộp, vùng riêng thay vùng chung | tách được `audio.wav`; ra video đúng độ phân giải, đúng 5,00 s, **còn audio**; vùng riêng mờ rõ hơn hẳn nền | PASS — độ lệch vùng riêng **8,56–15,24** so với nền **1,29–1,44**; 8 ảnh khung để kiểm bằng mắt |
 | S-2 | `test/frontend.cjs` | Chromium thật, API giả lập; 3 khung nhìn 360/768/1440 | nhóm 1: kiểm tra đầu vào, chống tải trùng, báo lỗi tải lên, ba bố cục; nhóm 2: phục hồi polling, 20 vòng điều hướng, 43 khung nạp lười, toạ độ ngang/dọc, kéo và dời hộp, vùng theo cue, cờ vùng mặc định nhóm, lỗi ảnh, kết quả suy giảm; nhóm 3: giữ dữ liệu khi lưu thuật ngữ hỏng, tôn trọng `prefers-reduced-motion`, mất WebGL context | PASS 3/3 nhóm, **không có lỗi JS chưa bắt** |
 | S-3 | `test/runtime_logic.py` (V-11) | uvicorn thật một worker, HTTP bằng `urllib`, multipart/JSON, SQLite + lock + ffmpeg thật | đua tải lên, đua gửi hộp, snapshot lệch, restart mồ côi, crash giữ lock, dùng lại cache, giữ output | PASS — `audio=7 asr=7 dich=5 render=6`, `temp_root_cleaned: true`, output SHA256 `3c009856…` |
 
@@ -843,9 +832,9 @@ Bảy lỗi P1 do một lượt rà logic độc lập tìm ra (biên bản `doc
 | Mã | Triệu chứng | Nguyên nhân gốc | Cách xử lý | Test canh giữ |
 |---|---|---|---|---|
 | F-1 | Vùng vẽ theo chỉ số câu vẫn chạy dù phụ đề gốc đã đổi | Chỉ kiểm hash `sub_goc.srt`, mà kiểm **sau** khi đã ghi bảng `video` và nhật ký | Thêm `_nguon_con_nguyen`, chặn **trước** `ffprobe` và trước mọi side effect; thiếu hash wav trong manifest là *không chứng minh được*, không đoán | `test_vung_cue_source_invalidation_before_side_effect` |
-| F-2 | Vùng `thay_the` cũ bị đọc lại bằng nghĩa cộng dồn | Chữ ký cache tính theo mode **mặc định của lần tải lên sau**, nên upload không nói gì về mode làm vùng cũ thành cache miss rồi bị vẽ lại | Chữ ký tính theo mode **đã lưu trong artifact**; mode của artifact là authoritative | `test_cached_region_mode_is_authoritative` |
-| F-3 | Artifact cũ thiếu `che_do_vung` bị mặc định hoá im lặng | Mode mất được coi như vắng mặt, mà vắng mặt lại quy về legacy | Mode mất, hỏng hay giá trị lạ đều là *không chứng minh được* → buộc chọn lại vùng, không lấy hộp nhóm thay vào (làm thế là lặng lẽ xoá vùng riêng) | `test_legacy_region_without_mode_is_not_valid_cache` |
-| F-4 | `che_do_vung: null` bị quy về `cong_them` | Không phân biệt "vắng mặt" với "`null` do người gửi cố ý viết ra" | `kiem_che_do` dùng sentinel `VANG_MAT` khác hẳn `None`; `null` tường minh là **400**. Mặc định là nghĩa **ngược** với việc người dùng đang làm, nên im lặng quy về mặc định là làm mờ sai chỗ mà không báo gì | `test_api_mode_validation_before_mutation` |
+| F-2 | Vùng `thay_the` cũ bị đọc lại bằng nghĩa cộng dồn | Chữ ký cache tính theo mode **mặc định của lần tải lên sau**, nên upload không nói gì về mode làm vùng cũ thành cache miss rồi bị vẽ lại | Chữ ký tính theo mode **đã lưu trong artifact**; mode của artifact là authoritative | `test_cached_region_mode_is_authoritative` *(Đã gỡ ngày 30/09/2026: chế độ `cong_them` và trường `che_do_vung` không còn; mọi vùng dùng nghĩa thay thế.)* |
+| F-3 | Artifact cũ thiếu `che_do_vung` bị mặc định hoá im lặng | Mode mất được coi như vắng mặt, mà vắng mặt lại quy về legacy | Mode mất, hỏng hay giá trị lạ đều là *không chứng minh được* → buộc chọn lại vùng, không lấy hộp nhóm thay vào (làm thế là lặng lẽ xoá vùng riêng) | `test_legacy_region_without_mode_is_not_valid_cache` *(Đã gỡ ngày 30/09/2026: chế độ `cong_them` và trường `che_do_vung` không còn; mọi vùng dùng nghĩa thay thế.)* |
+| F-4 | `che_do_vung: null` bị quy về `cong_them` | Không phân biệt "vắng mặt" với "`null` do người gửi cố ý viết ra" | `kiem_che_do` dùng sentinel `VANG_MAT` khác hẳn `None`; `null` tường minh là **400**. Mặc định là nghĩa **ngược** với việc người dùng đang làm, nên im lặng quy về mặc định là làm mờ sai chỗ mà không báo gì | `test_api_mode_validation_before_mutation` *(Đã gỡ ngày 30/09/2026: chế độ `cong_them` và trường `che_do_vung` không còn; mọi vùng dùng nghĩa thay thế.)* |
 | F-5 | Lỗi trước `add_task` để lại lock trên đĩa và job kẹt ở `cho` | Xếp lịch nằm **ngoài** khối `try` đã ghi DB và giành lock | Đưa `nen.add_task` vào trong `try`; `except` xoá file tạm, nhả lock, đánh job `loi` kèm hướng dẫn | `test_api_scheduler_failure_cleans_admission` |
 | F-6 | Hai POST hộp cùng CID tạo hai tác vụ; tác vụ thứ hai ghi `loi` đè lên lượt đang chạy tốt | Cả hai request đều thấy job ở `cho_chon_khung` và đều đi qua được | Tiêu thụ checkpoint **nguyên tử** dưới `threading.Lock` đã có sẵn; POST thứ hai nhận 409 | `test_api_resume_claim_is_single_winner` |
 | F-7 | Chỉ số câu vượt phạm vi bị bỏ qua im lặng | `_cue_cua` lọc `if i < len(cues)` — đúng cho dữ liệu cũ nhưng thành cái bẫy nuốt lỗi ở tầng request | Tầng HTTP truyền `so_cue` vào `kiem_vung`; vượt phạm vi là **400** | `test_api_cue_index_out_of_range_is_rejected` |
@@ -884,7 +873,7 @@ Không có lỗi hay cảnh báo JavaScript nào trong suốt lượt chạy.
 | `04_da_ve_hop.png` | Kéo chuột thật trên canvas ở khung 2/4; hộp ra `x=0.300 y=0.780 w=0.400 h=0.140` theo phần trăm |
 | `05_hop_giu_nguyen.png` | Chuyển sang khung 3/4, **hộp vẫn nguyên** — đó là toàn bộ lý do có thanh lật khung |
 | `06_xong.png` | Công việc về `xong`, hiện link tải kết quả |
-| `08_thuat_ngu.png` | Thuật ngữ máy tự học trong lượt dịch, và thuật ngữ người dùng thêm rồi khoá |
+| `08_thuat_ngu.png` | Thuật ngữ máy tự học trong lượt dịch, và thuật ngữ người dùng thêm rồi khoá *(Cờ khóa thuật ngữ đã gỡ ngày 30/09/2026.)* |
 | `ket_qua_khung.png` | Khung cắt từ video **trình duyệt tải về**: chữ Việt đủ dấu nằm đúng trên vệt mờ |
 | `B-upload-360/768/1440.png` | Cùng màn tải lên ở ba bề ngang, kiểm bố cục đáp ứng |
 | `B-progress · B-region · B-result · B-glossary.png` | Bốn màn trong lượt kiểm giao diện ngày 2026-09-10 |
@@ -908,7 +897,7 @@ py=.venv/Scripts/python.exe
 $py -m uvicorn api.app:app --reload          # hoặc start_system.bat
 #    mở http://127.0.0.1:8000
 
-# 2. Màn Nhóm: tạo nhóm, thêm một thuật ngữ và khoá nó
+# 2. Màn Nhóm: tạo nhóm, thêm một thuật ngữ
 #    → chứng minh thuật ngữ truyền được giữa các tập
 
 # 3. Màn Tải lên: chọn test/video_2.mp4, điền đúng tên nhóm vừa tạo
@@ -1161,6 +1150,8 @@ nghĩa **ngược** với việc họ đang làm.
 giá trị mặc định mang nghĩa ngược với ý định phổ biến của người gửi, im lặng quy về mặc định là làm sai mà
 không báo gì.
 
+*(Đã gỡ ngày 30/09/2026: chế độ `cong_them` và trường `che_do_vung` không còn; mọi vùng dùng nghĩa thay thế.)*
+
 ### B-6 — Hai POST hộp cùng CID phá lượt đang chạy tốt
 
 **Triệu chứng.** Người dùng bấm "Xong, kết xuất" hai lần; tác vụ thứ hai ghi trạng thái `loi` đè lên lượt
@@ -1247,8 +1238,8 @@ trong buổi bảo vệ.
 | **Một validator hình học duy nhất** (LD-8) | Frontend kiểm riêng, backend kiểm riêng | Hai bản kiểm là hai bộ luật, sớm muộn cũng lệch. Frontend kiểm thêm chỉ để **báo sớm**, không thay backend |
 | **`_nap("ten")` nạp module muộn** | `import` thẳng đầu file | Đây là điểm tiêm duy nhất để test thay module xử lý bằng bản giả — nhờ nó mà 27 test integration chạy được **không cần ffmpeg, GPU hay mạng** |
 | **Không thêm framework test** (IC-1) | pytest + fixture + plugin | `assert` trần, callable giả, `TestClient`, SQLite `:memory:` là đủ cho quy mô này. Toàn bộ tầng offline chạy trong **7,8 giây** |
-| **Mode đã lưu trong artifact là authoritative** | Dùng mode mặc định của lần tải lên hiện tại | Không thế thì một upload không nói gì về mode sẽ làm vùng `thay_the` cũ thành cache miss rồi **bị vẽ lại bằng nghĩa khác** |
-| **Mặc định `che_do_vung = cong_them`** | Mặc định `thay_the` cho hợp trực giác mới | Mặc định phải là nghĩa của **dữ liệu đã tồn tại**. Mọi payload cũ và CLI không nói gì về mode |
+| **Mode đã lưu trong artifact là authoritative** | Dùng mode mặc định của lần tải lên hiện tại | Không thế thì một upload không nói gì về mode sẽ làm vùng `thay_the` cũ thành cache miss rồi **bị vẽ lại bằng nghĩa khác** *(Đã gỡ ngày 30/09/2026: chế độ `cong_them` và trường `che_do_vung` không còn; mọi vùng dùng nghĩa thay thế.)* |
+| **Mặc định `che_do_vung = cong_them`** | Mặc định `thay_the` cho hợp trực giác mới | Mặc định phải là nghĩa của **dữ liệu đã tồn tại**. Mọi payload cũ và CLI không nói gì về mode *(Đã gỡ ngày 30/09/2026: chế độ `cong_them` và trường `che_do_vung` không còn; mọi vùng dùng nghĩa thay thế.)* |
 
 ### 25.4 Về giao diện
 
@@ -1273,7 +1264,7 @@ ngang lời giải.
 | 3 | Nạp CUDA runtime | `pip install nvidia-cublas-cu12`, rồi thêm `PATH`, rồi `os.add_dll_directory()` | Lỗi là *cannot be loaded* chứ không phải *not found*; `ctranslate2.dll` chỉ tìm phụ thuộc trong thư mục của chính nó | Chép `cublas64_12.dll` và `cublasLt64_12.dll` vào đúng thư mục đó. ASR 274 s → **56 s** |
 | 4 | Giành quyền xử lý một work dir | Kiểm `.lock.exists()` rồi tạo file | Hai lệnh tách rời — hai upload cùng lúc đều thấy chưa có lock và đều đi qua | `open(path, "x")` — tạo độc quyền ở mức hệ điều hành, một lệnh duy nhất |
 | 5 | Chặn vùng lệch so với phụ đề | So hash `sub_goc.srt` với `ky_cue`, kiểm sau khi sinh lại sub | Sidecar đổi trên đĩa thì file sản phẩm vẫn y nguyên tới lúc bị ghi đè — kiểm xong mới lệch, mà lúc đó đã ghi DB và nhật ký | `_nguon_con_nguyen` kiểm **cả chuỗi phụ thuộc**, đặt trước `ffprobe` và trước mọi side effect |
-| 6 | Chữ ký cache của vùng mờ | Tính theo `che_do_vung` mặc định của lần tải lên hiện tại | Upload không nói gì về mode làm vùng `thay_the` cũ thành cache miss rồi bị đọc lại bằng nghĩa cộng dồn | Tính theo mode **đã lưu trong artifact**; mode mất hoặc lạ thì buộc chọn lại, không đoán |
+| 6 | Chữ ký cache của vùng mờ | Tính theo `che_do_vung` mặc định của lần tải lên hiện tại | Upload không nói gì về mode làm vùng `thay_the` cũ thành cache miss rồi bị đọc lại bằng nghĩa cộng dồn | Tính theo mode **đã lưu trong artifact**; mode mất hoặc lạ thì buộc chọn lại, không đoán *(Đã gỡ ngày 30/09/2026: chế độ `cong_them` và trường `che_do_vung` không còn; mọi vùng dùng nghĩa thay thế.)* |
 | 7 | Quá 50 khoảng bật mờ | Cắt bớt khoảng cho vừa giới hạn | Cắt bớt là **bỏ mờ ở những câu phía sau** — sai thầm lặng | Nới ngưỡng gộp gấp đôi rồi lặp; cùng lắm mờ cả phim, thừa nhưng không sai |
 | 8 | Dẫn người dùng sang màn khoanh vùng | Thêm nút "Khoanh vùng làm mờ" trên màn Tiến độ (`5e3b16d`) | Chẩn đoán sai từ đầu: `nap_khung()` đã kết thúc bằng `hien("khung")` nên app **tự** mở màn đó. Nút lại nằm trong section bị ẩn đúng lúc cần hiện — mã chết | Gỡ nút, sửa ba câu mô tả cho khớp hành vi thật (`d248c7b`) |
 | 9 | Chọn bộ mã hoá video | Liệt kê encoder bằng `ffmpeg -encoders` rồi chọn NVENC nếu có | Có trong danh sách không chứng minh encode được trên máy này | **Encode thử thật** bằng `lavfi color=s=256x256:d=0.1`; hỏng thì cảnh báo và lui `libx264` |
@@ -1356,7 +1347,7 @@ Mục này là sổ nợ tập trung.
 
 | Nợ | Ở đâu | Trần đã biết | Đường nâng cấp đã ghi sẵn |
 |---|---|---|---|
-| `trich_khung` chạy tuần tự, một `ffmpeg` seek mỗi cue | `markbox.py:150` (`ponytail:`) | ~0,2 s/cue ở 640×360 (~9 s cho 43 cue). Phim hai tiếng ~2 000 cue là vài phút và vài trăm MB PNG | Trích **theo yêu cầu** từng khung trong `api/app.py` thay vì trích trước cả loạt |
+| `trich_khung` chạy tuần tự, một `ffmpeg` seek mỗi cue | `markbox.py:125` (`ponytail:`) | ~0,2 s/cue ở 640×360 (~9 s cho 43 cue). Phim hai tiếng ~2 000 cue là vài phút và vài trăm MB PNG | Trích **theo yêu cầu** từng khung trong `api/app.py` thay vì trích trước cả loạt |
 
 ### 28.2 Nợ phát hiện khi rà, chưa đánh dấu trong mã
 
@@ -1371,7 +1362,7 @@ Mục này là sổ nợ tập trung.
 
 | Nợ | Vấn đề | Đường xử lý |
 |---|---|---|
-| **Cột `sub_style` trong bảng `nhom`** | Có trong schema từ đầu nhưng **không một dòng mã nào đọc hoặc ghi nó**. Schema chết gây hiểu nhầm cho người đọc sau | Hoặc dùng nó (cho kiểu chữ riêng theo nhóm), hoặc bỏ khỏi schema |
+| **Cột `sub_style` trong bảng `nhom`** | Có trong schema từ đầu nhưng **không một dòng mã nào đọc hoặc ghi nó**. Schema chết gây hiểu nhầm cho người đọc sau | Hoặc dùng nó (cho kiểu chữ riêng theo nhóm), hoặc bỏ khỏi schema *(Đã gỡ khỏi lược đồ ngày 30/09/2026.)* |
 | **Không có CI** | Không có `.github/workflows`; mọi lượt test chạy tay, nên "xanh" phụ thuộc người nhớ chạy | Một workflow chạy 34 test offline (7,8 giây) là đủ và gần như miễn phí |
 | **Không có lint / typecheck** | Chỉ có `compileall` và `node --check` — bắt được lỗi cú pháp, không bắt được lỗi kiểu | Thêm `ruff` ở mức tối thiểu; type hint đã có sẵn khá đầy đủ |
 | **Test đặt tên theo người, không theo module** | `tests_api`, `tests_media`, `tests_db`, `tests_translate` phản ánh phân công chứ không phản ánh mã. Một file chạm nhiều module | Hợp lý lúc làm nhóm; sau khi nộp thì gom lại theo module sẽ dễ tìm hơn |
@@ -1566,16 +1557,16 @@ Xoá `work/subtitles.db` mất nhóm, thuật ngữ và nhật ký — **không*
 | Tài liệu cũ nói | Mã thực tế | Bằng chứng |
 |---|---|---|
 | Dịch "theo lô 400 câu" | **Lô 25**; docstring giải thích vì sao 400 làm gấp 4 lần chi phí | `translate.py:34,37-42` |
-| "Lấy 8 khung hình mẫu" | **Một khung cho mỗi câu thoại**, seek tại `bat_dau + 0.3 s` | `markbox.py:143-162` |
+| "Lấy 8 khung hình mẫu" | **Một khung cho mỗi câu thoại**, seek tại `bat_dau + 0.3 s` | `markbox.py:118-137` |
 | Frontend "bốn màn" / 4 trang | **Một** `index.html`, 4 `<section>` ẩn/hiện theo hash | `web/index.html` |
 | "17 test offline" | **34** test offline | đếm từ runner, 2026-09-17 |
 | "7 file kiểm thử" | `test_pipeline.py` + 4 `tests_*.py` + `tests_smoke.py` + `test/frontend.cjs` + `test/runtime_logic.py` | `ls` |
-| `VER` cũ, `vung_blur: 2` | `vung_blur: **3**`, `PROMPT_VER: 2` | `dieu_phoi.py:22-23` |
-| Không nói gì về chế độ vùng | Có `cong_them` / `thay_the`, mặc định `cong_them`, `null` là 400 | `markbox.py:38-56` |
+| `VER` cũ, `vung_blur: 2` | `vung_blur: **4**`, `PROMPT_VER: 2` | `dieu_phoi.py:24-25` |
+| Không nói gì về chế độ vùng | Có `cong_them` / `thay_the`, mặc định `cong_them`, `null` là 400 *(Đã gỡ ngày 30/09/2026: chế độ `cong_them` và trường `che_do_vung` không còn; mọi vùng dùng nghĩa thay thế.)* | `markbox.py:38-56` |
 | File tải lên lưu theo tên gốc | Lưu theo **SHA256 nội dung + namespace nhóm**, tên cố định `nguon.media` | `api/app.py:113,37` |
 | Không nói gì về checkpoint | Có `checkpoint` server-side, tiêu thụ nguyên tử dưới lock | `api/viec.py:73-113` |
-| Không nói gì về dọn job sau restart | Lifespan đánh `loi` job mồ côi kèm hướng dẫn | `api/app.py:42`, `db.py:225` |
-| Bảng `cong_viec` như nguồn sự thật | Chỉ báo tiến độ; resume dựa hoàn toàn trên manifest hệ thống file | `db.py:201` |
+| Không nói gì về dọn job sau restart | Lifespan đánh `loi` job mồ côi kèm hướng dẫn | `api/app.py:42`, `db.py:221` |
+| Bảng `cong_viec` như nguồn sự thật | Chỉ báo tiến độ; resume dựa hoàn toàn trên manifest hệ thống file | `db.py:197` |
 
 ---
 
@@ -1583,8 +1574,8 @@ Xoá `work/subtitles.db` mất nhóm, thuật ngữ và nhật ký — **không*
 
 | Hằng số | Giá trị | Ở đâu |
 |---|---|---|
-| `VER` | `audio 1, sub_goc 1, sub_vi 1, vung_blur 3` | `dieu_phoi.py:22` |
-| `PROMPT_VER` | `2` | `dieu_phoi.py:23` |
+| `VER` | `audio 1, sub_goc 1, sub_vi 1, vung_blur 4` | `dieu_phoi.py:24` |
+| `PROMPT_VER` | `2` | `dieu_phoi.py:25` |
 | `TI_LE_PHU_TOI_THIEU` | `0.25` | `dieu_phoi.py:27` |
 | `HAU_TO` / `MANIFEST` | `_vi.mp4` / `trang_thai.json` | `dieu_phoi.py:24-25` |
 | `NGHI` / `GAP` / `TOI_DA` | `0.4 s` / `1.0 s` / `50` khoảng | `render.py:17-19` |
@@ -1600,8 +1591,7 @@ Xoá `work/subtitles.db` mất nhóm, thuật ngữ và nhật ký — **không*
 | Đuôi video nhận | `.mp4 .mkv .mov .webm .avi .ts` | `api/app.py:31`, `dieu_phoi.py:518` |
 | Giới hạn tải lên | `4 GiB` | `api/app.py:32` |
 | Chu kỳ polling | `1 500 ms` | `web/app.js:181` |
-| Chế độ vùng | `cong_them` (mặc định), `thay_the` | `markbox.py:38-39` |
-| Hộp tối thiểu | `2×2` pixel sau khi chẵn hoá | `markbox.py:138` |
+| Hộp tối thiểu | `2×2` pixel sau khi chẵn hoá | `markbox.py:113` |
 | Encoder | thử `h264_nvenc -preset p5 -cq 23`, lui `libx264 -preset medium -crf 23` | `render.py:120-131` |
 | SRT | đọc `utf-8-sig`, ghi `utf-8` | `srt.py:53,87` |
 | Mã thoát CLI | `0` / `1` / `130` | `main.py:167-182` |

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import shutil
 import sys
 from contextlib import closing
@@ -10,6 +9,7 @@ from pathlib import Path
 
 from pipeline import db, dieu_phoi  # db chi de mo ket noi; moi truy van qua dieu_phoi
 from pipeline.dieu_phoi import TuyChon
+from pipeline.markbox import tach_hop
 
 
 # Console Windows mac dinh cp1252 lam vo moi ban dich tieng Viet in ra.
@@ -18,14 +18,11 @@ for _luong in (sys.stdout, sys.stderr):
 
 
 def _hop(text: str) -> dict[str, float]:
-    """Chi tach chuoi; markbox.kiem_hop moi la validator duy nhat (LD-8)."""
-    phan = text.split(",")
-    if len(phan) != 4:
-        raise argparse.ArgumentTypeError("Hop phai co dang x,y,w,h")
+    """Chi tach chuoi qua markbox.tach_hop; kiem_hop moi la validator (LD-8)."""
     try:
-        return dict(zip("xywh", (float(p) for p in phan)))
-    except ValueError:
-        raise argparse.ArgumentTypeError("Hop phai gom bon so") from None
+        return tach_hop(text)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from None
 
 
 def _co_chung(p: argparse.ArgumentParser) -> None:
@@ -59,16 +56,10 @@ def _preflight(tc: TuyChon):
     for tool in ("ffmpeg", "ffprobe"):
         if shutil.which(tool) is None:
             raise RuntimeError(f"Thieu {tool} trong PATH")
-    try:
-        from dotenv import load_dotenv
-        load_dotenv()
-    except ImportError:
-        pass
-    key = os.environ.get("DEEPSEEK_API_KEY", "")
-    if not key.strip():
+    goi = dieu_phoi.tao_goi(tc.model_dich)
+    if goi is None:
         raise RuntimeError("Thieu DEEPSEEK_API_KEY trong .env hoac bien moi truong")
-    from pipeline.translate import tao_goi
-    return tao_goi(key, tc.model_dich)
+    return goi
 
 
 def _mot_video(video: Path, tc: TuyChon, con, goi) -> str:
@@ -78,8 +69,7 @@ def _mot_video(video: Path, tc: TuyChon, con, goi) -> str:
               f"trong {kq.work}.\n  Chay lai voi --blur-box x,y,w,h hoac --blur off.",
               file=sys.stderr)
     elif kq.trang_thai == "suy_giam":
-        ly_do = (f"{len(kq.giu_nguon)} cue giu nguyen ban goc" if kq.giu_nguon
-                 else "phu de phu qua it so voi thoi luong, xem canh bao o tren")
+        ly_do = "; ".join(kq.canh_bao)
         print(f"SUY GIAM: {ly_do} -> {kq.ra}", file=sys.stderr)
     else:
         print(f"XONG: {kq.ra}")
@@ -125,7 +115,7 @@ def _chay_nhom(a: argparse.Namespace) -> int:
             for goc, dich in dieu_phoi.nhom_thuat_ngu(con, a.ten).items():
                 print(f"{goc}\t{dich}")
         elif a.viec == "set-term":
-            dieu_phoi.nhom_dat_thuat_ngu(con, a.ten, a.goc, a.dich, a.lock)
+            dieu_phoi.nhom_dat_thuat_ngu(con, a.ten, a.goc, a.dich)
         else:
             dieu_phoi.nhom_dat_hop(con, a.ten, a.hop)
     return 0
@@ -155,7 +145,6 @@ def tao_parser() -> argparse.ArgumentParser:
     t.add_argument("ten")
     t.add_argument("goc")
     t.add_argument("dich")
-    t.add_argument("--lock", action="store_true")
     b = viec.add_parser("set-box")
     b.add_argument("ten")
     b.add_argument("hop", type=_hop)
