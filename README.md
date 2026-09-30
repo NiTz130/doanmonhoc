@@ -10,6 +10,41 @@ Tải video tiếng Anh lên trình duyệt → hệ thống lấy phụ đề c
 [kế hoạch](docs/superpowers/plans/2026-09-09-dich-phu-de-video.md) ·
 [hướng dẫn Git](docs/GIT.md)
 
+## Giới thiệu
+
+Phụ đề cứng (chữ in sẵn vào hình) thì không tắt được, còn dịch thủ công cả phim thì quá
+lâu. Hệ thống này tự động hoá cả chuỗi, chỉ nhờ bạn **một việc duy nhất**: khoanh vùng
+phụ đề cũ để làm mờ.
+
+| Bước | Việc | Công nghệ |
+|---|---|---|
+| 1 | Lấy phụ đề tiếng Anh có sẵn, nếu không có thì nhận dạng giọng nói | ffmpeg, Whisper |
+| 2 | Bạn khoanh vùng phụ đề cứng cần che | Trình duyệt |
+| 3 | Dịch từng câu, giữ nguyên mốc thời gian, theo thuật ngữ của nhóm | DeepSeek |
+| 4 | Làm mờ + cháy phụ đề Việt vào hình, **một lần nén duy nhất** | ffmpeg |
+
+**Điểm nổi bật**
+
+- **Một lần nén:** làm mờ và cháy chữ trong cùng một filtergraph, không giảm chất lượng hai lần.
+- **Vùng mờ theo từng câu:** phụ đề nhảy chỗ giữa phim vẫn che đúng.
+- **Nhóm & thuật ngữ:** tên riêng, cách xưng hô nhất quán giữa các tập.
+- **Chạy lại rẻ:** đổi vùng mờ hay cỡ chữ không gọi lại Whisper hay API dịch.
+- **Chạy cục bộ:** không đăng nhập, không hàng đợi ngoài; video ở lại máy bạn.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/ketqua/B-upload-1440.png" alt="Màn tải lên"><br><sub><b>1. Tải lên</b> — kéo thả video, chọn nhóm</sub></td>
+<td width="50%"><img src="docs/ketqua/B-progress.png" alt="Màn tiến độ"><br><sub><b>2. Tiến độ</b> — theo dõi từng bước</sub></td>
+</tr>
+<tr>
+<td><img src="docs/ketqua/B-region.png" alt="Màn vùng làm mờ"><br><sub><b>3. Vùng làm mờ</b> — vẽ hộp lên khung của từng câu</sub></td>
+<td><img src="docs/ketqua/B-result.png" alt="Màn kết quả"><br><sub><b>Hoàn tất</b> — 5 bước xong, bấm tải video kết quả</sub></td>
+</tr>
+<tr>
+<td colspan="2"><img src="docs/ketqua/B-glossary.png" alt="Màn nhóm và thuật ngữ"><br><sub><b>4. Nhóm & thuật ngữ</b> — bảng thuật ngữ và khung mờ mặc định</sub></td>
+</tr>
+</table>
+
 ## 1. Cài đặt
 
 Cần: **Python 3.12**, [`uv`](https://docs.astral.sh/uv/), **ffmpeg 6+** (có `libass`,
@@ -154,6 +189,8 @@ API dịch. `--smoke` **không phải** end-to-end. Số đo ASR/dịch thật �
 
 ## 6. Kiến trúc
 
+![Sơ đồ kiến trúc](docs/kientruc.png)
+
 ```
 web/            4 màn HTML/CSS/JS thuần (Three.js vendored), không bundler
   |  HTTP (polling 1.5 s)
@@ -188,7 +225,7 @@ vào chia đôi, đắt gấp ~4 lần.
 
 ## 7. Chưa làm
 
-Lồng tiếng TTS · tự dò vùng chữ bằng OCR · giao diện desktop · phụ đề mềm · đăng nhập
-· hàng đợi ngoài · WebSocket · triển khai máy chủ · chạy nhiều video song song · vùng
+Lồng tiếng TTS · tự dò vùng chữ bằng OCR · giao diện desktop · phụ đề mềm ·
+hàng đợi ngoài · WebSocket · triển khai máy chủ · chạy nhiều video song song · vùng
 mờ bám chuyển động trong một câu (vùng vẫn đứng yên trong mỗi câu) · benchmark video
 dài / chi phí API cho cả một phim.
