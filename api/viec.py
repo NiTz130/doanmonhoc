@@ -5,7 +5,6 @@ frontend hoi theo chu ky. Bang nay chi bao tien do, khong quyet dinh resume.
 """
 from __future__ import annotations
 
-import os
 import threading
 from contextlib import closing
 from dataclasses import dataclass, replace
@@ -70,8 +69,7 @@ def _cap_nhat(cid: str, **truong: object) -> None:
                 setattr(ho_so, k, v)
 
 
-def dat_hop(cid: str, hop: list[dict] | dict | None, luu_nhom: bool = False,
-            che_do_vung: str = "cong_them") -> TuyChon:
+def dat_hop(cid: str, hop: list[dict] | dict | None, luu_nhom: bool = False) -> TuyChon:
     """Nhan hop da ve roi chay tiep DUNG luot cu, khong phai mo mot luot moi.
 
     LD-3: ghim lai nguon phu de da chon va bo co force cua luot truoc, nen gui hop
@@ -95,7 +93,6 @@ def dat_hop(cid: str, hop: list[dict] | dict | None, luu_nhom: bool = False,
         blur="off" if hop is None else "on",
         blur_box=hop,
         luu_hop_nhom=False if hop is None else luu_nhom,
-        che_do_vung=che_do_vung,
         force=False, force_asr=False,
         nguon_sub=cp.get("nguon_sub"),
         force_dich=bool(cp.get("force_dich")),
@@ -117,16 +114,7 @@ def nha_claim(cid: str) -> None:
 
 def tao_goi(tc: TuyChon):
     """Khong co khoa thi tra None: cache dich van dung duoc, chi dich moi la loi."""
-    try:
-        from dotenv import load_dotenv
-        load_dotenv()
-    except ImportError:
-        pass
-    key = os.environ.get("DEEPSEEK_API_KEY", "")
-    if not key.strip():
-        return None
-    from pipeline.translate import tao_goi as _tao
-    return _tao(key, tc.model_dich)
+    return dieu_phoi.tao_goi(tc.model_dich)
 
 
 def chay_nen(cid: str) -> None:
@@ -158,16 +146,18 @@ def chay_nen(cid: str) -> None:
             kq = dieu_phoi.chay(video, tc, tien, con=con, goi=tao_goi(tc), da_khoa=True)
         except BaseException as exc:        # ngoai le nen phai thanh trang thai loi
             ghi(trang_thai="loi", loi=f"{type(exc).__name__}: {exc}")
-        else:
-            if kq.checkpoint:
-                _cap_nhat(cid, checkpoint=kq.checkpoint)
-            # cho_chon_khung giu nguyen tien do buoc cuoi da bao; dat cung mot con so
-            # o day thi thanh tien do nhay lui khi buoc dich chay tiep sau do.
-            ghi(trang_thai=kq.trang_thai,
-                duong_dan_ra=str(kq.ra) if kq.ra else None,
-                loi=f"giu nguon {len(kq.giu_nguon)} cue" if kq.giu_nguon else None,
-                **({"tien_do": 1.0} if kq.ra else {}))
+            return
         finally:
             # Nha claim o moi loi ra, ke ca khi dung cho nguoi ve hop.
             khoa.unlink(missing_ok=True)
             _cap_nhat(cid, khoa=None)
+        # Nha claim TRUOC khi mo checkpoint: mo som thi POST /hop chen vao khe ho,
+        # task moi thay khoa con gia tri roi bi finally cua task cu xoa lock (LD-2/LD-6).
+        if kq.checkpoint:
+            _cap_nhat(cid, checkpoint=kq.checkpoint)
+        # cho_chon_khung giu nguyen tien do buoc cuoi da bao; dat cung mot con so
+        # o day thi thanh tien do nhay lui khi buoc dich chay tiep sau do.
+        ghi(trang_thai=kq.trang_thai,
+            duong_dan_ra=str(kq.ra) if kq.ra else None,
+            loi="; ".join(kq.canh_bao) or None,
+            **({"tien_do": 1.0} if kq.ra else {}))

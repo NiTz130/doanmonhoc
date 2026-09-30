@@ -150,3 +150,98 @@ def test_kieu_chu_bam_hop_ap_cho_moi_cau():
     # Ca hai thu tu deu phai ra hop `duoi` (cue=None), khong phu thuoc thu tu danh sach.
     assert len(chon) == 2 and chon[0] == chon[1], chon
     assert chon[0] == render.hop_sang_pixel(duoi, 1280, 720), chon[0]
+
+
+def test_viet_ass_bo_the_dinh_dang_goc():
+    # Bao ve loi: the <i>/<font>/{\an8} cua phu de goc chay nguyen chu len hinh.
+    from pipeline.render import viet_ass
+    from pipeline.srt import Cue
+    cues = [Cue(1, 0, 1, "<i>Xin chao</i>"), Cue(2, 1, 2, '<font color="#fff">A</font>'),
+            Cue(3, 2, 3, "{\\an8}Tren"), Cue(4, 3, 4, "a < b > c"), Cue(5, 4, 5, "{la}"),
+            Cue(6, 5, 6, "<B>x</B>\n<u>y</u>")]
+    with TemporaryDirectory() as d:
+        ra = Path(d) / "x.ass"
+        viet_ass(cues, {"PlayResX": 1280, "PlayResY": 720, "FontName": "Arial",
+                        "FontSize": 20, "MarginV": 10}, ra)
+        ass = ra.read_text(encoding="utf-8")
+    for xau in ("<i>", "</i>", "<font", "\\an8", "<B>", "<u>"):
+        assert xau not in ass, xau
+    assert ",,Xin chao\n" in ass and ",,Tren\n" in ass and ",,x\\Ny\n" in ass
+    assert "a < b > c" in ass
+    assert ",,(la)\n" in ass
+
+
+def test_asr_bo_segment_rong_hoac_nguoc_thoi_gian():
+    # Bao ve loi: mot segment rong/end<=start cua Whisper lam hong ca cong viec.
+    from pipeline import asr
+    from pipeline.srt import doc_srt
+    seg = [SimpleNamespace(start=0, end=1, text=" a "), SimpleNamespace(start=1, end=2, text="  "),
+           SimpleNamespace(start=3, end=3, text="b"), SimpleNamespace(start=4, end=5, text="c")]
+
+    class Model:
+        def transcribe(self, *args, **kwargs):
+            return iter(seg), None
+    with TemporaryDirectory() as d:
+        ra = Path(d) / "out.srt"
+        asr.nhan_dang(Path(d) / "a.wav", ra, tao_model=lambda *a, **k: Model())
+        cues = doc_srt(ra)
+    assert [(c.idx, c.bat_dau, c.ket_thuc, c.text) for c in cues] == [(1, 0, 1, "a"), (2, 4, 5, "c")]
+
+
+def test_doc_srt_bo_cue_hong():
+    # Bao ve loi: SRT ngoai doi co khoi chi co moc gio lam tu choi ca file.
+    from pipeline.srt import doc_srt
+    hong = "1\n00:00:00,000 --> 00:00:01,000\na\n\n2\n00:00:02,000 --> 00:00:03,000\n\n"
+    hong += "3\n00:00:05,000 --> 00:00:04,000\nnguoc\n\n4\n00:00:06,000 --> 00:00:07,000\nb\n"
+    with TemporaryDirectory() as d:
+        p = Path(d) / "x.srt"
+        p.write_text(hong, encoding="utf-8")
+        try:
+            doc_srt(p)
+            assert False
+        except ValueError:
+            pass
+        cues = doc_srt(p, bo_cue_hong=True)
+        assert [(c.idx, c.bat_dau, c.text) for c in cues] == [(1, 0, "a"), (2, 6, "b")]
+        for xau in ("1\n00:00:00,000 --> xx\na\n", "1\nkhong co mui ten\nchu\n"):
+            p.write_text(xau, encoding="utf-8")
+            try:
+                doc_srt(p, bo_cue_hong=True)
+                assert False, xau
+            except ValueError:
+                pass
+
+
+def test_tim_phu_de_sidecar_co_cue_rong():
+    # Bao ve loi: sidecar co mot cue rong lam hong ca cong viec.
+    from pipeline import subs
+    from pipeline.srt import doc_srt
+    with TemporaryDirectory() as d:
+        video = Path(d) / "m.mkv"
+        video.with_suffix(".srt").write_text(
+            "1\n00:00:00,000 --> 00:00:01,000\na\n\n2\n00:00:02,000 --> 00:00:03,000\n\n"
+            "3\n00:00:04,000 --> 00:00:05,000\nb\n", encoding="utf-8")
+        ra = Path(d) / "out.srt"
+        assert subs.tim_phu_de(video, ra)
+        assert [c.text for c in doc_srt(ra)] == ["a", "b"]
+
+
+def test_nhan_dien_hoan_doi_khi_xoay():
+    # Video quay doc: ffprobe bao kich thuoc truoc khi xoay, ffmpeg tu xoay hinh.
+    import json
+    from pipeline import dieu_phoi
+
+    def chay(side):
+        def gia(lenh, **_kw):
+            assert any("stream_side_data=rotation" in a for a in lenh), lenh
+            s = {"width": 640, "height": 360}
+            if side is not None:
+                s["side_data_list"] = side
+            return SimpleNamespace(stdout=json.dumps({"streams": [s], "format": {"duration": "2.0"}}))
+        with patch.object(dieu_phoi.subprocess, "run", gia):
+            return dieu_phoi.nhan_dien(Path("x.mp4"))
+
+    for side in ([{"rotation": 90}], [{"rotation": -90}], [{"rotation": 270}]):
+        assert chay(side) == (360, 640, 2.0), side
+    for side in ([{"rotation": 180}], None, [{}]):
+        assert chay(side) == (640, 360, 2.0), side

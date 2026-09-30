@@ -168,7 +168,7 @@ const NHAN = {
   dang_chay: "Đang xử lý",
   cho_chon_khung: "Chờ bạn khoanh vùng phụ đề cứng",
   xong: "Xong",
-  suy_giam: "Đã xuất video, nhưng còn dòng giữ nguyên tiếng nguồn. Hãy kiểm tra bản dịch.",
+  suy_giam: "Đã xuất video nhưng có cảnh báo. Hãy kiểm tra kết quả trước khi dùng.",
   loi: "Lỗi",
 };
 
@@ -335,18 +335,18 @@ function ve_hop() {
   if (!hop) return;
   const r = [hop.x * canvas.width, hop.y * canvas.height,
              hop.w * canvas.width, hop.h * canvas.height];
-  ctx.fillStyle = "rgba(216,36,106,.22)";
+  ctx.fillStyle = "rgba(245,197,24,.18)";
   ctx.fillRect(...r);
-  // Vien trang lot duoi vien hong: canh toi thi trang noi, canh sang thi hong
+  // Vien muc lot duoi vien vang: canh sang thi muc noi, canh toi thi vang
   // noi. Mot mau don le se chim o mot trong hai truong hop.
-  ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = 4; ctx.strokeRect(...r);
-  ctx.strokeStyle = "#d8246a"; ctx.lineWidth = 2; ctx.strokeRect(...r);
+  ctx.strokeStyle = "rgba(23,22,15,.85)"; ctx.lineWidth = 4; ctx.strokeRect(...r);
+  ctx.strokeStyle = "#f5c518"; ctx.lineWidth = 2; ctx.strokeRect(...r);
   for (let i = 0; i < NEO_TAY.length; i++) {
     const [ax, ay] = NEO_TAY[i];
     const hx = r[0] + r[2] * ax, hy = r[1] + r[3] * ay;
     const n = (i === tay_hover ? tay_ti : 1) * 4;      // nua canh mau neo
-    ctx.fillStyle = "#fff"; ctx.fillRect(hx - n - 1, hy - n - 1, n * 2 + 2, n * 2 + 2);
-    ctx.fillStyle = i === tay_hover ? "#ff5c92" : "#d8246a";
+    ctx.fillStyle = "#17160f"; ctx.fillRect(hx - n - 1, hy - n - 1, n * 2 + 2, n * 2 + 2);
+    ctx.fillStyle = i === tay_hover ? "#fff0a0" : "#f5c518";
     ctx.fillRect(hx - n, hy - n, n * 2, n * 2);
   }
 }
@@ -527,10 +527,8 @@ async function gui_hop(gia_tri) {
     await goi(`/api/cong-viec/${cid}/hop`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      // che_do_vung tuong minh: backend mac dinh cong_them cho payload cu, nen
-      // frontend moi phai tu noi no dung nghia thay the ma man hinh nay mo ta.
       body: JSON.stringify(gia_tri === null ? { co_blur: false }
-        : { co_blur: true, che_do_vung: "thay_the", vung: gia_tri,
+        : { co_blur: true, vung: gia_tri,
             luu_nhom: $("hop-luu-nhom").checked }),
     });
     cho_hop = false;
@@ -639,7 +637,7 @@ $("form-thuat-ngu").addEventListener("submit", async (e) => {
     const tu = await goi(`/api/nhom/${encodeURIComponent(nhom_dang_xem)}/thuat-ngu`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ goc: f.goc.value, dich: f.dich.value, khoa: f.khoa.checked }),
+      body: JSON.stringify({ goc: f.goc.value, dich: f.dich.value }),
     });
     e.target.reset();
     ve_thuat_ngu(tu);

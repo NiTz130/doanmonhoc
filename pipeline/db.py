@@ -11,7 +11,6 @@ LOI_MAT_HO_SO = ("Tiến trình xử lý đã khởi động lại nên công vi
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS nhom (
  id INTEGER PRIMARY KEY, ten TEXT NOT NULL UNIQUE,
- ngon_ngu_goc TEXT NOT NULL DEFAULT 'en', sub_style TEXT,
  blur_x REAL, blur_y REAL, blur_w REAL, blur_h REAL,
  tao_luc TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -26,9 +25,6 @@ CREATE TABLE IF NOT EXISTS thuat_ngu (
  id INTEGER PRIMARY KEY,
  nhom_id INTEGER NOT NULL REFERENCES nhom(id) ON DELETE CASCADE,
  goc TEXT NOT NULL, dich TEXT NOT NULL,
- loai TEXT NOT NULL DEFAULT 'thuat_ngu'
- CHECK (loai IN ('ten_nguoi','dia_danh','thuat_ngu')),
- so_lan INTEGER NOT NULL DEFAULT 1, khoa INTEGER NOT NULL DEFAULT 0,
  UNIQUE (nhom_id,goc)
 );
 CREATE TABLE IF NOT EXISTS nhat_ky (
@@ -91,25 +87,25 @@ def _kiem_thuat_ngu(moi: dict[str, str]) -> None:
 
 
 def ghi_thuat_ngu(con: sqlite3.Connection, nid: int | None, moi: dict[str, str]) -> int:
-    """Count observations without replacing any existing translation, locked or not."""
+    """Them tu moi hoc duoc; khong bao gio thay ban dich da co."""
     _kiem_thuat_ngu(moi)
     if nid is None:
         return 0
     con.executemany(
         "INSERT INTO thuat_ngu(nhom_id,goc,dich) VALUES (?,?,?) "
-        "ON CONFLICT(nhom_id,goc) DO UPDATE SET so_lan=thuat_ngu.so_lan+1",
+        "ON CONFLICT(nhom_id,goc) DO NOTHING",
         ((nid, goc, dich) for goc, dich in moi.items()),
     )
     return len(moi)
 
 
-def dat_thuat_ngu(con: sqlite3.Connection, nid: int, goc: str, dich: str, khoa: bool = False) -> None:
-    """Explicit user edit is allowed to replace a previously locked term."""
+def dat_thuat_ngu(con: sqlite3.Connection, nid: int, goc: str, dich: str) -> None:
+    """Lenh sua cua nguoi dung thay ban dich da co."""
     _kiem_thuat_ngu({goc: dich})
     con.execute(
-        "INSERT INTO thuat_ngu(nhom_id,goc,dich,khoa) VALUES (?,?,?,?) "
-        "ON CONFLICT(nhom_id,goc) DO UPDATE SET dich=excluded.dich,khoa=excluded.khoa",
-        (nid, goc, dich, int(khoa)),
+        "INSERT INTO thuat_ngu(nhom_id,goc,dich) VALUES (?,?,?) "
+        "ON CONFLICT(nhom_id,goc) DO UPDATE SET dich=excluded.dich",
+        (nid, goc, dich),
     )
 
 

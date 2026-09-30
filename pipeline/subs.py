@@ -36,7 +36,7 @@ def probe_subs(video: Path) -> list[dict]:
 def tim_phu_de(video: Path, ra: Path, lang: str = 'en') -> bool:
     sidecar = tim_sidecar(video, lang)
     if sidecar:
-        ghi_srt(doc_srt(sidecar), ra)
+        ghi_srt(doc_srt(sidecar, bo_cue_hong=True), ra)
         return True
     tracks = [(i,t) for i,t in enumerate(probe_subs(video)) if t.get('codec_name') in CODEC_CHU]
     if not tracks:
@@ -46,5 +46,5 @@ def tim_phu_de(video: Path, ra: Path, lang: str = 'en') -> bool:
     with file_tam(Path(ra)) as tmp:
         subprocess.run(['ffmpeg','-v','error','-y','-i',str(Path(video).resolve()),
             '-map',f'0:s:{index}','-c:s','srt',str(tmp)], check=True, capture_output=True, text=True)
-        ghi_srt(doc_srt(tmp),tmp)
+        ghi_srt(doc_srt(tmp, bo_cue_hong=True),tmp)
     return True

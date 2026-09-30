@@ -95,7 +95,7 @@ Tesseract **không còn cần**. Khung làm mờ do người dùng đánh dấu.
                                v                   ^
  input.mp4
     |
-    +--[0]   nhan_dien   ffprobe: kich thuoc, thoi luong; nap hop + style cua nhom
+    +--[0]   nhan_dien   ffprobe: kich thuoc, thoi luong; nap hop cua nhom
     |
     +--[1]   audio.py    ffmpeg demux              -> work/<ten>/audio.wav
     |                    tuy chon --separate: Demucs -> vocals.wav
@@ -164,8 +164,8 @@ nhau dùng chung một thư mục và ghi đè kết quả của nhau.
 Giá trị dự phòng chỉ dùng khi không có khung làm mờ. Có khung thì cả hai suy ra
 từ khung (xem bước 5).
 
-**Nhóm:** có `--nhom "tên"` thì tra hoặc tạo bản ghi, nạp thuật ngữ, khung làm
-mờ và `sub_style`. Không có thì video chạy lẻ: không nạp, không ghi thuật ngữ.
+**Nhóm:** có `--nhom "tên"` thì tra hoặc tạo bản ghi, nạp thuật ngữ và khung làm
+mờ. Không có thì video chạy lẻ: không nạp, không ghi thuật ngữ.
 
 ### Bước 1 — Tách âm thanh (`pipeline/audio.py`)
 
@@ -294,7 +294,7 @@ Lý do làm kỹ chỗ này: nối phụ đề thành một khối rồi tách l
 lỗi phổ biến nhất khi dịch phụ đề. Model gộp hai câu hoặc tách thành ba, và toàn
 bộ phần sau lệch timestamp. Đánh số rồi kiểm đếm là cách rẻ nhất để chặn.
 
-**Thuật ngữ:** truyền từ mới đã chấp nhận sang lô kế tiếp và nửa sau của lô chia đôi, không cắt tùy ý 400 mục. Giữ bản dịch của mục đã có trong suốt video; từ khóa không bị máy sửa. Lưu từ mới với metadata dịch. Ghi glossary và dấu hash artifact đã áp dụng trong cùng transaction SQLite; resume không tăng đếm lần nữa. Sau commit cập nhật baseline glossary cho cache để lần sau không tự invalidates bởi từ vừa học. Xem LD-6 và STEP-6 trong plan.
+**Thuật ngữ:** truyền từ mới đã chấp nhận sang lô kế tiếp và nửa sau của lô chia đôi, không cắt tùy ý 400 mục. Giữ bản dịch của mục đã có trong suốt video. Lưu từ mới với metadata dịch. Ghi glossary và dấu hash artifact đã áp dụng trong cùng transaction SQLite; resume không ghi lại lần nữa. Sau commit cập nhật baseline glossary cho cache để lần sau không tự invalidates bởi từ vừa học. Xem LD-6 và STEP-6 trong plan.
 
 `sub_vi.srt` ghi **UTF-8 không BOM** để libass đọc đúng dấu tiếng Việt.
 
@@ -437,8 +437,6 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE nhom (
   id            INTEGER PRIMARY KEY,
   ten           TEXT NOT NULL UNIQUE,
-  ngon_ngu_goc  TEXT NOT NULL DEFAULT 'en',
-  sub_style     TEXT,                      -- NULL = suy tu khung blur
   blur_x REAL, blur_y REAL, blur_w REAL, blur_h REAL,   -- 0.0-1.0
   tao_luc       TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -458,10 +456,6 @@ CREATE TABLE thuat_ngu (
   nhom_id  INTEGER NOT NULL REFERENCES nhom(id) ON DELETE CASCADE,
   goc      TEXT NOT NULL,
   dich     TEXT NOT NULL,
-  loai     TEXT NOT NULL DEFAULT 'thuat_ngu'
-           CHECK (loai IN ('ten_nguoi','dia_danh','thuat_ngu')),
-  so_lan   INTEGER NOT NULL DEFAULT 1,
-  khoa     INTEGER NOT NULL DEFAULT 0,   -- 1 = nguoi dung chot, may khong sua
   UNIQUE (nhom_id, goc)
 );
 
@@ -594,7 +588,7 @@ main.py <video> [-o OUT] [--nhom TEN] [--lang en] [--model large-v3]
                 [--blur auto|on|off] [--blur-box x,y,w,h] [--font-scale 0.42]
                 [--separate] [--force-asr] [--force]
 main.py batch <thu_muc> [--nhom TEN] [cac co tren]
-main.py nhom list | glossary <ten> | set-term <ten> "goc" "dich" [--lock]
+main.py nhom list | glossary <ten> | set-term <ten> "goc" "dich"
         | set-box <ten> x,y,w,h
 ```
 
@@ -618,7 +612,7 @@ mạng xã hội thường là nội dung — meme, caption, chú thích — che
 - Sửa tay `sub_vi.srt` hợp lệ được giữ nếu upstream không đổi: validate đủ cue/timestamp và ghi nhận hash override. Không học glossary từ bản sửa tay. File sai cấu trúc không dùng làm cache.
 - Ghi tạm cùng thư mục → validate → os.replace; manifest ghi sau artifact bằng cùng cơ chế. Crash trước manifest gây cache miss. File tạm media giữ đuôi đúng. File tốt cũ không bị xóa trước khi output mới được xác minh.
 - Một lock file tạo độc quyền cho mỗi work directory, giữ suốt lượt video. Lock còn sau crash: báo rõ và yêu cầu xác minh tiến trình đã dừng trước khi xóa, không tự thu hồi.
-- Resume dịch áp dụng glossary bằng transaction có dấu hash artifact; không đếm lại cùng artifact. Sau áp dụng cập nhật baseline glossary như plan LD-6/STEP-6.
+- Resume dịch áp dụng glossary bằng transaction có dấu hash artifact; không áp lại cùng artifact. Sau áp dụng cập nhật baseline glossary như plan LD-6/STEP-6.
 
 Batch từ chối `-o` trước side effect; mỗi nguồn sinh `<stem>_vi.mp4`. Hậu tố `_vi.mp4` dành cho output và bị loại khỏi quét batch. Chỉ nhận file thực; tính trước các đích, trùng đích giữa hai nguồn hoặc output trùng input thì từ chối trước ghi. Chạy tuần tự, tiếp tục sau lỗi video cục bộ, tổng kết thành công/suy giảm/lỗi. Exit 1 nếu có lỗi hoặc dòng dịch giữ nguồn, 0 khi tất cả thành công. Ctrl+C dừng và exit 130. Lỗi cấu hình chung kiểm trước vòng batch.
 
@@ -664,7 +658,7 @@ import các file kia và là điểm vào duy nhất — `python test_pipeline.p
 
 Cần CSDL (dùng `:memory:`):
 
-12. Thuật ngữ có `khoa = 1` không bị lượt dịch sau ghi đè.
+12. Thuật ngữ đã có không bị lượt dịch sau ghi đè; chỉ lệnh sửa của người dùng thay được.
 13. `UNIQUE (nhom_id, goc)` chặn được hai bản dịch khác nhau cho cùng một từ.
 14. Xoá nhóm thì video vẫn còn với `nhom_id = NULL`.
 

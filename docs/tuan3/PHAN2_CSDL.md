@@ -52,8 +52,6 @@ SQLite dùng kiểu động; bảng dưới ghi đúng kiểu khai báo trong `p
 |---|---|---|---|
 | `id` | INTEGER | PK | Khóa thay thế |
 | `ten` | TEXT | NOT NULL, UNIQUE | Tên nhóm do người dùng đặt, là khóa tự nhiên |
-| `ngon_ngu_goc` | TEXT | NOT NULL, mặc định `'en'` | Ngôn ngữ nguồn của nhóm — **khai báo, chưa dùng** |
-| `sub_style` | TEXT | cho phép NULL | Kiểu chữ riêng của nhóm — **khai báo, chưa dùng** |
 | `blur_x`, `blur_y` | REAL | cho phép NULL | Góc trên-trái vùng mờ mặc định, tỉ lệ 0–1 |
 | `blur_w`, `blur_h` | REAL | cho phép NULL | Rộng, cao vùng mờ mặc định, tỉ lệ 0–1 |
 | `tao_luc` | TEXT | NOT NULL, mặc định thời điểm tạo | Thời điểm tạo nhóm |
@@ -79,9 +77,6 @@ SQLite dùng kiểu động; bảng dưới ghi đúng kiểu khai báo trong `p
 | `nhom_id` | INTEGER | FK → `nhom.id`, ON DELETE CASCADE, NOT NULL | Nhóm sở hữu thuật ngữ |
 | `goc` | TEXT | NOT NULL; UNIQUE cùng `nhom_id` | Từ tiếng Anh |
 | `dich` | TEXT | NOT NULL | Bản dịch đang dùng |
-| `loai` | TEXT | NOT NULL, CHECK một trong `ten_nguoi`, `dia_danh`, `thuat_ngu` | Phân loại — **khai báo, mã luôn để mặc định** |
-| `so_lan` | INTEGER | NOT NULL, mặc định 1 | Số lần máy gặp lại thuật ngữ này |
-| `khoa` | INTEGER | NOT NULL, mặc định 0 | Người dùng đánh dấu khóa bản dịch |
 
 #### Bảng nhat_ky — nhật ký từng bước của từng video
 
@@ -124,7 +119,7 @@ Khóa ngoại được bật mỗi lần mở kết nối bằng `PRAGMA foreign
 
 **Dạng chuẩn 1 (1NF).** Mọi cột chứa một giá trị nguyên tử. Vùng mờ mặc định lưu thành bốn cột số `blur_x`, `blur_y`, `blur_w`, `blur_h`, không gộp thành chuỗi `"x,y,w,h"`. Không cột nào chứa danh sách: danh sách vùng mờ gắn với từng câu thoại **không** nằm trong CSDL mà nằm trong tệp `vung_blur.json` của video (lý do ở mục 1.1).
 
-**Dạng chuẩn 2 (2NF).** Mọi bảng có khóa chính một cột, nên không thể có phụ thuộc bộ phận vào khóa chính. Riêng `thuat_ngu` còn có khóa ứng viên ghép `(nhom_id, goc)`; các cột `dich`, `loai`, `so_lan`, `khoa` phụ thuộc vào **cả** cặp đó — cùng một từ `goc` ở hai nhóm khác nhau được phép có hai bản dịch khác nhau — nên không phụ thuộc bộ phận.
+**Dạng chuẩn 2 (2NF).** Mọi bảng có khóa chính một cột, nên không thể có phụ thuộc bộ phận vào khóa chính. Riêng `thuat_ngu` còn có khóa ứng viên ghép `(nhom_id, goc)`; cột `dich` phụ thuộc vào **cả** cặp đó — cùng một từ `goc` ở hai nhóm khác nhau được phép có hai bản dịch khác nhau — nên không phụ thuộc bộ phận.
 
 **Dạng chuẩn 3 và BCNF.** Kiểm từng phụ thuộc hàm không tầm thường:
 
@@ -132,25 +127,23 @@ Khóa ngoại được bật mỗi lần mở kết nối bằng `PRAGMA foreign
 |---|---|---|---|
 | `nhom` | `id → mọi cột`; `ten → mọi cột` | Có — `ten` là khóa ứng viên (UNIQUE) | Đạt BCNF |
 | `video` | `duong_dan → thu_muc_work, rong, cao, thoi_luong` | Có — `duong_dan` là khóa ứng viên | Đạt BCNF. `thu_muc_work` suy được từ `duong_dan` (băm đường dẫn) nhưng phụ thuộc vào khóa ứng viên thì không vi phạm |
-| `thuat_ngu` | `(nhom_id, goc) → dich, loai, so_lan, khoa` | Có — khóa ứng viên ghép | Đạt BCNF |
+| `thuat_ngu` | `(nhom_id, goc) → dich` | Có — khóa ứng viên ghép | Đạt BCNF |
 | `nhat_ky` | `id → mọi cột` | Có | Đạt BCNF; mỗi hàng là một sự kiện độc lập |
 | `cong_viec` | `id → mọi cột` | Có | Đạt BCNF |
 
-**Một đánh đổi đã chấp nhận.** Hàng `nhat_ky` có `buoc = 'translate_apply'` được dùng làm **dấu đã áp bảng thuật ngữ** cho một bản dịch, và cột `loi` của hàng đó chứa băm tệp bản dịch chứ không chứa lỗi. Nhờ vậy, một lần sập giữa "ghi tệp" và "ghi CSDL" được hoàn tất ở lần chạy sau mà không đếm thuật ngữ hai lần (FR-15). Cái giá: cột `loi` mang hai nghĩa tùy giá trị `buoc`. Nhóm giữ cách này thay vì thêm một bảng chỉ để chứa một cờ.
+**Một đánh đổi đã chấp nhận.** Hàng `nhat_ky` có `buoc = 'translate_apply'` được dùng làm **dấu đã áp bảng thuật ngữ** cho một bản dịch, và cột `loi` của hàng đó chứa băm tệp bản dịch chứ không chứa lỗi. Nhờ vậy, một lần sập giữa "ghi tệp" và "ghi CSDL" được hoàn tất ở lần chạy sau mà không áp bảng thuật ngữ hai lần (FR-15). Cái giá: cột `loi` mang hai nghĩa tùy giá trị `buoc`. Nhóm giữ cách này thay vì thêm một bảng chỉ để chứa một cờ.
 
 ### 1.6 Những gì lược đồ khai báo nhưng mã chưa dùng
 
-Kiểm trên mã nguồn và trên CSDL thật `work/subtitles.db` ngày 23/09/2026:
+Các cột `nhom.ngon_ngu_goc`, `nhom.sub_style`, `thuat_ngu.loai`, `thuat_ngu.so_lan` và `thuat_ngu.khoa` từng được khai báo nhưng không đổi hành vi nào, nên đã gỡ khỏi lược đồ ngày 30/09/2026. CSDL tạo trước ngày đó vẫn còn các cột này; mã mới không đọc hay ghi chúng, nên không cần di chuyển dữ liệu.
+
+Còn một điểm khai báo mà mã chưa dùng, kiểm trên mã nguồn và trên CSDL thật `work/subtitles.db` ngày 23/09/2026:
 
 | Thành phần | Hiện trạng | Bằng chứng trên dữ liệu thật |
 |---|---|---|
-| `nhom.ngon_ngu_goc` | Không có dòng mã nào đọc hay ghi; luôn là mặc định | 2/2 nhóm có giá trị `'en'` |
-| `nhom.sub_style` | Không có dòng mã nào đọc hay ghi | 0/2 nhóm có giá trị |
-| `thuat_ngu.loai` | Không có dòng mã nào ghi; luôn là mặc định | 11/11 thuật ngữ là `thuat_ngu` |
 | `cong_viec.video_id` | `tao_cong_viec` được gọi không kèm `video_id`, không nơi nào cập nhật sau đó | 0/3 công việc có giá trị |
-| `thuat_ngu.khoa`, `thuat_ngu.so_lan` | Được **ghi** nhưng chưa có nhánh nào **đọc**. Máy dịch vốn không bao giờ ghi đè bản dịch đã có, khóa hay không | — |
 
-Những điểm trên không làm sai chức năng hiện có, vì vậy nhóm **ghi nhận và chưa sửa** trong tuần này. Hướng xử lý cần cả nhóm thống nhất: hoặc dùng (ví dụ gán `cong_viec.video_id` để truy vết một công việc về video của nó), hoặc bỏ khỏi lược đồ để người đọc sau không hiểu nhầm.
+Điểm này không làm sai chức năng hiện có, vì vậy nhóm **ghi nhận và chưa sửa** trong tuần này. Hướng xử lý: dùng (gán `cong_viec.video_id` để truy vết một công việc về video của nó), hoặc bỏ khỏi lược đồ để người đọc sau không hiểu nhầm.
 
 ### 1.7 Ma trận phủ yêu cầu
 
@@ -158,10 +151,10 @@ Những điểm trên không làm sai chức năng hiện có, vì vậy nhóm *
 |---|---|---|
 | FR-12 — tạo và chọn nhóm | Tên nhóm | `nhom.ten` |
 | FR-13 — thuật ngữ học được dùng cho tập sau | Cặp từ gốc → bản dịch theo nhóm | `thuat_ngu.goc`, `thuat_ngu.dich` |
-| FR-14 — sửa và khóa thuật ngữ | Bản dịch người dùng sửa, cờ khóa | `thuat_ngu.dich`, `thuat_ngu.khoa` |
-| FR-15 — không đếm trùng khi chạy lại | Dấu đã áp theo băm bản dịch | `nhat_ky` hàng `translate_apply` |
+| FR-14 — sửa thuật ngữ | Bản dịch người dùng sửa | `thuat_ngu.dich` |
+| FR-15 — không ghi lặp khi chạy lại | Dấu đã áp theo băm bản dịch | `nhat_ky` hàng `translate_apply` |
 | FR-21 — vùng mờ mặc định của nhóm | Một vùng chính, tỉ lệ 0–1 | `nhom.blur_x/y/w/h` |
-| FR-17, FR-18 — vùng mờ chung và riêng từng câu | Danh sách vùng kèm chỉ số câu, chế độ vùng | Tệp `vung_blur.json` |
+| FR-17, FR-18 — vùng mờ chung và riêng từng câu | Danh sách vùng kèm chỉ số câu | Tệp `vung_blur.json` |
 | Tra cứu video đã xử lý | Kích thước, thời lượng, lần xong gần nhất | `video.rong`, `cao`, `thoi_luong`, `xong_luc` — chỉ để tra cứu; các bước xử lý (FR-07, FR-25) đọc lại trực tiếp bằng ffprobe |
 | FR-27, FR-28, FR-30 — chạy nền, tiến độ, ghi mọi kết cục | Trạng thái, bước, tỉ lệ, lỗi | `cong_viec.trang_thai`, `buoc`, `tien_do`, `loi` |
 | FR-31 — tải video kết quả | Đường dẫn tệp kết quả | `cong_viec.duong_dan_ra` |
@@ -185,6 +178,4 @@ Lược đồ đầy đủ dạng SQL có trong [schema.sql](../schema.sql). T�
 
 | Việc | Vì sao | Ai quyết |
 |---|---|---|
-| Dùng hay bỏ các cột ở mục 1.6 | Cột khai báo mà không dùng khiến người đọc lược đồ hiểu nhầm | Cả nhóm; TV1 phụ trách CSDL |
 | Gán `cong_viec.video_id` | Hiện không truy được một công việc về hàng `video` của nó qua CSDL | TV1 |
-| Ý nghĩa của ô "Khóa bản dịch" | Máy vốn không ghi đè bản dịch đã có, nên cờ khóa chưa đổi hành vi nào | TV3 phụ trách dịch và thuật ngữ |

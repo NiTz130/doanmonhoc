@@ -129,7 +129,7 @@ def smoke_media() -> None:
                         video, TuyChon(
                             nhom="smoke", blur="on",
                             blur_box=[{**duoi, "cue": None}, {**tren, "cue": [1]}],
-                            che_do_vung="thay_the", ra=coordinator_output),
+                            ra=coordinator_output),
                         con=con, goi=provider)
             finally:
                 os.chdir(cwd)
@@ -154,6 +154,49 @@ def smoke_media() -> None:
                                 str(work / f"{nguon}.mp4"), "-frames:v", "1", "-y", str(anh)],
                                check=True, capture_output=True, text=True)
                 print(f"  khung {ten} t={t}s -> {anh.name} (xem bang mat)")
+
+    # V-2a: video quay doc (metadata xoay 90): nhan_dien phai bao kich thuoc SAU xoay,
+    # va vung mo phai roi dung dai da chon tren hinh da xoay.
+    from unittest.mock import patch
+    from pipeline import dieu_phoi
+    with TemporaryDirectory() as d:
+        work = Path(d)
+        goc, xoay = work / "goc.mp4", work / "xoay.mp4"
+        _video_gia(goc, 640, 360)
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-display_rotation", "90", "-i", str(goc),
+                        "-c", "copy", str(xoay)], check=True, capture_output=True, text=True)
+        assert dieu_phoi.nhan_dien(xoay)[:2] == (360, 640), dieu_phoi.nhan_dien(xoay)
+        srt = work / "sub_vi.srt"
+        ghi_srt(cues, srt)
+        style = {"W": 360, "H": 640, "font_scale": 0.42}
+        hop = {"x": .1, "y": .75, "w": .8, "h": .1}
+        doi_chung = {"x": .1, "y": .1, "w": .8, "h": .1}
+        khong, co = work / "khong_blur.mp4", work / "co_blur.mp4"
+        render.ket_xuat(xoay, srt, [], style, khong)
+        render.ket_xuat(xoay, srt, [({**hop, "cue": None}, render.khoang_mo(cues, 5.0))], style, co)
+        v = next(s for s in _probe(co)["streams"] if s["codec_type"] == "video")
+        assert (v["width"], v["height"]) == (360, 640), (v["width"], v["height"])
+        control, out = _anh_xam(khong, 1.0), _anh_xam(co, 1.0)
+        trung, ngoai = (_do_khac(out, control, 360, 640, h) for h in (hop, doi_chung))
+        assert trung > max(1.0, 2 * ngoai), ("vung mo sai dai", trung, ngoai)
+        print("  xoay 90: 360x640 OK")
+
+    # V-2b: nguon 10-bit di qua libx264 phai ra yuv420p (High 10 kho phat tren trinh duyet).
+    with TemporaryDirectory() as d:
+        work = Path(d)
+        nguon, ra = work / "10bit.mp4", work / "ra.mp4"
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i",
+                        "testsrc2=size=320x240:rate=10:duration=2", "-c:v", "libx264",
+                        "-pix_fmt", "yuv420p10le", str(nguon)],
+                       check=True, capture_output=True, text=True)
+        srt = work / "sub_vi.srt"
+        ghi_srt(cues, srt)
+        with patch.object(render, "bo_ma_hoa", lambda: ("-c:v", "libx264", "-preset",
+                                                        "ultrafast", "-crf", "23")):
+            render.ket_xuat(nguon, srt, [], {"W": 320, "H": 240, "font_scale": 0.42}, ra)
+        v = next(s for s in _probe(ra)["streams"] if s["codec_type"] == "video")
+        assert v["pix_fmt"] == "yuv420p", v["pix_fmt"]
+        print("  10-bit -> yuv420p OK")
 
 
 if __name__ == "__main__":

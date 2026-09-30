@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib
 import json
 import logging
+import os
 import shutil
 import subprocess
 import time
@@ -15,14 +16,15 @@ from pathlib import Path
 
 from pipeline import db
 # Validator thuan: LD-8 chi co mot ban, va khong module gia nao duoc thay no.
-from pipeline.markbox import CHE_DO_VUNG, hop_chinh, kiem_che_do
+from pipeline.markbox import hop_chinh
 from pipeline.srt import (Cue, bam_file, chu_ky, doc_json, doc_srt, file_tam,
                           ghi_json, khoa_work, thu_muc_lam_viec)
 
 # Tang khi doi cach sinh artifact cua mot buoc: moi manifest cu thanh cache miss.
-VER = {"audio": 1, "sub_goc": 1, "sub_vi": 1, "vung_blur": 3}
+VER = {"audio": 1, "sub_goc": 1, "sub_vi": 1, "vung_blur": 4}
 PROMPT_VER = 2                          # doi prompt phai lam moi moi ban dich cu
 HAU_TO = "_vi.mp4"
+DUOI_VIDEO = {".mp4", ".mkv", ".mov", ".webm", ".avi", ".ts"}
 MANIFEST = "trang_thai.json"
 # Duoi nguong nay coi nhu nhan dang hong, khong phai video it thoai.
 TI_LE_PHU_TOI_THIEU = 0.25
@@ -43,10 +45,6 @@ class TuyChon:
     blur: str = "auto"                      # auto | on | off
     # Mot dict = mot hop cho moi cau (CLI, khung nhom); danh sach = hop gan cue rieng.
     blur_box: dict[str, float] | list[dict] | None = None
-    # LD-7: `cong_them` la nghia legacy (moi vung deu ap); `thay_the` la nghia cua
-    # frontend moi (vung rieng thay vung chung o dung cau duoc gan). Mac dinh phai
-    # la legacy, vi CLI va moi payload cu khong noi gi ve mode.
-    che_do_vung: str = "cong_them"
     luu_hop_nhom: bool = False           # hop nay co thanh mac dinh cua nhom khong
     font_scale: float = 0.42
     separate: bool = False
@@ -75,6 +73,7 @@ class KetQua:
     giu_nguon: list[int] = field(default_factory=list)
     # Chi co khi `cho_chon_khung`: server tu ghi, khong nhan tu than request.
     checkpoint: dict | None = None
+    canh_bao: list[str] = field(default_factory=list)   # ly do suy_giam; CLI va web cung doc
 
 
 class ChoChonKhung(Exception):
@@ -88,14 +87,21 @@ class ChoChonKhung(Exception):
 def nhan_dien(video: Path) -> tuple[int, int, float]:
     ket = subprocess.run(
         ["ffprobe", "-v", "error", "-select_streams", "v:0",
-         "-show_entries", "stream=width,height", "-show_entries", "format=duration",
+         "-show_entries", "stream=width,height:stream_side_data=rotation",
+         "-show_entries", "format=duration",
          "-of", "json", str(Path(video).resolve())],
         check=True, capture_output=True, text=True)
     d = json.loads(ket.stdout)
     if not d.get("streams"):
         raise ValueError(f"Khong tim thay luong video trong {video}")
     s = d["streams"][0]
-    return int(s["width"]), int(s["height"]), float(d["format"]["duration"])
+    W, H = int(s["width"]), int(s["height"])
+    # Video quay doc: ffprobe bao kich thuoc TRUOC khi xoay, con ffmpeg (trich khung,
+    # render) tu xoay hinh. Khong doi thi hop phan tram bi doi sang pixel sai truc.
+    xoay = next((sd["rotation"] for sd in s.get("side_data_list") or [] if "rotation" in sd), 0)
+    if round(abs(float(xoay))) % 180 == 90:
+        W, H = H, W
+    return W, H, float(d["format"]["duration"])
 
 
 # ---------------------------------------------------------------- manifest
@@ -249,14 +255,11 @@ def _cue_cua(v: dict, cues: list[Cue]) -> list[Cue]:
     return [cues[i] for i in v["cue"] if i < len(cues)]
 
 
-def _phan_cue(vung: list[dict], cues: list[Cue], che_do: str) -> list[tuple[dict, list[Cue]]]:
-    """Cau nao thuoc vung nao. `thay_the`: cau da co vung rieng bi tru khoi vung chung.
+def _phan_cue(vung: list[dict], cues: list[Cue]) -> list[tuple[dict, list[Cue]]]:
+    """Cau nao thuoc vung nao: cau da co vung rieng bi tru khoi vung chung.
 
-    Khong dong vao `_cue_cua`: payload va JSON legacy van phai giu nghia cong don
-    cua chinh no, nen phep tru nam o day chu khong o trong ham dung chung.
+    Khong dong vao `_cue_cua`: phep tru nam o day chu khong o trong ham dung chung.
     """
-    if che_do != "thay_the":
-        return [(v, _cue_cua(v, cues)) for v in vung]
     rieng = {i for v in vung if v.get("cue") is not None for i in v["cue"]}
     return [(v, [c for i, c in enumerate(cues) if i not in rieng]
                 if v.get("cue") is None else _cue_cua(v, cues))
@@ -271,22 +274,19 @@ def _hop_chung(vung: list[dict]) -> dict[str, float]:
 
 def _buoc_hop(video: Path, work: Path, tc: TuyChon, W: int, H: int, cues: list[Cue],
               ky_cue: str, bam: Callable[[Path], str], hop_nhom: dict | None,
-              luu_nhom: Callable[[dict], None]) -> tuple[list[dict], str]:
+              luu_nhom: Callable[[dict], None]) -> list[dict]:
     """Co flags duoc xet truoc cache, nen doi --blur khong bi JSON cu che."""
     ra = work / "vung_blur.json"
     kiem = _nap("markbox").kiem_vung
     if tc.blur == "off" or (tc.blur == "auto" and W / H < 1.2):
         ghi_json(ra, {"co_blur": False})       # khong xoa hop cua nhom
-        return [], tc.che_do_vung
-    # LD-4/LD-7b: chu ky gom SHA256 sub goc va mode, khong chi so cue. Doi thu tu ma
+        return []
+    # LD-4/LD-7b: chu ky gom SHA256 sub goc, khong chi so cue. Doi thu tu ma
     # giu nguyen so luong van phai chon lai vung: chi so cue cu tro sang cau khac.
-    che_do = kiem_che_do(tc.che_do_vung)
-
-    def ky_cua(mode: str) -> str:
-        return chu_ky(["vung_blur", bam(video), W, H, ky_cue, mode])
+    ky = chu_ky(["vung_blur", bam(video), W, H, ky_cue])
 
     if tc.blur_box is not None:
-        vung = kiem(tc.blur_box, W, H, len(cues), che_do)
+        vung = kiem(tc.blur_box, W, H, len(cues))
         if tc.luu_hop_nhom:             # ve hop cho mot video khong am tham doi ca nhom
             luu_nhom(_hop_chung(vung))
     else:
@@ -301,17 +301,9 @@ def _buoc_hop(video: Path, work: Path, tc: TuyChon, W: int, H: int, cues: list[C
             return ChoChonKhung(_nap("markbox").trich_khung(video, cues, thu_muc))
 
         luu = doc_json(ra)
-        che_do_luu = luu.get("che_do_vung")
-        # Mode cua artifact la authoritative: chu ky duoc tinh theo mode DA LUU chu
-        # khong theo mode mac dinh cua lan tai len sau; khong the thi mot upload
-        # khong noi gi ve mode se lam vung `thay_the` cu thanh cache miss roi bi ve
-        # lai bang nghia khac. Doc duoc mot nghia van khong phai bang chung cache
-        # con hop le: mode mat, hong hay la gia tri la deu la KHONG chung minh duoc.
-        cu = (None if tc.force or che_do_luu not in CHE_DO_VUNG
-              else _cache(work, "vung_blur", ky_cua(che_do_luu), ra))
+        cu = None if tc.force else _cache(work, "vung_blur", ky, ra)
         if cu and luu.get("co_blur"):
-            che_do = che_do_luu
-            vung = kiem(luu["vung"], W, H, len(cues), che_do)
+            vung = kiem(luu["vung"], W, H, len(cues))
         elif luu.get("co_blur") and any(
                 isinstance(v, dict) and v.get("cue") is not None
                 for v in (luu.get("vung") or ())):
@@ -320,13 +312,12 @@ def _buoc_hop(video: Path, work: Path, tc: TuyChon, W: int, H: int, cues: list[C
             # cu bang mot hop chung duy nhat (LD-7b).
             raise chon_lai()
         elif hop_nhom is not None:
-            # Hop nhom la MOT hop doc lap chi so cue: hai mode cho cung ket qua.
-            vung = kiem(hop_nhom, W, H, len(cues), che_do)
+            vung = kiem(hop_nhom, W, H, len(cues))
         else:
             raise chon_lai()
-    ghi_json(ra, {"co_blur": True, "che_do_vung": che_do, "vung": vung})
-    _ghi_manifest(work, "vung_blur", ky_cua(che_do), ra)
-    return vung, che_do
+    ghi_json(ra, {"co_blur": True, "vung": vung})
+    _ghi_manifest(work, "vung_blur", ky, ra)
+    return vung
 
 
 # ---------------------------------------------------------------- luong chinh
@@ -417,8 +408,8 @@ def _chay(video: Path, work: Path, tc: TuyChon, tien: Callable, con, goi) -> Ket
                 db.ghi_hop(con, nid, hop)
 
     try:
-        vung, che_do_vung = _buoc_hop(video, work, tc, W, H, cues, ky_cue, bam,
-                                      hop_nhom, luu_nhom)
+        vung = _buoc_hop(video, work, tc, W, H, cues, ky_cue, bam,
+                         hop_nhom, luu_nhom)
     except ChoChonKhung as cho:
         nhat_ky("vung_blur", "bo_qua", time.monotonic(), "cho_chon_khung")
         if tc.thu_muc_khung:
@@ -455,17 +446,13 @@ def _chay(video: Path, work: Path, tc: TuyChon, tien: Callable, con, goi) -> Ket
     # khong con khoang nao: tru het cau khoi vung chung khong duoc lam kieu chu nhay
     # sang mot vung khac. Cung ham ma khung mac dinh cua nhom dung.
     style = {"font_scale": tc.font_scale, "W": W, "H": H,
-             "FontSize": 22 if W / H >= 1.2 else 16,
-             "MarginV": 30 if W / H >= 1.2 else 90,
              **({"hop_chinh": hop_chinh(vung)} if vung else {})}
     khoang = [(v, render.khoang_mo(cv, thoi_luong))
-              for v, cv in _phan_cue(vung, cues, che_do_vung)]
-    loai_tru = None
-    if che_do_vung == "thay_the":
-        # Noi +-0.4s va gop khoang cua vung chung co the bac cau qua dung cau da co
-        # vung rieng; mat na nay la cho duy nhat bao dam cau do khong mo ca hai noi.
-        loai_tru = render.gop_khoang(
-            [k for v, kk in khoang if v.get("cue") is not None for k in kk]) or None
+              for v, cv in _phan_cue(vung, cues)]
+    # Noi +-0.4s va gop khoang cua vung chung co the bac cau qua dung cau da co
+    # vung rieng; mat na nay la cho duy nhat bao dam cau do khong mo ca hai noi.
+    loai_tru = render.gop_khoang(
+        [k for v, kk in khoang if v.get("cue") is not None for k in kk]) or None
     try:
         # Chi truyen khi that su co mat na: moi loi goi ket_xuat cu giu nguyen chu ky.
         render.ket_xuat(video, work / "sub_vi.srt", khoang, style, ra,
@@ -477,8 +464,11 @@ def _chay(video: Path, work: Path, tc: TuyChon, tien: Callable, con, goi) -> Ket
     tien("render", 1.0)
     # Phu de phu qua it cung la suy giam: bao "xong" va thoat 0 thi script goi
     # main.py se dem video chi co 10% phu de la thanh cong.
+    ly_do = ([f"phu de nhan dang chi phu {phu:.0f}s / {thoi_luong:.0f}s video; "
+              f"neu la video ca nhac, thu bat Tach giong hat"] if thieu else [])
+    ly_do += [f"giu nguon {len(giu_nguon)} cue"] if giu_nguon else []
     return KetQua("suy_giam" if (giu_nguon or thieu) else "xong", work, ra=ra,
-                  giu_nguon=giu_nguon)
+                  giu_nguon=giu_nguon, canh_bao=ly_do)
 
 
 # ------------------------------------------------- quan ly nhom (CLI va API)
@@ -501,8 +491,8 @@ def nhom_thuat_ngu(con, ten: str) -> dict[str, str]:
     return db.doc_thuat_ngu(con, db.lay_nhom(con, ten))
 
 
-def nhom_dat_thuat_ngu(con, ten: str, goc: str, dich: str, khoa: bool = False) -> None:
-    db.dat_thuat_ngu(con, db.lay_nhom(con, ten), goc, dich, khoa)
+def nhom_dat_thuat_ngu(con, ten: str, goc: str, dich: str) -> None:
+    db.dat_thuat_ngu(con, db.lay_nhom(con, ten), goc, dich)
 
 
 def nhom_dat_hop(con, ten: str, hop: dict, W: int = 1920, H: int = 1080) -> dict:
@@ -512,13 +502,26 @@ def nhom_dat_hop(con, ten: str, hop: dict, W: int = 1920, H: int = 1080) -> dict
     return hop
 
 
+def tao_goi(model_dich: str):
+    """Doc .env mot cho cho ca CLI lan web; khong co khoa thi tra None."""
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+    key = os.environ.get("DEEPSEEK_API_KEY", "")
+    if not key.strip():
+        return None
+    from pipeline.translate import tao_goi as _tao
+    return _tao(key, model_dich)
+
+
 # ---------------------------------------------------------------- batch
 
 def dich_batch(thu_muc: Path) -> list[tuple[Path, Path]]:
     """Tinh truoc moi dich; trung dich hoac trung input thi tu choi truoc khi ghi."""
-    duoi = {".mp4", ".mkv", ".mov", ".webm", ".avi", ".ts"}
     nguon = sorted(p for p in Path(thu_muc).iterdir()
-                   if p.is_file() and p.suffix.lower() in duoi
+                   if p.is_file() and p.suffix.lower() in DUOI_VIDEO
                    and not p.name.endswith(HAU_TO))
     if not nguon:
         raise ValueError(f"Khong co video nao trong {thu_muc}")

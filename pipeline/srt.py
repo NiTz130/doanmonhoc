@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 import hashlib
 import json
+import logging
 import math
 import os
 from pathlib import Path
@@ -49,18 +50,26 @@ def _ghi_moc(t: float) -> str:
     return f"{gio:02d}:{phut:02d}:{giay:02d},{mili:03d}"
 
 
-def doc_srt(path: Path) -> list[Cue]:
+def doc_srt(path: Path, *, bo_cue_hong: bool = False) -> list[Cue]:
+    """bo_cue_hong: chi cho nguon ngoai (sidecar/nhung); file ta ghi va ban dich giu che do chat."""
     noi_dung = Path(path).read_text(encoding="utf-8-sig").strip()
     cues = []
+    bo = 0
     for khoi in re.split(r"\n\s*\n", noi_dung):
         dong = khoi.splitlines()
         if dong and dong[0].strip().isdigit():
             dong = dong[1:]
-        if len(dong) < 2 or dong[0].count("-->") != 1:
+        if not dong or dong[0].count("-->") != 1 or (len(dong) < 2 and not bo_cue_hong):
             raise ValueError("Khoi SRT hong hoac rong")
         a, b = dong[0].split("-->")
-        cues.append(Cue(len(cues) + 1, _doc_moc(a), _doc_moc(b.strip().split()[0]),
-                        "\n".join(dong[1:])))
+        bat_dau, ket_thuc = _doc_moc(a), _doc_moc(b.strip().split()[0])
+        chu = "\n".join(dong[1:])
+        if bo_cue_hong and (not chu.strip() or ket_thuc <= bat_dau):
+            bo += 1
+            continue
+        cues.append(Cue(len(cues) + 1, bat_dau, ket_thuc, chu))
+    if bo:
+        logging.warning("Bo %d cue rong hoac end<=start khi doc %s", bo, path)
     kiem_cue(cues)
     return cues
 

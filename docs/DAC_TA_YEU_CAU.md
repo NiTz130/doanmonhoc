@@ -159,8 +159,8 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 |---|---|---|---|
 | **FR-12** | Người dùng tạo và chọn nhóm cho video | Nhập tên nhóm khi tải video lên; nhóm chưa tồn tại thì được tạo mới. Trang quản lý liệt kê được các nhóm đã có | M |
 | **FR-13** | Thuật ngữ học được ở video trước áp dụng cho video sau cùng nhóm | Dịch tập 1 sinh ra cặp thuật ngữ mới; dịch tập 2 cùng nhóm thì cặp đó xuất hiện trong bản dịch với **cùng một cách dịch**. Xác minh bằng phép thử nhân quả: đổi bản dịch trong bảng thuật ngữ rồi chạy lại tập 2, kết quả phải đổi theo | M |
-| **FR-14** | Người dùng xem, sửa và khóa bản dịch của một thuật ngữ | Trang quản lý cho sửa bản dịch và bật cờ khóa. Thuật ngữ đã khóa **không bị** máy ghi đè ở những lần dịch sau; chỉ lệnh sửa của người dùng mới thay được | M |
-| **FR-15** | Việc ghi thuật ngữ không bị đếm trùng khi chạy lại | Chạy lại cùng một video đã dịch xong thì số lần quan sát của mỗi thuật ngữ **không tăng thêm**. Xác minh bằng test đọc lại cơ sở dữ liệu sau hai lượt chạy | S |
+| **FR-14** | Người dùng xem và sửa bản dịch của một thuật ngữ | Trang quản lý cho sửa bản dịch. Bản người dùng sửa thay bản cũ; máy học từ mới **không bao giờ** ghi đè bản dịch đã có | M |
+| **FR-15** | Việc ghi thuật ngữ không bị lặp khi chạy lại | Chạy lại cùng một video đã dịch xong thì bảng thuật ngữ **không đổi**: không thêm dòng trùng, không đổi bản dịch đã có. Xác minh bằng test đọc lại cơ sở dữ liệu sau hai lượt chạy | S |
 
 ### 3.5 Nhóm E — Vùng mờ phụ đề cứng
 
@@ -170,7 +170,7 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 |---|---|---|---|
 | **FR-16** | Hệ thống trích một khung hình cho **mỗi** câu thoại để người dùng xem | Video có N câu thoại thì có đúng N ảnh khung được sinh ra, mỗi ảnh lấy tại thời điểm câu đó xuất hiện. Không lấy mẫu thưa, vì câu phụ đề nhảy chỗ chính là câu cần nhìn nhất | M |
 | **FR-17** | Người dùng vẽ, chỉnh và xóa vùng mờ bằng chuột trên khung hình | Kéo trong vùng trống tạo hộp mới; kéo cạnh hoặc góc chỉnh kích thước; kéo giữa hộp dời vị trí; rút hộp về gần bằng không là xóa. Hộp **giữ nguyên** khi chuyển sang khung khác, để người dùng so được câu nào cao nhất | M |
-| **FR-18** | Người dùng gán vùng riêng cho câu thoại có phụ đề nhảy chỗ | Chọn chế độ riêng, vẽ vùng mới trên khung của câu đó, rồi áp cho một dải câu liền kề. Vùng chung của các câu còn lại **không đổi**; câu có vùng riêng được đánh dấu trên giao diện | S |
+| **FR-18** | Người dùng gán vùng riêng cho câu thoại có phụ đề nhảy chỗ | Chọn phạm vi riêng cho câu đang xem, vẽ vùng mới trên khung của câu đó, rồi áp cho một dải câu liền kề. Vùng chung của các câu còn lại **không đổi**; câu có vùng riêng được đánh dấu trên giao diện | S |
 | **FR-19** | Công việc **chờ** người dùng vẽ hộp thay vì báo lỗi | Video chưa có vùng mờ thì công việc dừng ở trạng thái chờ ngay **sau bước nhận dạng và trước bước dịch**. Người dùng gửi hộp lên thì công việc chạy tiếp từ bước dịch. Bỏ cuộc ở màn này thì **chưa tốn** một đồng tiền API nào | M |
 | **FR-20** | Mọi vùng mờ đều qua cùng một bộ kiểm tra hình học | Vùng phải có 4 số hữu hạn, `0 ≤ x,y < 1`, `w,h > 0`, `x+w ≤ 1`, `y+h ≤ 1`, quy ra pixel phải chẵn, tối thiểu 2×2 và nằm trọn trong ảnh. Cùng bộ kiểm tra này áp cho giao diện web, dòng lệnh, file trên đĩa và cơ sở dữ liệu | M |
 | **FR-21** | Người dùng đặt vùng mờ mặc định cho cả nhóm | Tích ô lưu làm mặc định thì vùng chính được ghi vào nhóm và dùng làm điểm khởi đầu cho video sau. Vùng vẽ riêng của một video luôn **được ưu tiên hơn** vùng mặc định của nhóm | S |
@@ -314,9 +314,9 @@ Bản tương tác có thể mở bằng trình duyệt: [usecase.html](usecase.
 | **Mục tiêu** | Sửa cách dịch một tên riêng và giữ nó cố định cho các tập sau |
 | **Điều kiện trước** | Nhóm đã tồn tại và đã có ít nhất một video được dịch |
 | **Điều kiện sau** | Bản dịch mới được lưu; những lần dịch sau dùng bản này |
-| **Luồng chính** | 1. Người dùng mở màn Nhóm & thuật ngữ<br>2. Chọn nhóm cần xem<br>3. Hệ thống hiển thị danh sách cặp từ gốc → bản dịch<br>4. Người dùng sửa bản dịch của một thuật ngữ<br>5. Bật cờ khóa để máy không tự sửa lại<br>6. Lưu |
+| **Luồng chính** | 1. Người dùng mở màn Nhóm & thuật ngữ<br>2. Chọn nhóm cần xem<br>3. Hệ thống hiển thị danh sách cặp từ gốc → bản dịch<br>4. Người dùng sửa bản dịch của một thuật ngữ<br>5. Lưu |
 | **Luồng thay thế** | **4a.** Người dùng thêm thuật ngữ mới chưa từng xuất hiện → hệ thống ghi nhận và áp dụng từ lần dịch sau |
-| **Quy tắc nghiệp vụ** | Thuật ngữ đã khóa chỉ thay được bằng lệnh sửa của người dùng. Máy học từ mới không được ghi đè lên bản đã khóa |
+| **Quy tắc nghiệp vụ** | Chỉ lệnh sửa của người dùng thay được bản dịch đã có. Máy học từ mới không ghi đè bản dịch đã có |
 
 ---
 

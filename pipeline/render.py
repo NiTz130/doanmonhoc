@@ -4,6 +4,7 @@ from __future__ import annotations
 import functools
 import json
 import logging
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -17,6 +18,8 @@ __all__ = ["hop_sang_pixel", "cue_thanh_khoang", "khoang_mo", "gop_khoang",
 NGHI = 0.4          # noi bien moi phia; hardsub thuong hien som/tat muon hon cue
 GAP = 1.0           # gop hai khoang cach nhau duoi nguong nay
 TOI_DA = 50         # chuoi enable dai hon lam vo filtergraph
+# ASS khong hieu the HTML cua SRT va khoi override (vd an8): bo truoc khi doi {} -> ().
+THE_DINH_DANG = re.compile(r"</?(?:i|b|u|s|font)\b[^>]*>|\{\\[^}]*\}", re.IGNORECASE)
 
 
 def cue_thanh_khoang(cues: list[Cue], thoi_luong: float | None = None,
@@ -63,16 +66,15 @@ def gop_khoang(khoang: list[tuple[float, float]]) -> list[tuple[float, float]]:
 
 
 def kieu_chu(W: int, H: int, px: tuple[int, int, int, int] | None = None,
-             font_scale: float = 0.42, du_phong: dict | None = None) -> dict:
+             font_scale: float = 0.42) -> dict:
     """Co hop thi suy kieu chu tu hop; khong thi dung ho so hinh hoc."""
     if (isinstance(font_scale, bool) or not isinstance(font_scale, (int, float))
             or not font_scale > 0):
         raise ValueError("font-scale phai la so duong")
     if px is None:
         ngang = W / H >= 1.2
-        du_phong = du_phong or {}
-        style = {"FontSize": du_phong.get("FontSize", 22 if ngang else 16),
-                 "MarginV": du_phong.get("MarginV", 30 if ngang else 90)}
+        style = {"FontSize": 22 if ngang else 16,
+                 "MarginV": 30 if ngang else 90}
     else:
         # Chu Viet roi dung day hop mo va che gan het no; xem thiet ke buoc 5.
         style = {"FontSize": max(8, round(px[3] * font_scale)),
@@ -105,7 +107,7 @@ def viet_ass(cues: list[Cue], style: dict, path: Path) -> None:
            "Effect, Text\n")
     dong = "".join(
         f"Dialogue: 0,{_moc_ass(c.bat_dau)},{_moc_ass(c.ket_thuc)},Default,,0,0,0,,"
-        + c.text.replace("{", "(").replace("}", ")").replace("\n", "\\N") + "\n"
+        + THE_DINH_DANG.sub("", c.text).replace("{", "(").replace("}", ")").replace("\n", "\\N") + "\n"
         for c in cues)
     with file_tam(path) as tmp:
         tmp.write_text(dau + dong, encoding="utf-8")
@@ -157,7 +159,7 @@ def ket_xuat(video: Path, srt: Path, vung: list[tuple[dict, list[tuple[float, fl
     chinh = style.get("hop_chinh") or (hop_chinh([h for h, _ in dung]) if dung else None)
     px = hop_sang_pixel(chinh, W, H) if chinh else None
     ass = srt.with_suffix(".ass")
-    viet_ass(doc_srt(srt), kieu_chu(W, H, px, style.get("font_scale", 0.42), style), ass)
+    viet_ass(doc_srt(srt), kieu_chu(W, H, px, style.get("font_scale", 0.42)), ass)
 
     # cwd dat tai thu muc chua phu de va truyen ten tuong doi: duong dan Windows
     # tuyet doi trong filtergraph phai escape thanh C\:/... , sai mot dau la loi la.
@@ -182,7 +184,9 @@ def ket_xuat(video: Path, srt: Path, vung: list[tuple[dict, list[tuple[float, fl
 
     with file_tam(ra) as tmp:
         lenh = ["ffmpeg", "-v", "error", "-y", "-i", str(video), "-filter_complex", loc,
-                "-map", "[v]", "-map", "0:a?", *bo_ma_hoa(), "-c:a", "copy",
+                "-map", "[v]", "-map", "0:a?", *bo_ma_hoa(),
+                # Nguon 10-bit ma roi ve libx264 thi ra High 10, trinh duyet/dien thoai kho phat.
+                "-pix_fmt", "yuv420p", "-c:a", "copy",
                 "-f", "mp4", str(tmp.resolve())]
         ket = subprocess.run(lenh, cwd=str(srt.parent.resolve()), capture_output=True, text=True)
         if ket.returncode != 0:

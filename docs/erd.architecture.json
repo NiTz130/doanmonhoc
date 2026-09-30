@@ -114,7 +114,6 @@
       "title": "Ràng buộc do schema giữ, không do mã ứng dụng",
       "items": [
         "trang_thai CHECK 6 giá trị: cho · dang_chay · cho_chon_khung · xong · suy_giam · loi",
-        "thuat_ngu.loai CHECK 3 giá trị: ten_nguoi · dia_danh · thuat_ngu",
         "UNIQUE (nhom_id, goc): một nhóm không có hai bản dịch cho cùng một từ",
         "PRAGMA foreign_keys=ON bật lại mỗi lần mở kết nối"
       ]
@@ -123,9 +122,9 @@
       "dot": "violet",
       "title": "Cột còn lại của từng bảng",
       "items": [
-        "nhom: ngon_ngu_goc · sub_style · blur_x/y/w/h · tao_luc",
+        "nhom: blur_x/y/w/h · tao_luc",
         "video: thu_muc_work UNIQUE · rong · cao · thoi_luong · them_luc · xong_luc",
-        "thuat_ngu: goc · dich · loai CHECK · so_lan · khoa",
+        "thuat_ngu: goc · dich",
         "nhat_ky: buoc · ket_qua · giay · token_vao · token_ra · loi · luc",
         "cong_viec: trang_thai CHECK · buoc · tien_do · duong_dan_ra · loi · cap_nhat_luc"
       ]

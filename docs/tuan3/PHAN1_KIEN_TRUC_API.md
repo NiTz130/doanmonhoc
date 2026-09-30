@@ -110,17 +110,17 @@ Lý do: chia theo lịch cố định thì ba người sẽ ngồi chờ ngườ
 | GET | `/api/cong-viec/{cid}` | — | `{id, trang_thai, buoc, tien_do, loi, co_ket_qua}` |
 | GET | `/api/cong-viec/{cid}/khung` | — | `[{i, giay, text}]` — một phần tử cho mỗi câu thoại |
 | GET | `/api/cong-viec/{cid}/khung/{i}` | — | Ảnh PNG của khung thứ `i` |
-| POST | `/api/cong-viec/{cid}/hop` | `{co_blur, che_do_vung, vung, luu_nhom}` | `{id, trang_thai: "cho", vung, che_do_vung}` |
+| POST | `/api/cong-viec/{cid}/hop` | `{co_blur, vung, luu_nhom}` | `{id, trang_thai: "cho", vung}` |
 | GET | `/api/cong-viec/{cid}/ket-qua` | — | Tệp `video/mp4` |
 | GET · POST | `/api/nhom` | POST: `{ten}` | Danh sách nhóm · `201 {ten}` |
-| GET · POST | `/api/nhom/{ten}/thuat-ngu` | POST: `{goc, dich, khoa}` | Bảng thuật ngữ của nhóm sau khi ghi |
+| GET · POST | `/api/nhom/{ten}/thuat-ngu` | POST: `{goc, dich}` | Bảng thuật ngữ của nhóm sau khi ghi |
 | GET · POST | `/api/nhom/{ten}/hop` | POST: `{x, y, w, h}` | Vùng mặc định đã kiểm |
 
 ### 2.3 Quy ước mã lỗi
 
 | Mã | Nghĩa trong hệ thống | Ví dụ |
 |---|---|---|
-| 400 | Dữ liệu người dùng gửi sai; sửa đầu vào rồi gửi lại | Sai đuôi tệp, tệp rỗng, quá 4 GiB, ffprobe không đọc được, hộp vượt khung, chỉ số câu không tồn tại, `che_do_vung: null` |
+| 400 | Dữ liệu người dùng gửi sai; sửa đầu vào rồi gửi lại | Sai đuôi tệp, tệp rỗng, quá 4 GiB, ffprobe không đọc được, hộp vượt khung, chỉ số câu không tồn tại |
 | 404 | Không có tài nguyên này | Mã công việc không tồn tại, chưa có video kết quả |
 | 409 | Yêu cầu đúng nhưng **sai thời điểm** so với trạng thái hiện tại | Video đang được tiến trình khác xử lý, công việc chưa tới bước chọn vùng, đã gửi vùng rồi, phụ đề gốc đã đổi so với lúc vẽ |
 
