@@ -29,7 +29,7 @@ def _co_chung(p: argparse.ArgumentParser) -> None:
     p.add_argument("--nhom")
     p.add_argument("--lang", default="en")
     p.add_argument("--model", default="large-v3")
-    p.add_argument("--model-dich", default="deepseek-v4-flash")
+    p.add_argument("--model-dich", default="nllb-cuc-bo")
     p.add_argument("--blur", choices=("auto", "on", "off"), default="auto")
     p.add_argument("--blur-box", type=_hop)
     p.add_argument("--font-scale", type=float, default=0.42)
@@ -56,10 +56,7 @@ def _preflight(tc: TuyChon):
     for tool in ("ffmpeg", "ffprobe"):
         if shutil.which(tool) is None:
             raise RuntimeError(f"Thieu {tool} trong PATH")
-    goi = dieu_phoi.tao_goi(tc.model_dich)
-    if goi is None:
-        raise RuntimeError("Thieu DEEPSEEK_API_KEY trong .env hoac bien moi truong")
-    return goi
+    return dieu_phoi.tao_goi(tc.model_dich)
 
 
 def _mot_video(video: Path, tc: TuyChon, con, goi) -> str:

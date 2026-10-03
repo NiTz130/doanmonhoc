@@ -156,7 +156,7 @@ def tai_len(
     nhom_ten: Annotated[str | None, Form(alias="nhom")] = None,
     lang: Annotated[str, Form()] = "en",
     model: Annotated[str, Form()] = "large-v3",
-    model_dich: Annotated[str, Form()] = "deepseek-v4-flash",
+    model_dich: Annotated[str, Form()] = "nllb-cuc-bo",
     blur: Annotated[str, Form()] = "auto",
     blur_box: Annotated[str | None, Form()] = None,
     font_scale: Annotated[float, Form()] = 0.42,

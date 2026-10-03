@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Web app dịch phụ đề video Anh → Việt, chạy cục bộ. Đồ án môn học 4 thành viên.
 Người dùng tải video lên trình duyệt → hệ thống lấy phụ đề sẵn hoặc nhận dạng bằng
-Whisper → dịch bằng DeepSeek → làm mờ vùng phụ đề cứng do người dùng khoanh → cháy
+Whisper → dịch tại máy bằng NLLB → làm mờ vùng phụ đề cứng do người dùng khoanh → cháy
 phụ đề Việt vào hình, **chỉ qua một lần nén**.
 
 Tài liệu gốc: [README.md](README.md) (đầy đủ nhất), [spec](docs/superpowers/specs/2026-09-09-video-dich-phu-de-design.md),
@@ -32,8 +32,7 @@ $py -m http.server 8765 --bind 127.0.0.1 --directory web   # rồi ở terminal 
 npm run test:frontend                # Playwright + API giả lập (UI_URL đổi được cổng)
 ```
 
-Dịch thật cần `DEEPSEEK_API_KEY` trong `.env` (mẫu `.env.example`) — **tốn tiền**;
-mọi test ở trên đều thay `translate` bằng callable giả nên không gọi mạng.
+Dịch chạy tại máy (NLLB, tự tải model lần đầu); mọi test ở trên đều thay `translate` bằng callable giả.
 
 **Chạy một test lẻ:** không có framework, `test_pipeline.py` tự quét `globals()` tìm
 hàm `test_*`. Gọi trực tiếp:

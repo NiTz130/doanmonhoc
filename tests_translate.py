@@ -92,3 +92,64 @@ def test_translation_validation_and_context() -> None:
 if __name__ == "__main__":
     test_translation_validation_and_context()
     print("translation checks passed")
+
+
+def test_tao_goi_dung_ban_cuc_bo():
+    from unittest.mock import patch
+    from pipeline import dieu_phoi
+    sentinel = object()
+    with patch.object(dieu_phoi, "_nap", lambda ten: type("M", (), {"tao_goi_cuc_bo": staticmethod(lambda: sentinel)})):
+        assert dieu_phoi.tao_goi("nllb-cuc-bo") is sentinel
+
+
+def test_dich_cuc_bo_lui_ve_cpu_khi_loi_cuda():
+    """Loi CUDA luc nap hoac luc dich -> dung lai tren CPU; loi khac van noi len."""
+    import sys
+    import types
+    from unittest.mock import patch
+    from pipeline.translate import tao_goi_cuc_bo
+
+    def chay(loi_nap, loi_dich):
+        thiet_bi = []
+
+        class TR:
+            def __init__(self, thu_muc, device):
+                thiet_bi.append(device)
+                if device == "auto" and loi_nap:
+                    raise RuntimeError(loi_nap)
+                self.device = device
+
+            def translate_batch(self, vao, **kw):
+                if self.device == "auto" and loi_dich:
+                    raise RuntimeError(loi_dich)
+                return [types.SimpleNamespace(hypotheses=[["vie_Latn", "x"]]) for _ in vao]
+
+        class TK:
+            def encode(self, s, add_special_tokens):
+                return types.SimpleNamespace(tokens=[s])
+
+            def token_to_id(self, t):
+                return 1
+
+            def decode(self, ids):
+                return "vi"
+
+        fake = {
+            "ctranslate2": types.SimpleNamespace(Translator=TR),
+            "huggingface_hub": types.SimpleNamespace(snapshot_download=lambda r: "."),
+            "tokenizers": types.SimpleNamespace(Tokenizer=types.SimpleNamespace(from_file=lambda p: TK())),
+        }
+        with patch.dict(sys.modules, fake):
+            ra = tao_goi_cuc_bo()({"glossary": {}, "lines": {"1": "hi"}})
+        return thiet_bi, ra.content["lines"]
+
+    assert chay(None, None) == (["auto"], {"1": "vi"})                      # GPU/auto on
+    assert chay("CUDA driver version is insufficient", None)[0] == ["auto", "cpu"]   # loi luc nap
+    tb, ra = chay(None, "cuda out of memory")                               # loi luc dich
+    assert tb == ["auto", "cpu"] and ra == {"1": "vi"}
+    try:
+        chay("loi la khong lien quan", None)
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("loi khong phai CUDA phai noi len")

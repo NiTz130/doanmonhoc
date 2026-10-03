@@ -21,7 +21,7 @@ from pipeline.srt import (Cue, bam_file, chu_ky, doc_json, doc_srt, file_tam,
                           ghi_json, khoa_work, thu_muc_lam_viec)
 
 # Tang khi doi cach sinh artifact cua mot buoc: moi manifest cu thanh cache miss.
-VER = {"audio": 1, "sub_goc": 1, "sub_vi": 1, "vung_blur": 4}
+VER = {"audio": 1, "sub_goc": 2, "sub_vi": 1, "vung_blur": 4}
 PROMPT_VER = 2                          # doi prompt phai lam moi moi ban dich cu
 HAU_TO = "_vi.mp4"
 DUOI_VIDEO = {".mp4", ".mkv", ".mov", ".webm", ".avi", ".ts"}
@@ -41,7 +41,7 @@ class TuyChon:
     nhom: str | None = None
     lang: str = "en"
     model: str = "large-v3"
-    model_dich: str = "deepseek-v4-flash"
+    model_dich: str = "nllb-cuc-bo"
     blur: str = "auto"                      # auto | on | off
     # Mot dict = mot hop cho moi cau (CLI, khung nhom); danh sach = hop gan cue rieng.
     blur_box: dict[str, float] | list[dict] | None = None
@@ -234,7 +234,7 @@ def _buoc_dich(work: Path, sub_goc: Path, cues: list[Cue], tc: TuyChon,
             return list(cu.get("giu_nguon") or []), 0, 0     # cache hit: khong ton token
 
     if goi is None:
-        raise RuntimeError("Thieu DEEPSEEK_API_KEY nen khong dich duoc")
+        raise RuntimeError("Khong co ham dich")
     kq = _nap("translate").dich([c.text for c in cues], glossary, goi)
     from pipeline.srt import ghi_srt
     ghi_srt([Cue(c.idx, c.bat_dau, c.ket_thuc, t) for c, t in zip(cues, kq.ban)], ra)
@@ -503,17 +503,8 @@ def nhom_dat_hop(con, ten: str, hop: dict, W: int = 1920, H: int = 1080) -> dict
 
 
 def tao_goi(model_dich: str):
-    """Doc .env mot cho cho ca CLI lan web; khong co khoa thi tra None."""
-    try:
-        from dotenv import load_dotenv
-        load_dotenv()
-    except ImportError:
-        pass
-    key = os.environ.get("DEEPSEEK_API_KEY", "")
-    if not key.strip():
-        return None
-    from pipeline.translate import tao_goi as _tao
-    return _tao(key, model_dich)
+    """Dich tai may (NLLB); khong key, khong mang sau lan tai dau."""
+    return _nap("translate").tao_goi_cuc_bo()
 
 
 # ---------------------------------------------------------------- batch

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import gc
 import logging
+import re
 from pathlib import Path
 from collections.abc import Callable
 
@@ -14,6 +15,20 @@ def loi_cuda(exc: RuntimeError | OSError) -> bool:
     return any(x in text for x in ('cuda out of memory', 'cuda driver version is insufficient',
         'no cuda-capable device', 'cuda failed with error out of memory',
         'cudnn', 'cublas', 'cudart', 'nvcuda.dll', 'cuda driver library cannot be found'))
+
+
+def gop_cau(cues: list[Cue], gap: float = 1.0, toi_da: float = 10.0) -> list[Cue]:
+    """Whisper hay ngat giua cau; dich tung manh roi se mat mach. Gop cac cue lien tiep cho
+    toi khi gap dau ket cau, khoang lang > gap giay hoac cue dai qua toi_da giay."""
+    ra: list[Cue] = []
+    for c in cues:
+        if ra and not re.search(r'[.?!…]["\')]*$', ra[-1].text) \
+                and c.bat_dau - ra[-1].ket_thuc <= gap and c.ket_thuc - ra[-1].bat_dau <= toi_da:
+            t = ra[-1]
+            ra[-1] = Cue(t.idx, t.bat_dau, c.ket_thuc, t.text + ' ' + c.text)
+        else:
+            ra.append(Cue(len(ra) + 1, c.bat_dau, c.ket_thuc, c.text))
+    return ra
 
 
 def nhan_dang(wav: Path, ra: Path, lang: str = 'en', model: str = 'large-v3',
@@ -52,4 +67,4 @@ def nhan_dang(wav: Path, ra: Path, lang: str = 'en', model: str = 'large-v3',
             cues = nhan('cpu')
         except (RuntimeError, OSError) as cpu_exc:
             raise cpu_exc from exc
-    ghi_srt(cues, ra)
+    ghi_srt(gop_cau(cues), ra)

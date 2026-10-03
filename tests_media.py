@@ -245,3 +245,15 @@ def test_nhan_dien_hoan_doi_khi_xoay():
         assert chay(side) == (360, 640, 2.0), side
     for side in ([{"rotation": 180}], None, [{}]):
         assert chay(side) == (640, 360, 2.0), side
+
+
+def test_gop_cau_asr():
+    # Whisper ngat giua cau: gop toi dau cham; khong gop qua khoang lang hoac qua dai.
+    from pipeline.asr import gop_cau
+    from pipeline.srt import Cue
+    c = [Cue(1, 0, 2, "It was released"), Cue(2, 2.2, 4, "in 2009."), Cue(3, 4.1, 5, "Next."),
+         Cue(4, 8, 9, "no end"), Cue(5, 9.1, 12, "tail")]
+    r = gop_cau(c)
+    assert [(x.idx, x.bat_dau, x.ket_thuc, x.text) for x in r] == [
+        (1, 0, 4, "It was released in 2009."), (2, 4.1, 5, "Next."), (3, 8, 12, "no end tail")]
+    assert gop_cau([Cue(1, 0, 1, "a"), Cue(2, 1.1, 20, "b")])[1].text == "b"      # dai > 10s

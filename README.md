@@ -1,7 +1,7 @@
 # Web app dịch phụ đề video Anh → Việt
 
 Tải video tiếng Anh lên trình duyệt → hệ thống lấy phụ đề có sẵn hoặc nhận dạng bằng
-**Whisper** → dịch sang tiếng Việt bằng **DeepSeek** → làm mờ phụ đề cứng do bạn khoanh
+**Whisper** → dịch sang tiếng Việt tại máy bằng **NLLB** → làm mờ phụ đề cứng do bạn khoanh
 → trả video có phụ đề Việt cháy vào hình, **chỉ qua một lần nén**. Chạy cục bộ.
 
 Đồ án nhóm 4 thành viên. Tài liệu: [đề cương](docs/DE_CUONG.md) ·
@@ -20,7 +20,7 @@ phụ đề cũ để làm mờ.
 |---|---|---|
 | 1 | Lấy phụ đề tiếng Anh có sẵn, nếu không có thì nhận dạng giọng nói | ffmpeg, Whisper |
 | 2 | Bạn khoanh vùng phụ đề cứng cần che | Trình duyệt |
-| 3 | Dịch từng câu, giữ nguyên mốc thời gian, theo thuật ngữ của nhóm | DeepSeek |
+| 3 | Dịch từng câu, giữ nguyên mốc thời gian, theo thuật ngữ của nhóm | NLLB (cục bộ) |
 | 4 | Làm mờ + cháy phụ đề Việt vào hình, **một lần nén duy nhất** | ffmpeg |
 
 **Điểm nổi bật**
@@ -54,7 +54,6 @@ Cần: **Python 3.12**, [`uv`](https://docs.astral.sh/uv/), **ffmpeg 6+** (có `
 git clone https://github.com/NiTz130/doanmonhoc.git
 cd doanmonhoc
 uv sync
-cp .env.example .env      # điền DEEPSEEK_API_KEY (dịch thật tốn tiền)
 ```
 
 | Tuỳ chọn | Lệnh | Ghi chú |
@@ -138,7 +137,7 @@ $py main.py nhom set-box "Tên phim" 0.3,0.855,0.4,0.09
 | `--separate` | Tách giọng bằng Demucs trước khi nhận dạng (cần extra `demucs`) |
 | `--force-asr` | Bỏ qua phụ đề có sẵn, chạy Whisper |
 | `--force` | Chạy lại mọi bước |
-| `--lang`, `--model`, `--model-dich` | Ngôn ngữ nguồn (`en`), model Whisper (`large-v3`), model dịch (`deepseek-v4-flash`) |
+| `--lang`, `--model`, `--model-dich` | Ngôn ngữ nguồn (`en`), model Whisper (`large-v3`), model dịch (`nllb-cuc-bo`) |
 | `-o OUT` | Đường dẫn ra (một video; `batch` từ chối) |
 
 CLI không có màn vẽ hộp: chưa có khung thì phải truyền `--blur-box` hoặc `--blur off`.
@@ -219,9 +218,9 @@ Nguyên tắc chính:
   crash chỉ gây cache miss.
 - **Mỗi cue nguồn ứng đúng một cue kết quả**, giữ nguyên timestamp.
 
-**Lô dịch phụ thuộc model:** mặc định 25 cue/request, đo trên `deepseek-v4-flash`. Đổi
-model thì đo lại rồi chỉnh `lo` trong `pipeline/translate.py` — lô quá lớn bị cắt và rơi
-vào chia đôi, đắt gấp ~4 lần.
+**Lô dịch phụ thuộc model:** mặc định 25 cue/lô. Đổi
+model thì đo lại rồi chỉnh `lo` trong `pipeline/translate.py` — lô quá lớn có thể bị cắt và rơi
+vào chia đôi.
 
 ## 7. Chưa làm
 
