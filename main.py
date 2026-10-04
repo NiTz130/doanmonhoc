@@ -75,7 +75,7 @@ def _mot_video(video: Path, tc: TuyChon, con, goi) -> str:
 
 def _chay_video(a: argparse.Namespace) -> int:
     video = Path(a.video)
-    if not video.is_file():                          # bao truoc khi doi hoi khoa API
+    if not video.is_file():                          # bao truoc khi kiem ffmpeg/nap model
         raise FileNotFoundError(f"Khong tim thay video: {video}")
     tc = _tuy_chon(a, Path(a.output) if a.output else None)
     goi = _preflight(tc)

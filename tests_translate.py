@@ -153,3 +153,132 @@ def test_dich_cuc_bo_lui_ve_cpu_khi_loi_cuda():
         pass
     else:
         raise AssertionError("loi khong phai CUDA phai noi len")
+
+
+def test_dich_cuc_bo_nap_model_muon():
+    """Hoi quy: tao ham dich khong tai/nap model; lan dich dau moi nap, nap mot lan; tai loi -> bao ro."""
+    import sys
+    import types
+    from unittest.mock import patch
+    from pipeline.translate import tao_goi_cuc_bo
+
+    dem = {"tai": 0, "nap": 0}
+
+    def tai(repo):
+        dem["tai"] += 1
+        if repo == "mat-mang":
+            raise OSError("We couldn't connect to 'https://huggingface.co'")
+        return "."
+
+    class TR:
+        def __init__(self, thu_muc, device):
+            dem["nap"] += 1
+
+        def translate_batch(self, vao, **kw):
+            return [types.SimpleNamespace(hypotheses=[["vie_Latn", "x"]]) for _ in vao]
+
+    class TK:
+        def encode(self, s, add_special_tokens):
+            return types.SimpleNamespace(tokens=[s])
+
+        def token_to_id(self, t):
+            return 1
+
+        def decode(self, ids):
+            return "vi"
+
+    fake = {
+        "ctranslate2": types.SimpleNamespace(Translator=TR),
+        "huggingface_hub": types.SimpleNamespace(snapshot_download=tai),
+        "tokenizers": types.SimpleNamespace(Tokenizer=types.SimpleNamespace(from_file=lambda p: TK())),
+    }
+    p = {"glossary": {}, "lines": {"1": "hi"}}
+    with patch.dict(sys.modules, fake):
+        goi = tao_goi_cuc_bo()
+        assert dem == {"tai": 0, "nap": 0}                 # job dung o man ve hop khong ton cong nap
+        assert goi(p).content["lines"] == {"1": "vi"}
+        goi(p)
+        assert dem == {"tai": 1, "nap": 1}                 # nap mot lan cho ca luot
+        loi = tao_goi_cuc_bo("mat-mang")
+        for _ in range(2):                                  # tai hong khong bi nho, lan sau thu lai
+            try:
+                loi(p)
+            except RuntimeError as exc:
+                assert "model dich" in str(exc) and isinstance(exc.__cause__, OSError), exc
+            else:
+                raise AssertionError("tai model loi phai noi len")
+        assert dem["tai"] == 3
+
+
+def test_the_thuat_ngu_che_va_tra():
+    """_che: cum dai truoc, khong phan biet hoa thuong, dung ranh gioi tu; _tra: the hong -> None."""
+    from pipeline.translate import _che, _tra
+    g = sorted({"Iron": "Sắt", "Ironhold": "Thành Sắt"}.items(), key=lambda kv: -len(kv[0]))
+    assert _che("to  IRONHOLD, iron!", g) == ("to Zq0x, Zq1x!", ["Thành Sắt", "Sắt"])
+    assert _che("Ironholds", g) == ("Ironholds", [])                     # ranh gioi tu
+    assert _che("Ironhold and ironhold", g) == ("Zq0x and Zq0x", ["Thành Sắt"])
+    assert _che("hello", []) == ("hello", [])
+    assert _tra("tới zq0X và ZQ0x", ["Thành Sắt"]) == "tới Thành Sắt và Thành Sắt"
+    assert _tra("không có thẻ", []) == "không có thẻ"                   # khong ep thi khong kiem
+    for hong in ("tới", "tới Zq 0 x", "tới zqox Zq0x", "tới Zq0x"):      # mat / bien dang / thieu the 1
+        assert _tra(hong, ["A", "B"] if hong == "tới Zq0x" else ["A"]) is None, hong
+
+
+def test_dich_cuc_bo_the_hong_thi_dich_lai_khong_the():
+    """Hoi quy: model lam mat/bien dang the Zq<i>x -> khong de rac vao phu de, canh bao, dich lai cau goc."""
+    import sys
+    import types
+    from unittest.mock import patch
+    from pipeline.translate import tao_goi_cuc_bo
+
+    def chay(bien, payload, loi_lan=None):
+        lan = []
+
+        class TR:
+            def __init__(self, thu_muc, device):
+                pass
+
+            def translate_batch(self, vao, **kw):
+                lan.append([" ".join(v[1:-1]) for v in vao])
+                if loi_lan == len(lan):
+                    raise RuntimeError("loi la khong lien quan")
+                return [types.SimpleNamespace(hypotheses=[["vie_Latn"] + bien(v[1:-1])]) for v in vao]
+
+        class TK:
+            def encode(self, s, add_special_tokens):
+                return types.SimpleNamespace(tokens=s.split())
+
+            def token_to_id(self, t):
+                return t
+
+            def decode(self, ids):
+                return " ".join(ids)
+
+        fake = {
+            "ctranslate2": types.SimpleNamespace(Translator=TR),
+            "huggingface_hub": types.SimpleNamespace(snapshot_download=lambda r: "."),
+            "tokenizers": types.SimpleNamespace(Tokenizer=types.SimpleNamespace(from_file=lambda p: TK())),
+        }
+        with patch.dict(sys.modules, fake), warnings.catch_warnings(record=True) as bao:
+            warnings.simplefilter("always")
+            ra = tao_goi_cuc_bo()(payload)
+        return ra.content["lines"], lan, bao
+
+    giu = lambda t: t
+    p = {"glossary": {"Ironhold": "Thành Sắt"}, "lines": {"1": "to Ironhold", "2": "hi"}}
+    ra, lan, bao = chay(giu, p)                                           # duong chinh: the con nguyen
+    assert ra == {"1": "to Thành Sắt", "2": "hi"} and len(lan) == 1 and not bao
+
+    for bien in (lambda t: [x for x in t if not x.startswith("Zq")],      # mat the
+                 lambda t: [y for x in t for y in (["Zq", "0", "x"] if x == "Zq0x" else [x])]):  # bien dang
+        ra, lan, bao = chay(bien, p)
+        assert all("zq" not in v.lower() for v in ra.values()), ra
+        assert ra["1"] == "to Ironhold" and ra["2"] == "hi"               # dich lai tu cau goc
+        assert lan[1] == ["to Ironhold"] and len(lan) == 2 and bao        # chi dich lai cau hong
+
+    try:                                                                  # loi o luot dich lai van noi len
+        chay(lambda t: [], p, loi_lan=2)
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("loi khong phai CUDA o luot dich lai phai noi len")

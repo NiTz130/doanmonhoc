@@ -247,6 +247,30 @@ def test_nhan_dien_hoan_doi_khi_xoay():
         assert chay(side) == (640, 360, 2.0), side
 
 
+def test_asr_tach_segment_nhieu_cau_theo_tu():
+    # Hoi quy: Whisper gop "No, ...? The adult is talking." vao mot segment -> mat 1 dong phu de.
+    from pipeline import asr
+    from pipeline.srt import doc_srt
+    def w(t, a, b): return SimpleNamespace(word=t, start=a, end=b)
+    nhieu = SimpleNamespace(start=0, end=3, text=" Yes, sir. I'm sorry. Dr. Who? ", words=[
+        w(" Yes,", 0, .3), w(" sir.", .3, .6), w(" I'm", 1, 1.2), w(" sorry.", 1.2, 1.8),
+        w(" Dr.", 2, 2.2), w(" Who?", 2.2, 3)])
+    mot = SimpleNamespace(start=5, end=7, text=" Okay then. ", words=[w(" Okay", 5.2, 6), w(" then.", 6, 7)])
+    khong_tu = SimpleNamespace(start=8, end=9, text=" no words.")     # model gia/khong co words
+    rong = SimpleNamespace(start=10, end=11, text=" x.", words=[])
+
+    class Model:
+        def transcribe(self, *args, **kwargs):
+            assert kwargs.get("word_timestamps") is True
+            return iter([nhieu, mot, khong_tu, rong]), None
+    with TemporaryDirectory() as d:
+        ra = Path(d) / "out.srt"
+        asr.nhan_dang(Path(d) / "a.wav", ra, tao_model=lambda *a, **k: Model())
+        cues = [(c.bat_dau, c.ket_thuc, c.text) for c in doc_srt(ra)]
+    assert cues == [(0, .6, "Yes, sir."), (1, 1.8, "I'm sorry."), (2, 3, "Dr. Who?"),   # "Dr." khong ket cau
+                    (5, 7, "Okay then."), (8, 9, "no words."), (10, 11, "x.")]            # 1 cau / khong co tu: giu moc segment
+
+
 def test_gop_cau_asr():
     # Whisper ngat giua cau: gop toi dau cham; khong gop qua khoang lang hoac qua dai.
     from pipeline.asr import gop_cau

@@ -31,6 +31,28 @@ def gop_cau(cues: list[Cue], gap: float = 1.0, toi_da: float = 10.0) -> list[Cue
     return ra
 
 
+_VIET_TAT = {'mr.', 'mrs.', 'ms.', 'dr.', 'st.', 'jr.', 'sr.', 'vs.'}
+
+
+def tach_cau(s) -> list[Cue]:
+    """Whisper hay nhet nhieu cau vao mot segment (mat dong phu de, mat moc thoi gian).
+    Co moc tung tu thi tach tai dau ket cau; segment mot cau hoac khong co words giu nguyen."""
+    cue = Cue(0, s.start, s.end, s.text.strip())
+    words = getattr(s, 'words', None)
+    if not words:
+        return [cue]
+    cum: list[list] = [[]]
+    for w in words:
+        cum[-1].append(w)
+        t = w.word.strip().lower()
+        if re.search(r'[.?!…]["\')]*$', t) and t not in _VIET_TAT:
+            cum.append([])
+    cum = [c for c in cum if c]
+    if len(cum) < 2:
+        return [cue]
+    return [Cue(0, c[0].start, c[-1].end, ''.join(w.word for w in c).strip()) for c in cum]
+
+
 def nhan_dang(wav: Path, ra: Path, lang: str = 'en', model: str = 'large-v3',
              tao_model: Callable | None = None, vad: bool = True) -> None:
     """vad=True cắt khoảng lặng để Whisper khỏi bịa chữ, nhưng Silero VAD coi nhạc nền
@@ -45,12 +67,12 @@ def nhan_dang(wav: Path, ra: Path, lang: str = 'en', model: str = 'large-v3',
                               compute_type='int8_float16' if device == 'cuda' else 'int8')
         try:
             segments, _ = recognizer.transcribe(str(wav), language=lang, vad_filter=vad,
-                vad_parameters={'min_silence_duration_ms':500})
+                vad_parameters={'min_silence_duration_ms':500}, word_timestamps=True)
             tat_ca = list(segments)
             tot = [s for s in tat_ca if s.text.strip() and s.end > s.start]
             if len(tot) < len(tat_ca):
                 logging.warning('Bo %d segment rong hoac end<=start cua Whisper', len(tat_ca) - len(tot))
-            return [Cue(i+1,s.start,s.end,s.text.strip()) for i,s in enumerate(tot)]
+            return [c for s in tot for c in tach_cau(s)]
         finally:
             del recognizer
 

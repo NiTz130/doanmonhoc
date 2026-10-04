@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -104,31 +105,57 @@ def dich(lines: list[str], glossary: dict[str, str],
 MODEL_CUC_BO = "JustFrederik/nllb-200-distilled-600M-ct2-int8"     # ~600MB, tu tai lan dau
 
 
+def _che(text: str, gloss: list[tuple[str, str]]) -> tuple[str, list[str]]:
+    """Thay thuat ngu nguon (gloss da xep cum dai truoc) bang the Zq<i>x; tra cau va ban dich tung the."""
+    dung: list[str] = []
+    for k, v in gloss:
+        text, n = re.subn(rf"(?<!\w){re.escape(k)}(?!\w)", f"Zq{len(dung)}x", text, flags=re.I)
+        if n:
+            dung.append(v)
+    return " ".join(text.split()), dung      # CS-1: mot cue vao, mot cue ra, khong dong trong
+
+
+def _tra(vi: str, dung: list[str]) -> str | None:
+    """Tra the ve thuat ngu; None khi model lam mat hay bien dang the, de rac khong chay vao video."""
+    for i, v in enumerate(dung):
+        vi, n = re.subn(rf"zq{i}x", lambda _: v, vi, flags=re.I)
+        if not n:
+            return None
+    return None if dung and re.search("zq", vi, re.I) else vi
+
+
 def tao_goi_cuc_bo(repo: str = MODEL_CUC_BO) -> Callable[[dict[str, object]], PhanHoi]:
     """Dich bang NLLB chay tai may (CTranslate2): khong key, khong mang sau lan tai dau.
 
     Model dich may khong tu rut thuat ngu moi nen `thuat_ngu_moi` luon rong; glossary ep bang cach thay tu nguon bang the giu cho.
+    Model nap muon o lan dich dau: job dung o man ve hop hay trung cache dich khong
+    phai tai ~600MB, va NLLB khong chiem VRAM trong luc Whisper chay.
     """
-    import re
-
-    import ctranslate2
-    from huggingface_hub import snapshot_download
-    from tokenizers import Tokenizer
-
-    thu_muc = snapshot_download(repo)
-    tk = Tokenizer.from_file(thu_muc + "/tokenizer.json")
     from pipeline.asr import loi_cuda
 
+    tk = tr = thu_muc = None
+
     def dung(device: str):
+        import ctranslate2
         return ctranslate2.Translator(thu_muc, device=device)
 
-    # GPU neu co (auto), loi CUDA luc nap hay luc dich thi lui ve CPU mot lan.
-    try:
-        tr = dung("auto")
-    except (RuntimeError, OSError) as exc:
-        if not loi_cuda(exc):
-            raise
-        tr = dung("cpu")
+    def nap() -> None:
+        nonlocal tk, tr, thu_muc
+        from huggingface_hub import snapshot_download
+        from tokenizers import Tokenizer
+        try:
+            thu_muc = snapshot_download(repo)
+        except Exception as exc:
+            raise RuntimeError(f"Khong tai duoc model dich {repo} (~600MB, chi tai lan dau); "
+                               "kiem tra ket noi mang roi chay lai") from exc
+        tk = Tokenizer.from_file(thu_muc + "/tokenizer.json")
+        # GPU neu co (auto), loi CUDA luc nap hay luc dich thi lui ve CPU mot lan.
+        try:
+            tr = dung("auto")
+        except (RuntimeError, OSError) as exc:
+            if not loi_cuda(exc):
+                raise
+            tr = dung("cpu")
 
     def dich_lo(vao):
         nonlocal tr
@@ -140,26 +167,30 @@ def tao_goi_cuc_bo(repo: str = MODEL_CUC_BO) -> Callable[[dict[str, object]], Ph
             tr = dung("cpu")
             return tr.translate_batch(vao, target_prefix=[["vie_Latn"]] * len(vao), beam_size=4)
 
+    def ma(cau: list[str]) -> list[list[str]]:
+        return [["eng_Latn"] + tk.encode(s, add_special_tokens=False).tokens + ["</s>"] for s in cau]
+
+    def giai(r) -> str:
+        return tk.decode([tk.token_to_id(t) for t in r.hypotheses[0][1:]])
+
     def goi(payload: dict[str, object]) -> PhanHoi:
+        if tr is None:
+            nap()
         gloss = sorted(payload["glossary"].items(), key=lambda kv: -len(kv[0]))
-        khoa, nguon, the = list(payload["lines"]), [], []
-        for text in payload["lines"].values():
-            dung = []
-            for k, v in gloss:
-                text, n = re.subn(rf"(?<!\w){re.escape(k)}(?!\w)", f"Zq{len(dung)}x", text, flags=re.I)
-                if n:
-                    dung.append(v)
-            nguon.append(" ".join(text.split()))      # CS-1: mot cue vao, mot cue ra, khong dong trong
-            the.append(dung)
-        vao = [["eng_Latn"] + tk.encode(s, add_special_tokens=False).tokens + ["</s>"] for s in nguon]
-        kq = dich_lo(vao)
-        ra = {}
-        for k, r, dung in zip(khoa, kq, the):
-            vi = tk.decode([tk.token_to_id(t) for t in r.hypotheses[0][1:]])
-            for i, v in enumerate(dung):
-                vi = re.sub(rf"zq{i}x", lambda _: v, vi, flags=re.I)
-            ra[k] = vi
-        return PhanHoi({"lines": ra, "thuat_ngu_moi": {}}, "stop", sum(map(len, vao)), 0)
+        khoa, goc = list(payload["lines"]), list(payload["lines"].values())
+        che = [_che(t, gloss) for t in goc]
+        vao = ma([s for s, _ in che])
+        ra = [_tra(giai(r), the) for r, (_, the) in zip(dich_lo(vao), che)]
+        hong = [i for i, v in enumerate(ra) if v is None]
+        so_token = sum(map(len, vao))
+        if hong:
+            # Model lam hong the: dich lai cau goc khong ep thuat ngu, thua mat thuat ngu con hon rac trong video.
+            warnings.warn(f"Model lam hong the thuat ngu o {len(hong)} cau; dich lai khong ep thuat ngu", stacklevel=2)
+            lai = ma([" ".join(goc[i].split()) for i in hong])
+            for i, r in zip(hong, dich_lo(lai)):
+                ra[i] = giai(r)
+            so_token += sum(map(len, lai))
+        return PhanHoi({"lines": dict(zip(khoa, ra)), "thuat_ngu_moi": {}}, "stop", so_token, 0)
 
     return goi
 

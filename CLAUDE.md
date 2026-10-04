@@ -24,7 +24,7 @@ uv sync                              # cài môi trường
 $py -m uvicorn api.app:app --reload  # chạy web app → http://127.0.0.1:8000
 start_system.bat                     # tương đương, kèm mở trình duyệt
 
-$py test_pipeline.py                 # 41 test offline, không cần mạng/GPU/ffmpeg (= `npm test`)
+$py test_pipeline.py                 # 48 test offline, không cần mạng/GPU/ffmpeg (= `npm test`)
 $py test_pipeline.py --smoke         # CHỈ test media (tests_smoke.smoke_media), cần ffmpeg
 $py test/runtime_logic.py            # V-11: uvicorn + ffmpeg + SQLite thật, không nằm trong runner trên
 npm ci && npx playwright install chromium          # chuẩn bị một lần
@@ -72,7 +72,7 @@ pipeline/{audio,subs,asr,translate,markbox,render,srt,db}.py
 
 **Vùng mờ đứng trước bước dịch** dù không phải phụ thuộc của ai — nó là bước duy nhất
 cần người dùng, nên đặt sớm để thời gian chờ của máy và của người chồng lên nhau, và
-người bỏ cuộc ở màn vẽ hộp không tốn tiền API. Thiếu hộp → trạng thái `cho_chon_khung`,
+người bỏ cuộc ở màn vẽ hộp không tốn công dịch. Thiếu hộp → trạng thái `cho_chon_khung`,
 **không phải lỗi**.
 
 **Resume dựa trên hệ thống file, không dựa trên DB.** `work/<stem>-<hash>/trang_thai.json`

@@ -21,8 +21,8 @@ from pipeline.srt import (Cue, bam_file, chu_ky, doc_json, doc_srt, file_tam,
                           ghi_json, khoa_work, thu_muc_lam_viec)
 
 # Tang khi doi cach sinh artifact cua mot buoc: moi manifest cu thanh cache miss.
-VER = {"audio": 1, "sub_goc": 2, "sub_vi": 1, "vung_blur": 4}
-PROMPT_VER = 2                          # doi prompt phai lam moi moi ban dich cu
+VER = {"audio": 1, "sub_goc": 4, "sub_vi": 1, "vung_blur": 4}
+PROMPT_VER = 3                          # doi prompt phai lam moi moi ban dich cu
 HAU_TO = "_vi.mp4"
 DUOI_VIDEO = {".mp4", ".mkv", ".mov", ".webm", ".avi", ".ts"}
 MANIFEST = "trang_thai.json"
@@ -399,7 +399,7 @@ def _chay(video: Path, work: Path, tc: TuyChon, tien: Callable, con, goi) -> Ket
 
     # Vung mo dung TRUOC buoc dich, du no chi can cue chu khong can ban dich: hop
     # do nguoi dung ve, nen dung o day thi nguoi dung ve xong ngay sau ASR thay vi
-    # ngoi cho het ca buoc dich, va bo cuoc o man ve hop cung khong mat tien API.
+    # ngoi cho het ca buoc dich, va bo cuoc o man ve hop cung khong mat cong dich.
     tien("vung_blur", 0.4)
 
     def luu_nhom(hop: dict) -> None:

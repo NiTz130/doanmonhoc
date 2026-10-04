@@ -113,7 +113,7 @@ def nha_claim(cid: str) -> None:
 
 
 def tao_goi(tc: TuyChon):
-    """Khong co khoa thi tra None: cache dich van dung duoc, chi dich moi la loi."""
+    """Ham dich NLLB tai may; model nap muon, chi tai lan dau can dich that."""
     return dieu_phoi.tao_goi(tc.model_dich)
 
 

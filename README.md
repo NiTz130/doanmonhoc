@@ -27,8 +27,8 @@ phụ đề cũ để làm mờ.
 
 - **Một lần nén:** làm mờ và cháy chữ trong cùng một filtergraph, không giảm chất lượng hai lần.
 - **Vùng mờ theo từng câu:** phụ đề nhảy chỗ giữa phim vẫn che đúng.
-- **Nhóm & thuật ngữ:** tên riêng, cách xưng hô nhất quán giữa các tập.
-- **Chạy lại rẻ:** đổi vùng mờ hay cỡ chữ không gọi lại Whisper hay API dịch.
+- **Nhóm & thuật ngữ:** tên riêng dịch nhất quán giữa các tập (thuật ngữ do bạn nhập).
+- **Chạy lại rẻ:** đổi vùng mờ hay cỡ chữ không chạy lại Whisper hay bước dịch.
 - **Chạy cục bộ:** không đăng nhập, không hàng đợi ngoài; video ở lại máy bạn.
 
 <table>
@@ -95,7 +95,8 @@ Mở http://127.0.0.1:8000 — bốn màn trong một trang:
 
 Chưa có vùng mờ thì công việc **dừng ở trạng thái chờ** (không phải lỗi): bạn vẽ hộp,
 gửi lên, nó chạy tiếp. Bấm *Bỏ qua* thì không làm mờ. Bước này đặt *trước* dịch để
-người bỏ cuộc ở màn vẽ hộp chưa tốn đồng API nào.
+thời gian chờ máy dịch chồng lên thời gian bạn vẽ hộp, và người bỏ cuộc ở màn vẽ hộp
+không tốn công dịch.
 
 ### Vẽ vùng làm mờ
 
@@ -157,8 +158,8 @@ chỉ mất nhóm, thuật ngữ, nhật ký — không mất artifact.
 | `work/tai_len/nguon/<băm nhóm>/<sha256>/` | Video tải lên, cất theo **nội dung và nhóm**, không theo tên file |
 | `work/tai_len/<id công việc>/` | Kết quả và khung mẫu của từng lượt (mỗi lần tải lên = công việc mới) |
 
-- Đổi `--blur`, hộp, cỡ chữ → chỉ tính lại vùng mờ và kết xuất, **không** gọi lại
-  Whisper hay API dịch.
+- Đổi `--blur`, hộp, cỡ chữ → chỉ tính lại vùng mờ và kết xuất, **không** chạy lại
+  Whisper hay bước dịch.
 - Băm theo nội dung: đổi tên file vẫn dùng lại cache; đổi nội dung thì làm mới.
 - Sửa tay `sub_vi.srt` rồi chạy lại: bản sửa **được giữ** nếu còn đủ cue, đúng mốc giờ.
 - Ngắt giữa chừng chỉ gây tính lại, không sinh file dở bị hiểu là hoàn tất.
@@ -172,7 +173,7 @@ chỉ mất nhóm, thuật ngữ, nhật ký — không mất artifact.
 
 ```bash
 py=.venv/Scripts/python.exe
-$py test_pipeline.py             # 41 test offline (= npm test), không cần mạng/GPU/ffmpeg
+$py test_pipeline.py             # 48 test offline (= npm test), không cần mạng/GPU/ffmpeg
 $py test_pipeline.py --smoke     # test media, cần ffmpeg; ghi smoke_*.png để nhìn tận mắt
 $py test/runtime_logic.py        # uvicorn + ffmpeg + SQLite thật
 
@@ -181,8 +182,8 @@ $py -m http.server 8765 --bind 127.0.0.1 --directory web      # terminal 1
 npm run test:frontend                                         # terminal 2
 ```
 
-Bộ offline dùng `assert` trần, callable giả, `TestClient`, SQLite `:memory:`; không gọi
-API dịch. `--smoke` **không phải** end-to-end. Số đo ASR/dịch thật ở
+Bộ offline dùng `assert` trần, callable giả, `TestClient`, SQLite `:memory:`; không nạp
+model dịch thật. `--smoke` **không phải** end-to-end. Số đo ASR/dịch thật ở
 [V8](docs/ketqua/V8.md), kiểm giao diện ở [B-frontend](docs/ketqua/B-frontend.md) —
 đều là bằng chứng của lượt đo được ghi lại, không phải cam kết cho phiên bản hiện tại.
 
@@ -227,4 +228,28 @@ vào chia đôi.
 Lồng tiếng TTS · tự dò vùng chữ bằng OCR · giao diện desktop · phụ đề mềm ·
 hàng đợi ngoài · WebSocket · triển khai máy chủ · chạy nhiều video song song · vùng
 mờ bám chuyển động trong một câu (vùng vẫn đứng yên trong mỗi câu) · benchmark video
-dài / chi phí API cho cả một phim.
+dài cho cả một phim.
+
+**Giới hạn đã biết của bước dịch (NLLB):**
+
+- Dịch **từng câu riêng**, không thấy câu trước/sau, nên cách xưng hô (anh/em/tôi/cậu)
+  có thể đổi giữa các câu liền nhau. Giữ CS-1 (một cue vào, một cue ra) thì không ghép
+  câu cho model được.
+- Model không tự rút thuật ngữ mới; thuật ngữ chỉ có khi bạn nhập ở màn Nhóm.
+- Thuật ngữ được ép bằng thẻ giữ chỗ. Nếu model làm mất/biến dạng thẻ ở câu nào, câu đó
+  được dịch lại **không ép thuật ngữ** (kèm cảnh báo) thay vì để rác vào video.
+- Lần dịch **đầu tiên** tải model ~600 MB: thanh tiến độ đứng ở bước *Dịch* đến khi tải
+  xong. Model chỉ nạp khi thật sự cần dịch, nên công việc còn chờ vẽ hộp hoặc trúng bản
+  dịch đã lưu không phải tải. Mất mạng ở lần đầu → công việc báo lỗi, chạy lại khi có mạng.
+
+**Giới hạn khác:**
+
+- **Không đăng nhập** — có chủ ý: server chỉ nhận Host `127.0.0.1`/`localhost`, chặn POST
+  khác nguồn. Đưa lên mạng chung thì phải thêm lớp xác thực trước.
+- Vùng mờ là **hình chữ nhật**; chữ nghiêng hay uốn cong phải vẽ hộp bao ngoài.
+- Phụ đề Việt dùng font **Arial** (Windows có đủ dấu tiếng Việt). Máy khác thiếu Arial thì
+  libass lấy font thay thế qua fontconfig.
+- Chưa đo chất lượng tự động (WER cho nhận dạng, BLEU cho dịch) — cần bộ phụ đề tham
+  chiếu do người làm; hiện chỉ có kiểm tra bằng mắt ở [docs/ketqua](docs/ketqua/).
+- Khởi động lại server làm mất công việc đang chạy: nó chuyển sang *lỗi* kèm hướng dẫn
+  tải lại; tải lại cùng video thì các bước đã xong được dùng lại từ đĩa.
