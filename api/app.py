@@ -184,9 +184,9 @@ def tai_len(
         # Gianh claim TRUOC khi cong bo nguon: kiem `.lock.exists()` roi tao sau
         # khong phai claim nguyen tu, hai upload cung luc se cung di qua (LD-6).
         khoa = gianh_khoa(thu_muc_lam_viec(video))
-    except FileExistsError:
+    except FileExistsError as exc:
         tam.unlink(missing_ok=True)
-        raise HTTPException(409, "Da co tien trinh dang xu ly video nay") from None
+        raise HTTPException(409, str(exc)) from None
     cid = None
     try:
         _cong_bo(tam, video, bam)

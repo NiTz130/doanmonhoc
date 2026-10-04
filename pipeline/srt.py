@@ -138,7 +138,15 @@ def gianh_khoa(work: Path) -> Path:
     try:
         f = path.open("x", encoding="utf-8")
     except FileExistsError:
-        raise FileExistsError(f"Dang co lock {path}. Chi xoa sau khi xac minh tien trinh da dung.") from None
+        # Chi hien duong dan tuong doi trong work/, khong lo duong dan he thong.
+        try:
+            duong_khoa = (Path("work") / path.resolve().relative_to(Path("work").resolve())).as_posix()
+        except ValueError:
+            duong_khoa = path.name
+        raise FileExistsError(
+            "Video có thể đang xử lý hoặc có khoá còn sót sau sự cố. "
+            f"Chỉ xoá tay file khoá {duong_khoa} khi chắc chắn không còn tiến trình nào chạy."
+        ) from None
     with f:
         f.write(str(os.getpid()))
     return path

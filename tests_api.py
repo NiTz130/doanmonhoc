@@ -202,6 +202,97 @@ def test_api_loi_nen_va_lock():
         assert thu_muc_lam_viec(video).name.startswith("phim-")
 
 
+def test_api_lock_con_sot_bao_huong_dan():
+    """LD-2: lock tren dia chan upload du RAM rong, khong doan PID da chet."""
+    from api import viec
+    from api.app import _canonical
+    from pipeline import db
+    from pipeline.srt import bam_file, thu_muc_lam_viec
+
+    for noi_dung in ("", str(os.getpid())):
+        with _san() as (client, video), patch.dict(viec._HO_SO, {}, clear=True):
+            nguon = _canonical(bam_file(video), None)
+            khoa = thu_muc_lam_viec(nguon) / ".lock"
+            khoa.parent.mkdir(parents=True, exist_ok=True)
+            khoa.write_text(noi_dung, encoding="utf-8")
+            for _ in range(3):
+                r = _tai_len(client, video, blur="off")
+                assert r.status_code == 409, r.text
+                detail = r.json()["detail"]
+                assert "khoá" in detail and "còn sót" in detail, r.text
+                assert "đang xử lý" in detail and "sự cố" in detail, r.text
+                assert "xoá tay" in detail and "chắc chắn" in detail, r.text
+                assert "không còn tiến trình" in detail, r.text
+                assert khoa.as_posix() in detail, r.text
+                assert str(Path.cwd()) not in detail, r.text
+                assert khoa.read_text(encoding="utf-8") == noi_dung
+                assert not nguon.exists() and not viec.dang_theo_doi()
+            with closing(db.mo(viec.DB)) as con:
+                assert con.execute("SELECT COUNT(*) FROM cong_viec").fetchone()[0] == 0
+
+    with _san() as (client, video):
+        r = _tai_len(client, video, blur="off")
+        assert r.status_code == 202, r.text
+        assert not (thu_muc_lam_viec(viec.lay(r.json()["id"]).video) / ".lock").exists()
+
+
+def test_lock_cung_thong_bao_api_cli_va_nen():
+    """CS-6/IC-2: moi caller dung loi chung cua claim, ke ca work tuyet doi."""
+    from contextlib import redirect_stderr
+    from io import StringIO
+    import main as cli
+    from api import viec
+    from pipeline import dieu_phoi
+    from pipeline.srt import gianh_khoa, thu_muc_lam_viec
+
+    with _san() as (client, video):
+        cid = _tai_len(client, video, blur="on").json()["id"]
+        nguon = viec.lay(cid).video
+        khoa = thu_muc_lam_viec(nguon) / ".lock"
+        khoa.write_text("1234", encoding="utf-8")
+        r = _tai_len(client, video, blur="on")
+        assert r.status_code == 409, r.text
+        detail = r.json()["detail"]
+
+        for gianh in (lambda: gianh_khoa(khoa.parent.resolve()),
+                      lambda: dieu_phoi.chay(nguon)):
+            try:
+                gianh()
+            except FileExistsError as exc:
+                assert str(exc) == detail, (str(exc), detail)
+            else:
+                raise AssertionError("lock tren dia khong chan caller")
+
+        loi_cli = StringIO()
+        with patch.object(cli, "_preflight", lambda tc: None), redirect_stderr(loi_cli):
+            assert cli.main([str(nguon)]) == 1
+        assert loi_cli.getvalue() == f"LOI: {detail}\n", loi_cli.getvalue()
+
+        r = client.post(f"/api/cong-viec/{cid}/hop", json={"co_blur": False})
+        assert r.status_code == 200, r.text
+        tt = client.get(f"/api/cong-viec/{cid}").json()
+        assert tt["trang_thai"] == "loi" and tt["loi"] == detail, tt
+        assert khoa.read_text(encoding="utf-8") == "1234"
+
+
+def test_lock_khong_lo_duong_dan_ngoai_work():
+    """Thong bao claim khong lo duong dan tuyet doi cua file ngoai work/."""
+    from pipeline.srt import gianh_khoa
+
+    with tempfile.TemporaryDirectory() as d:
+        khoa = Path(d) / ".lock"
+        khoa.write_text("", encoding="utf-8")
+        try:
+            gianh_khoa(khoa.parent)
+        except FileExistsError as exc:
+            detail = str(exc)
+            assert str(khoa.parent) not in detail, detail
+            assert ".lock" in detail and "xoá tay" in detail, detail
+        else:
+            raise AssertionError("lock rong bi tu dong bo qua")
+        assert khoa.read_text(encoding="utf-8") == ""
+
+
 def test_api_va_cli_cung_ket_qua():
     """AC-9: hai duong vao dung chung dieu_phoi nen phai cho ra cung artifact."""
     from contextlib import closing

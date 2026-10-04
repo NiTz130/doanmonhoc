@@ -439,7 +439,17 @@ def runtime() -> None:
             _ready(base, process)
             status, crash_state, _ = _get(base, f"/api/cong-viec/{crash}")
             assert status == 200 and crash_state["trang_thai"] == "loi", crash_state
-            assert _upload(base, video, blur="off", nhom="crash")[0] == 409
+            crash_lock = crash_work / ".lock"
+            lock_bytes = crash_lock.read_bytes()
+            crash_upload = _upload(base, video, blur="off", nhom="crash")
+            assert crash_upload[0] == 409, crash_upload
+            results["crash_lock_detail"] = crash_upload[1]["detail"]
+            detail = crash_upload[1]["detail"]
+            assert "khoá" in detail and "còn sót" in detail, detail
+            assert "xoá tay" in detail and "không còn tiến trình" in detail, detail
+            assert crash_lock.relative_to(root).as_posix() in detail, detail
+            assert str(root) not in detail, detail
+            assert crash_lock.read_bytes() == lock_bytes
 
             # Cache remains reusable after restart; lock from crash remains untouched.
             before_final = json.loads(counters.read_text(encoding="utf-8"))
