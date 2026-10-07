@@ -2,7 +2,13 @@
 
 **Nhóm:** 3 thành viên · **Nhóm trưởng:** TV1.
 
-Thay TV1–TV3 bằng họ tên và MSSV sau khi nhóm chốt danh sách.
+| Thành viên | Họ tên | MSSV | Vai trò |
+|---|---|---|---|
+| TV1 | Nguyễn Lê Đức Bình | 23050025 | Nhóm trưởng |
+| TV2 | Đinh Hoàng Phú | 23050002 | Thành viên |
+| TV3 | Phạm Tuấn Kiệt | 23050046 | Thành viên |
+
+Các ký hiệu TV1–TV3 trong tài liệu tương ứng với danh sách trên.
 
 Tài liệu này phân công **theo thứ tự phụ thuộc kỹ thuật, không theo lịch**. Việc nào chưa đủ đầu vào thì chưa bắt đầu được; việc nào đủ đầu vào thì bắt đầu ngay, không chờ mốc thời gian. Deadline nộp bài do môn học quy định, nhóm tự áp lên các cổng ở §3 và §7.
 
