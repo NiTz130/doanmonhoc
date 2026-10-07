@@ -5037,6 +5037,7 @@
         <path data-edge-from="nhom" data-edge-to="thuat_ngu" data-edge-label="1 — N · CASCADE" data-edge-key="1" data-edge-id="r-nhom-tu" data-composition-points="360,252;430,252;430,385;500,385" d="M 360 252 L 422 252 Q 430 252 430 260 L 430 377 Q 430 385 438 385 L 500 385" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="video" data-edge-to="nhat_ky" data-edge-label="1 — N · CASCADE" data-edge-key="2" data-edge-id="r-video-nk" data-composition-points="820,98;950,98" d="M 820 98 L 950 98" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="video" data-edge-to="cong_viec" data-edge-label="1 — N · CASCADE" data-edge-key="3" data-edge-id="r-video-cv" data-composition-points="820,112;885,112;885,385;950,385" d="M 820 112 L 877 112 Q 885 112 885 120 L 885 377 Q 885 385 893 385 L 950 385" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="nhom" data-edge-to="lich_su" data-edge-label="trigger ghi" data-edge-key="4" data-edge-id="r-nhom-ls" data-composition-points="200,300;200,380" d="M 200 300 L 200 380" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 
         <!-- Components -->
         <g id="node-nhom" data-node-id="nhom" data-node-label="nhom" tabindex="0" role="button" aria-label="Focus nhom, id PK · ten UNIQUE, Architecture component" aria-pressed="false" data-node-kind="database" data-node-sublabel="id PK · ten UNIQUE" data-node-context="Architecture component">
@@ -5099,6 +5100,18 @@
         <text data-detail="context" x="1110" y="399" class="t-muted" font-size="9" text-anchor="middle">id TEXT PK · video_id FK</text>
         </g>
 
+        <g id="node-lich_su" data-node-id="lich_su" data-node-label="lich_su" tabindex="0" role="button" aria-label="Focus lich_su, id PK · doi_tuong · hanh_dong · không FK, Architecture component" aria-pressed="false" data-node-kind="database" data-node-sublabel="id PK · doi_tuong · hanh_dong · không FK" data-node-context="Architecture component">
+          <title>lich_su · id PK · doi_tuong · hanh_dong · không FK · Architecture component</title>
+          <rect x="40" y="380" width="320" height="110" rx="6" class="c-mask"/>
+          <rect x="40" y="380" width="320" height="110" rx="6" class="c-database" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(46 386) scale(0.6875)">
+            <ellipse cx="8" cy="4" rx="5" ry="2"/>
+            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="200" y="433" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">lich_su</text>
+        <text data-detail="context" x="200" y="449" class="t-muted" font-size="9" text-anchor="middle">id PK · doi_tuong · hanh_dong · không FK</text>
+        </g>
+
         <!-- Connection labels -->
         <g data-detail="context" data-edge-from="nhom" data-edge-to="video" data-edge-label="1 — N · SET NULL" data-edge-key="0" data-edge-id="r-nhom-video">
           <rect x="386.6" y="151.5" width="86.8" height="14" rx="3" class="c-mask"/>
@@ -5116,18 +5129,16 @@
           <rect x="844" y="228.5" width="82" height="14" rx="3" class="c-mask"/>
           <text x="885" y="238.5" class="t-muted" font-size="8" text-anchor="middle">1 — N · CASCADE</text>
         </g>
+        <g data-detail="context" data-edge-from="nhom" data-edge-to="lich_su" data-edge-label="trigger ghi" data-edge-key="4" data-edge-id="r-nhom-ls">
+          <rect x="168.6" y="330" width="62.8" height="14" rx="3" class="c-mask"/>
+          <text x="200" y="340" class="t-muted" font-size="8" text-anchor="middle">trigger ghi</text>
+        </g>
 
         <!-- Boundary labels (foreground masks keep routes out of titles) -->
 
 
         <!-- Legend -->
-        <g data-legend="" data-legend-bridge="">
-          <text x="40" y="504" class="t-primary" font-size="12" font-weight="650">Legend</text>
-          <g data-legend-semantic-kind="database" data-legend-kind="database" data-legend-label="Database" data-legend-x="40" data-legend-baseline="524" data-legend-width="83">
-            <rect x="40" y="515" width="16" height="10" rx="2.5" class="c-database" stroke-width="1"/>
-            <text x="62" y="524" class="t-muted" font-size="10" font-weight="500">Database</text>
-          </g>
-        </g>
+
       </svg>
       <p class="intent-trace-status no-print" id="intent-trace-status" role="status" aria-live="polite" aria-atomic="true"></p>
       <div class="share-chapter-cue no-print" id="share-chapter-cue" hidden role="status" aria-live="polite">
@@ -5323,6 +5334,7 @@
           <li>&bull; trang_thai CHECK 6 giá trị: cho · dang_chay · cho_chon_khung · xong · suy_giam · loi</li>
           <li>&bull; UNIQUE (nhom_id, goc): một nhóm không có hai bản dịch cho cùng một từ</li>
           <li>&bull; PRAGMA foreign_keys=ON bật lại mỗi lần mở kết nối</li>
+          <li>&bull; doi_tuong CHECK (nhom, thuat_ngu) · hanh_dong CHECK (tao, sua, xoa)</li>
         </ul>
       </div>
 
@@ -5337,18 +5349,20 @@
           <li>&bull; thuat_ngu: goc · dich</li>
           <li>&bull; nhat_ky: buoc · ket_qua · giay · token_vao · token_ra · loi · luc</li>
           <li>&bull; cong_viec: trang_thai CHECK · buoc · tien_do · duong_dan_ra · loi · cap_nhat_luc</li>
+          <li>&bull; lich_su: khoa · cu · moi · luc · nhom_id (không FK, để dòng lịch sử sống sau khi xoá nhóm)</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot amber"></div>
-          <h3>Hai điều dễ hiểu nhầm</h3>
+          <h3>Điều dễ hiểu nhầm</h3>
         </div>
         <ul>
           <li>&bull; Bảng cong_viec CHỈ báo tiến độ cho frontend — resume quyết định bởi trang_thai.json trên đĩa</li>
           <li>&bull; nhat_ky kiêm dấu đã-áp-glossary: hàng buoc=&#39;translate_apply&#39; mang hash artifact ở cột loi</li>
           <li>&bull; Xoá subtitles.db mất nhóm, thuật ngữ, nhật ký — KHÔNG mất artifact trong work/</li>
+          <li>&bull; lich_su chỉ do 6 trigger ls_* ghi: mọi đường ghi, kể cả thuật ngữ máy tự học và xoá dây chuyền, đều để lại dấu vết</li>
         </ul>
       </div>
     </div>

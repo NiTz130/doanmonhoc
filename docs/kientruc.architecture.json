@@ -71,7 +71,7 @@
       "id": "db",
       "type": "database",
       "label": "SQLite",
-      "sublabel": "subtitles.db · 5 bảng",
+      "sublabel": "subtitles.db · 6 bảng",
       "pos": [
         600,
         470
@@ -166,10 +166,10 @@
       ]
     },
     {
-      "id": "deepseek",
+      "id": "nllb",
       "type": "external",
-      "label": "DeepSeek API",
-      "sublabel": "api.deepseek.com",
+      "label": "Model dịch NLLB",
+      "sublabel": "CTranslate2 · chạy tại máy",
       "pos": [
         1125,
         216
@@ -261,10 +261,10 @@
       "to": "ffmpeg"
     },
     {
-      "id": "c-deepseek",
+      "id": "c-nllb",
       "from": "translate",
-      "to": "deepseek",
-      "label": "HTTPS",
+      "to": "nllb",
+      "label": "nạp muộn",
       "variant": "emphasis"
     },
     {

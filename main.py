@@ -79,7 +79,7 @@ def _chay_video(a: argparse.Namespace) -> int:
         raise FileNotFoundError(f"Khong tim thay video: {video}")
     tc = _tuy_chon(a, Path(a.output) if a.output else None)
     goi = _preflight(tc)
-    with closing(db.mo(Path("work") / "subtitles.db")) as con:
+    with closing(db.mo(DB)) as con:
         return 0 if _mot_video(video, tc, con, goi) == "xong" else 1
 
 
@@ -88,7 +88,7 @@ def _chay_batch(a: argparse.Namespace) -> int:
     cap = dieu_phoi.dich_batch(Path(a.thu_muc))       # tinh dich truoc moi side effect
     goi = _preflight(tc)
     dem = {"xong": 0, "suy_giam": 0, "cho_chon_khung": 0, "loi": 0}
-    with closing(db.mo(Path("work") / "subtitles.db")) as con:
+    with closing(db.mo(DB)) as con:
         for video, ra in cap:                        # tuan tu: thuat ngu tich luy dan
             try:
                 dem[_mot_video(video, _tuy_chon(a, ra), con, goi)] += 1
@@ -102,7 +102,7 @@ def _chay_batch(a: argparse.Namespace) -> int:
 
 
 def _chay_nhom(a: argparse.Namespace) -> int:
-    with closing(db.mo(Path("work") / "subtitles.db")) as con, con:
+    with closing(db.mo(DB)) as con, con:
         if a.viec == "list":
             for row in dieu_phoi.nhom_danh_sach(con):
                 hop = "chua co hop" if row["blur_x"] is None else \
@@ -113,8 +113,49 @@ def _chay_nhom(a: argparse.Namespace) -> int:
                 print(f"{goc}\t{dich}")
         elif a.viec == "set-term":
             dieu_phoi.nhom_dat_thuat_ngu(con, a.ten, a.goc, a.dich)
+        elif a.viec == "delete":
+            dieu_phoi.nhom_xoa(con, a.ten)
+        elif a.viec == "del-term":
+            dieu_phoi.nhom_xoa_thuat_ngu(con, a.ten, a.goc)
         else:
             dieu_phoi.nhom_dat_hop(con, a.ten, a.hop)
+    return 0
+
+
+DB = Path("work") / "subtitles.db"
+
+
+def _chay_sao_luu(a: argparse.Namespace) -> int:
+    with closing(db.mo(DB)) as con:
+        print(f"Da sao luu: {dieu_phoi.sao_luu(con, dich=Path(a.dich) if a.dich else None)}")
+    return 0
+
+
+def _chay_khoi_phuc(a: argparse.Namespace) -> int:
+    with closing(db.mo(DB)) as con:
+        an_toan = dieu_phoi.khoi_phuc(con, Path(a.tep))
+    print(f"Da khoi phuc tu {a.tep}. Ban truoc khi khoi phuc luu o: {an_toan}")
+    return 0
+
+
+def _chay_don_dep(a: argparse.Namespace) -> int:
+    with closing(db.mo(DB)) as con:
+        muc = dieu_phoi.don_dep(ngay=a.ngay, thuc_hien=a.thuc_hien, con=con)
+    for duong, byte in muc:
+        print(f"{byte / 1048576:8.1f} MiB  {duong}")
+    tong = sum(b for _, b in muc) / 1048576
+    print(f"{'Da xoa' if a.thuc_hien else 'Se xoa (them --thuc-hien de xoa that)'}: "
+          f"{len(muc)} muc, {tong:.1f} MiB")
+    return 0
+
+
+def _chay_lich_su(a: argparse.Namespace) -> int:
+    with closing(db.mo(DB)) as con:
+        dong, tong = dieu_phoi.lich_su_tim(con, nhom=a.nhom, trang=a.trang, moi_trang=a.moi_trang)
+    for r in dong:
+        print(f"{r['luc']}\t{r['doi_tuong']}\t{r['hanh_dong']}\t{r['khoa']}\t"
+              f"{r['cu'] or ''}\t{r['moi'] or ''}")
+    print(f"({len(dong)}/{tong} dong)", file=sys.stderr)
     return 0
 
 
@@ -145,13 +186,35 @@ def tao_parser() -> argparse.ArgumentParser:
     b = viec.add_parser("set-box")
     b.add_argument("ten")
     b.add_argument("hop", type=_hop)
+    d = viec.add_parser("delete", help="xoa nhom va thuat ngu cua nhom")
+    d.add_argument("ten")
+    dt = viec.add_parser("del-term", help="xoa mot thuat ngu")
+    dt.add_argument("ten")
+    dt.add_argument("goc")
     nhom.set_defaults(ham=_chay_nhom)
+
+    sl = sub.add_parser("sao-luu", help="chup CSDL work/subtitles.db")
+    sl.add_argument("--dich", help="mac dinh work/sao_luu/subtitles-<thoi gian>.db")
+    sl.set_defaults(ham=_chay_sao_luu)
+    kp = sub.add_parser("khoi-phuc", help="thay CSDL bang mot ban sao luu (ban hien tai duoc chup truoc)")
+    kp.add_argument("tep")
+    kp.set_defaults(ham=_chay_khoi_phuc)
+    dd = sub.add_parser("don-dep", help="liet ke / xoa ket qua va cache cu duoi work/tai_len")
+    dd.add_argument("--ngay", type=float, default=7.0, help="chi dong toi muc cu hon so ngay nay")
+    dd.add_argument("--thuc-hien", action="store_true", help="xoa that; mac dinh chi liet ke")
+    dd.set_defaults(ham=_chay_don_dep)
+    ls = sub.add_parser("lich-su", help="lich su doi nhom va thuat ngu")
+    ls.add_argument("--nhom")
+    ls.add_argument("--trang", type=int, default=1)
+    ls.add_argument("--moi-trang", type=int, default=50)
+    ls.set_defaults(ham=_chay_lich_su)
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    if argv and argv[0] not in {"video", "batch", "nhom", "-h", "--help"}:
+    if argv and argv[0] not in {"video", "batch", "nhom", "sao-luu", "khoi-phuc", "don-dep", "lich-su",
+                        "-h", "--help"}:
         argv.insert(0, "video")                      # main.py <video> nhu spec §8
     a = tao_parser().parse_args(argv)
     if not getattr(a, "ham", None):

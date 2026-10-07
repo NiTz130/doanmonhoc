@@ -4,7 +4,9 @@ from __future__ import annotations
 import importlib
 import json
 import logging
+import math
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -12,9 +14,11 @@ from collections import Counter
 from collections.abc import Callable
 from contextlib import nullcontext
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 from pipeline import db
+from pipeline.db import DangBan, KhongCo     # noqa: F401  api/ import tu day (IC-2)
 # Validator thuan: LD-8 chi co mot ban, va khong module gia nao duoc thay no.
 from pipeline.markbox import hop_chinh
 from pipeline.srt import (Cue, bam_file, chu_ky, doc_json, doc_srt, file_tam,
@@ -28,6 +32,36 @@ DUOI_VIDEO = {".mp4", ".mkv", ".mov", ".webm", ".avi", ".ts"}
 MANIFEST = "trang_thai.json"
 # Duoi nguong nay coi nhu nhan dang hong, khong phai video it thoai.
 TI_LE_PHU_TOI_THIEU = 0.25
+# Cua web chi nhan model da biet: chuoi tuy y la ten repo/duong dan se bi tai ve may.
+# CLI khong bi han che boi danh sach nay.
+MODEL_WHISPER = frozenset({"tiny", "tiny.en", "base", "base.en", "small", "small.en", "medium",
+                           "medium.en", "large-v1", "large-v2", "large-v3", "large-v3-turbo",
+                           "turbo"})
+MODEL_DICH = frozenset({"nllb-cuc-bo"})
+FONT_SCALE_TOI_DA = 5.0
+GIU_SAO_LUU = 5
+
+
+def kiem_tuy_chon(tc: "TuyChon", *, chat: bool = False) -> None:
+    """Validator tuy chon duy nhat: CLI goi qua `chay`, API goi truc tiep de tra 400.
+
+    `chat=True` (cua web) con han che model vao danh sach da biet.
+    """
+    if tc.blur not in {"auto", "on", "off"}:
+        raise ValueError("blur phai la auto, on hoac off")
+    fs = tc.font_scale
+    if isinstance(fs, bool) or not isinstance(fs, int | float) or not math.isfinite(fs) or fs <= 0:
+        raise ValueError("font-scale phai la so duong")
+    if fs > FONT_SCALE_TOI_DA:
+        raise ValueError(f"font-scale toi da {FONT_SCALE_TOI_DA:g}")
+    if not isinstance(tc.lang, str) or not re.fullmatch(r"[A-Za-z]{2,3}(-[A-Za-z]{2,4})?", tc.lang):
+        raise ValueError("lang phai la ma ngon ngu ngan, vi du en hoac pt-BR")
+    if tc.nhom is not None:
+        db.kiem_ten_nhom(tc.nhom)
+    if chat and tc.model not in MODEL_WHISPER:
+        raise ValueError("model phai la mot trong: " + ", ".join(sorted(MODEL_WHISPER)))
+    if chat and tc.model_dich not in MODEL_DICH:
+        raise ValueError("model_dich phai la mot trong: " + ", ".join(sorted(MODEL_DICH)))
 
 
 def _nap(ten: str):
@@ -331,8 +365,7 @@ def chay(video: Path, tuy_chon: TuyChon | None = None,
     tien = bao_tien_do or (lambda buoc, ti_le: None)
     if not video.is_file():
         raise FileNotFoundError(f"Khong tim thay video: {video}")
-    if not (isinstance(tc.font_scale, float | int) and tc.font_scale > 0):
-        raise ValueError("font-scale phai la so duong")
+    kiem_tuy_chon(tc)
     work = thu_muc_lam_viec(video)
     dong_db = con is None
     con = con or db.mo(Path("work") / "subtitles.db")
@@ -479,16 +512,26 @@ def nhom_danh_sach(con) -> list[dict]:
         "SELECT ten,blur_x,blur_y,blur_w,blur_h FROM nhom ORDER BY ten")]
 
 
+def nhom_tim(con, **loc) -> tuple[list[dict], int]:
+    """Tim, sap xep, phan trang nhom: (danh sach, tong so)."""
+    return db.liet_ke_nhom(con, **loc)
+
+
 def nhom_tao(con, ten: str) -> int:
     return db.lay_nhom(con, ten)
 
 
 def nhom_hop(con, ten: str) -> dict[str, float] | None:
-    return db.doc_hop(con, db.lay_nhom(con, ten))
+    """Chi doc: nhom khong co thi KhongCo, khong tao ra nhom rong."""
+    return db.doc_hop(con, db.tim_nhom(con, ten))
 
 
 def nhom_thuat_ngu(con, ten: str) -> dict[str, str]:
-    return db.doc_thuat_ngu(con, db.lay_nhom(con, ten))
+    return db.doc_thuat_ngu(con, db.tim_nhom(con, ten))
+
+
+def nhom_thuat_ngu_tim(con, ten: str, **loc) -> tuple[dict[str, str], int]:
+    return db.liet_ke_thuat_ngu(con, db.tim_nhom(con, ten), **loc)
 
 
 def nhom_dat_thuat_ngu(con, ten: str, goc: str, dich: str) -> None:
@@ -500,6 +543,115 @@ def nhom_dat_hop(con, ten: str, hop: dict, W: int = 1920, H: int = 1080) -> dict
     hop = _nap("markbox").kiem_hop(hop, W, H)
     db.ghi_hop(con, db.lay_nhom(con, ten), hop)
     return hop
+
+
+def nhom_xoa(con, ten: str) -> None:
+    db.xoa_nhom(con, db.tim_nhom(con, ten))
+
+
+def nhom_xoa_thuat_ngu(con, ten: str, goc: str) -> None:
+    db.xoa_thuat_ngu(con, db.tim_nhom(con, ten), goc)
+
+
+def cong_viec_tim(con, **loc) -> tuple[list[dict], int]:
+    return db.liet_ke_cong_viec(con, **loc)
+
+
+def nhat_ky_tim(con, **loc) -> tuple[list[dict], int]:
+    return db.liet_ke_nhat_ky(con, **loc)
+
+
+def lich_su_tim(con, nhom: str | None = None, **loc) -> tuple[list[dict], int]:
+    return db.liet_ke_lich_su(con, nhom_id=None if nhom is None else db.tim_nhom(con, nhom), **loc)
+
+
+# --------------------------------------------------- sao luu, khoi phuc, don dep
+
+def _dau_thoi_gian() -> str:
+    return datetime.now().strftime("%Y%m%d-%H%M%S")
+
+
+def sao_luu(con, thu_muc: Path = Path("work") / "sao_luu", dich: Path | None = None) -> Path:
+    return db.sao_luu(con, dich or Path(thu_muc) / f"subtitles-{_dau_thoi_gian()}.db")
+
+
+def sao_luu_tu_dong(con, thu_muc: Path, giu: int = GIU_SAO_LUU) -> Path:
+    """Sao luu luc khoi dong server va giu `giu` ban moi nhat; ban 'truoc-khoi-phuc' khong bi xoa."""
+    ra = sao_luu(con, thu_muc)
+    cu = sorted(Path(thu_muc).glob("subtitles-*.db"))
+    for bo in cu[:max(0, len(cu) - giu)]:
+        bo.unlink(missing_ok=True)
+    return ra
+
+
+def khoi_phuc(con, nguon: Path, thu_muc: Path = Path("work") / "sao_luu") -> Path:
+    """Khoi phuc tu `nguon`. Ban hien tai duoc chup truoc, nen khoi phuc nham van quay lai duoc."""
+    nguon = Path(nguon)
+    db._kiem_file_db(nguon)             # tu choi som, truoc khi dong vao ban hien tai
+    an_toan = db.sao_luu(con, Path(thu_muc) / f"truoc-khoi-phuc-{_dau_thoi_gian()}.db")
+    db.khoi_phuc(con, nguon)
+    with con:                           # tien trinh nay khong co cong viec nao dang chay that
+        db.don_cong_viec_mat_ho_so(con, set())
+    return an_toan
+
+
+def _dung_luong(*goc: Path) -> tuple[int, float]:
+    """(tong byte, mtime moi nhat) cua cac cay thu muc/tep."""
+    tong, moi = 0, 0.0
+    for g in goc:
+        for p in [g, *g.rglob("*")] if g.is_dir() else [g]:
+            try:
+                st = p.stat()
+            except OSError:
+                continue
+            moi = max(moi, st.st_mtime)
+            tong += st.st_size if p.is_file() else 0
+    return tong, moi
+
+
+def don_dep(goc: Path = Path("work"), ngay: float = 7.0, thuc_hien: bool = False,
+            con=None) -> list[tuple[Path, int]]:
+    """Liet ke (va xoa neu `thuc_hien`) tai nguyen cu hon `ngay` ngay duoi work/tai_len.
+
+    - work/tai_len/<cid>/: ket qua va khung mau cua mot luot (bo qua luot dang chay/cho ve hop).
+    - work/tai_len/nguon/<nhom>/<hash>/ cung thu muc lam viec cua no: ban nguon va cache buoc.
+    Khong dong toi work/subtitles.db, khong dong toi video khong nam trong tai_len.
+    Mac dinh chi liet ke: xoa la khong hoan lai duoc.
+    """
+    if not isinstance(ngay, int | float) or isinstance(ngay, bool) or not ngay >= 0:
+        raise ValueError("ngay phai la so khong am")
+    goc = Path(goc).resolve()
+    tai = goc / "tai_len"
+    if not tai.is_dir():
+        return []
+    han = time.time() - ngay * 86400
+    giu = set()
+    if con is not None:
+        giu = {r[0] for r in con.execute(
+            "SELECT id FROM cong_viec WHERE trang_thai IN ('cho','dang_chay','cho_chon_khung')")}
+    muc: list[tuple[Path, int]] = []
+    for d in sorted(tai.iterdir()):
+        if d.is_dir() and d.name != "nguon" and d.name not in giu:
+            tong, moi = _dung_luong(d)
+            if moi < han:
+                muc.append((d, tong))
+    nguon = tai / "nguon"
+    for hdir in sorted(nguon.glob("*/*")) if nguon.is_dir() else []:
+        tep = hdir / "nguon.media"
+        work = goc / thu_muc_lam_viec(tep, goc).name
+        if (work / ".lock").exists() or not hdir.is_dir():
+            continue
+        tong, moi = _dung_luong(hdir, work)
+        if moi < han:
+            muc.append((hdir, _dung_luong(hdir)[0]))
+            if work.is_dir():
+                muc.append((work, _dung_luong(work)[0]))
+    if thuc_hien:
+        for p, _ in muc:
+            if not p.resolve().is_relative_to(goc) or p.resolve() in (goc, tai):
+                raise RuntimeError(f"Từ chối xoá ngoài work/: {p}")
+            shutil.rmtree(p)
+    return muc
 
 
 def tao_goi(model_dich: str):

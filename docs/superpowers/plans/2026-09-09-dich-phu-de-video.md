@@ -1,5 +1,7 @@
 # Kế hoạch triển khai: Hệ thống dịch phụ đề video Anh → Việt
 
+> **Ghi chú ngày 05/10/2026 — tài liệu lưu trữ.** Mã nguồn đã đổi sau ngày viết: bước dịch chạy tại máy bằng NLLB (đã bỏ DeepSeek, SDK OpenAI, khoá API và `.env`); lô dịch là 25 câu (không phải 400); khung mẫu trích mỗi câu thoại một khung (không phải 8 khung); không còn khoá thuật ngữ (`khoa`, `--lock`) và chế độ vùng `che_do_vung`. Mô tả đúng với mã hiện tại: [BAO_CAO_TONG_HOP.md](../../BAO_CAO_TONG_HOP.md). Nội dung dưới đây giữ nguyên làm lịch sử quyết định.
+
 > **Sửa đổi ngày 30/09/2026.** Hệ thống đã gỡ: chế độ vùng `cong_them` cùng trường `che_do_vung` (mọi vùng nay dùng nghĩa thay thế; `VER["vung_blur"]` tăng lên 4); cờ khóa thuật ngữ (`khoa`, `--lock`); các cột `nhom.ngon_ngu_goc`, `nhom.sub_style`, `thuat_ngu.loai`, `thuat_ngu.so_lan`. Những đoạn dưới đây còn nhắc tới các mục đó được giữ nguyên làm lịch sử quyết định.
 
 ## Plan Metadata

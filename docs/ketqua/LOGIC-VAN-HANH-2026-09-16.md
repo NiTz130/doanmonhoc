@@ -1,5 +1,7 @@
 # Completion Report — logic-van-hanh-2026-09-16 v2
 
+> **Ghi chú ngày 05/10/2026.** Báo cáo ghi lại trạng thái ngày 16/09/2026, lúc bộ dịch còn là DeepSeek. Nay đã thay bằng NLLB chạy tại máy; mô tả đúng với mã: `docs/BAO_CAO_TONG_HOP.md`.
+
 Plan ID / version: logic-van-hanh-2026-09-16 / v2
 
 Base SHA / candidate snapshot / final commit:

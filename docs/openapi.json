@@ -50,7 +50,7 @@
             "type": "string"
           },
           "model_dich": {
-            "default": "deepseek-v4-flash",
+            "default": "nllb-cuc-bo",
             "title": "Model Dich",
             "type": "string"
           },
@@ -156,6 +156,97 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/cong-viec": {
+      "get": {
+        "operationId": "danh_sach_cong_viec_api_cong_viec_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "trang_thai",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Trang Thai"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sap_xep",
+            "required": false,
+            "schema": {
+              "default": "tao_luc",
+              "title": "Sap Xep",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "thu_tu",
+            "required": false,
+            "schema": {
+              "default": "desc",
+              "title": "Thu Tu",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "trang",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "title": "Trang",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "moi_trang",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Moi Trang",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Danh Sach Cong Viec Api Cong Viec Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Danh Sach Cong Viec"
+      }
+    },
     "/api/cong-viec/{cid}": {
       "get": {
         "operationId": "trang_thai_api_cong_viec__cid__get",
@@ -379,9 +470,274 @@
         "summary": "Mot Khung"
       }
     },
+    "/api/lich-su": {
+      "get": {
+        "description": "Ai doi gi trong nhom/thuat ngu (do trigger CSDL ghi, nen khong duong ghi nao bo sot).",
+        "operationId": "lich_su_api_lich_su_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "nhom",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nhom"
+            }
+          },
+          {
+            "in": "query",
+            "name": "doi_tuong",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Doi Tuong"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hanh_dong",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hanh Dong"
+            }
+          },
+          {
+            "in": "query",
+            "name": "trang",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "title": "Trang",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "moi_trang",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Moi Trang",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Lich Su Api Lich Su Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lich Su"
+      }
+    },
+    "/api/nhat-ky": {
+      "get": {
+        "operationId": "nhat_ky_api_nhat_ky_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "video_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Video Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "buoc",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Buoc"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ket_qua",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ket Qua"
+            }
+          },
+          {
+            "in": "query",
+            "name": "trang",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "title": "Trang",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "moi_trang",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Moi Trang",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Nhat Ky Api Nhat Ky Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Nhat Ky"
+      }
+    },
     "/api/nhom": {
       "get": {
         "operationId": "danh_sach_api_nhom_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sap_xep",
+            "required": false,
+            "schema": {
+              "default": "ten",
+              "title": "Sap Xep",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "thu_tu",
+            "required": false,
+            "schema": {
+              "default": "asc",
+              "title": "Thu Tu",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "trang",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "title": "Trang",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "moi_trang",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Moi Trang",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -397,6 +753,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Danh Sach",
@@ -441,6 +807,41 @@
           }
         },
         "summary": "Tao",
+        "tags": [
+          "nhom"
+        ]
+      }
+    },
+    "/api/nhom/{ten}": {
+      "delete": {
+        "operationId": "xoa_api_nhom__ten__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ten",
+            "required": true,
+            "schema": {
+              "title": "Ten",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Xoa",
         "tags": [
           "nhom"
         ]
@@ -564,6 +965,62 @@
               "title": "Ten",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sap_xep",
+            "required": false,
+            "schema": {
+              "default": "goc",
+              "title": "Sap Xep",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "thu_tu",
+            "required": false,
+            "schema": {
+              "default": "asc",
+              "title": "Thu Tu",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "trang",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "title": "Trang",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "moi_trang",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Moi Trang",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -652,6 +1109,71 @@
         "tags": [
           "nhom"
         ]
+      }
+    },
+    "/api/nhom/{ten}/thuat-ngu/{goc}": {
+      "delete": {
+        "operationId": "xoa_thuat_ngu_api_nhom__ten__thuat_ngu__goc__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ten",
+            "required": true,
+            "schema": {
+              "title": "Ten",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "goc",
+            "required": true,
+            "schema": {
+              "title": "Goc",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Xoa Thuat Ngu",
+        "tags": [
+          "nhom"
+        ]
+      }
+    },
+    "/api/sao-luu": {
+      "post": {
+        "description": "Chup CSDL ra work/sao_luu. Khoi phuc chi qua CLI: web khong thay file dang mo.",
+        "operationId": "sao_luu_api_sao_luu_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Sao Luu Api Sao Luu Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sao Luu"
       }
     },
     "/api/video": {

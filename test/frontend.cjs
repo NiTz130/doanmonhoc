@@ -286,6 +286,59 @@ const screenshotDir = process.env.SCREENSHOT_DIR || 'docs/ketqua';
     assert(await fallbackPage.locator('#upload-submit').isEnabled());
     assert(await fallbackPage.locator('.scene-fallback').isVisible());
     await fallbackPage.close();
+
+    // F5: cong viec dang theo doi phai song sot khi tai lai trang (cid nam o sessionStorage cua tab).
+    const dungF5=async(p,st)=>p.route('**/api/**',async route=>{
+      const path=new URL(route.request().url()).pathname;
+      if(path==='/api/video') return route.fulfill({status:202,json:{id:'job-f5',trang_thai:'cho'}});
+      if(path==='/api/cong-viec/job-f5') {
+        st.polls++;
+        if(st.gone) return route.fulfill({status:404,json:{detail:'Khong co cong viec nay'}});
+        return route.fulfill({json:{id:'job-f5',trang_thai:'cho_chon_khung',tien_do:0.5,buoc:'sub_goc',co_ket_qua:false}});
+      }
+      if(path.endsWith('/khung')) return route.fulfill({json:Array.from({length:3},(_,i)=>({i,giay:i+0.3,text:'mau'}))});
+      if(/\/khung\/\d+$/.test(path)) return route.fulfill({contentType:'image/svg+xml',body:sampleImage});
+      throw new Error('Unexpected API request '+path);
+    });
+    const soKhung=p=>p.waitForFunction(()=>document.querySelectorAll('#khung-thumbnails button').length===3);
+    const f5=await browser.newPage({viewport:{width:1280,height:900}});
+    const f5Loi=[];f5.on('pageerror',e=>f5Loi.push(e.message));
+    const st={polls:0,gone:false};
+    await dungF5(f5,st);
+    await f5.goto(base);
+    await f5.locator('#video-file').setInputFiles(file);
+    await f5.locator('#upload-submit').click();
+    await f5.locator('#khung').waitFor({state:'visible'});
+    await soKhung(f5);
+    await f5.reload();
+    await f5.locator('#khung').waitFor({state:'visible'});
+    await soKhung(f5);               // F5 o man ve hop: van quay lai duoc khung cua cong viec dang cho
+    await f5.locator('nav a[href="#tien-do"]').click();
+    assert((await f5.locator('#viec-id').textContent()).includes('job-f5'),'F5 lam mat ma cong viec');
+    await f5.waitForTimeout(400);    // lan hoi do nav #tien-do vua kich hoat phai xong truoc khi gia lap 404
+    st.gone=true;const truoc=st.polls;
+    await f5.reload();
+    await f5.waitForFunction(()=>document.getElementById('viec-trang-thai').textContent.includes('Không còn công việc'));
+    assert.equal(await f5.evaluate(()=>sessionStorage.getItem('dich-phu-de:viec')),null,'404 phai xoa dau cong viec');
+    await f5.reload();await f5.waitForTimeout(400);
+    assert.equal(st.polls,truoc+1,'Cong viec da mat thi khong duoc hoi lai sau F5');
+    await f5.locator('#video-file').setInputFiles(file);
+    assert(await f5.locator('#upload-submit').isEnabled(),'Cong viec da mat thi phai cho tai video moi');
+    assert.deepEqual(f5Loi,[]);
+    await f5.close();
+    // Trinh duyet chan storage: trang van chay, chi mat kha nang quay lai sau F5.
+    const chan=await browser.newPage({viewport:{width:1280,height:900}});
+    const chanLoi=[];chan.on('pageerror',e=>chanLoi.push(e.message));
+    await chan.addInitScript(()=>{Object.defineProperty(window,'sessionStorage',{get(){throw new DOMException('blocked','SecurityError');}});});
+    await dungF5(chan,{polls:0,gone:false});
+    await chan.goto(base);
+    await chan.locator('#video-file').setInputFiles(file);
+    await chan.locator('#upload-submit').click();
+    await chan.locator('#khung').waitFor({state:'visible'});
+    await soKhung(chan);
+    assert.deepEqual(chanLoi,[]);
+    await chan.close();
+    console.log('PASS F5 giu cong viec o man ve hop, 404 dung theo doi va xoa dau, storage bi chan van chay');
     console.log('PASS glossary failed-save retention and lock payload, reduced motion, context loss and missing module fallback; no uncaught JS errors');
   } finally { await browser.close(); }
 })().catch(error=>{console.error(error);process.exitCode=1;});

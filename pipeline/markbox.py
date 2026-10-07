@@ -3,9 +3,12 @@ from __future__ import annotations
 
 import math
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from pipeline.srt import Cue
+
+SONG_SONG = 4          # so ffmpeg chay cung luc khi trich khung
 
 
 def _so(v: object) -> float:
@@ -122,19 +125,23 @@ def trich_khung(video: Path, cues: list[Cue], work: Path) -> list[Path]:
     dung cau khong nam trong mau la lot luoi, ma do moi la cau can nhin.
     Khung lay tai dau cau chu khong rai deu theo thoi gian: khung nao cung co chu.
     """
-    # ponytail: tuan tu mot ffmpeg seek moi cue (~0.2s o 640x360, ~9s cho 43 cue).
-    # Phim hai tieng ~2000 cue thi mat vai phut va vai tram MB PNG; luc do hay
-    # trich theo yeu cau tung khung trong api/app.py thay vi trich truoc ca loat.
+    # Mot lenh ffmpeg moi cue, chay song song vai luong: ffmpeg la tien trinh rieng nen
+    # khong vuong GIL. ponytail: phim ~2000 cue van ton vai tram MB PNG; luc do trich
+    # theo yeu cau tung khung trong api/app.py thay vi trich truoc ca loat.
     work = Path(work)
     work.mkdir(parents=True, exist_ok=True)
-    ra = []
-    for i, c in enumerate(cues):
+    video = str(Path(video).resolve())
+
+    def mot(i_c: tuple[int, Cue]) -> Path:
+        i, c = i_c
         path = work / f"khung_{i}.png"
         subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{c.bat_dau + 0.3:.3f}",
-                        "-i", str(Path(video).resolve()), "-frames:v", "1", "-y", str(path)],
+                        "-i", video, "-frames:v", "1", "-y", str(path)],
                        check=True, capture_output=True, text=True)
-        ra.append(path)
-    return ra
+        return path
+
+    with ThreadPoolExecutor(max_workers=SONG_SONG) as pool:
+        return list(pool.map(mot, enumerate(cues)))     # giu thu tu; loi dau tien duoc nem ra
 
 
 def moc_khung(cues: list[Cue]) -> list[dict]:

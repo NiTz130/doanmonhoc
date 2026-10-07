@@ -22,6 +22,19 @@ let khung_cid = null;
 let cho_hop = false;
 let scene = null;
 
+// F5 khong duoc lam mat cong viec dang chay: cid song trong sessionStorage cua tab nay.
+// Trinh duyet chan storage thi trang van chay binh thuong, chi mat kha nang quay lai sau F5.
+const KHOA_VIEC = "dich-phu-de:viec";
+function luu_viec(id, ten) {
+  try {
+    if (id) sessionStorage.setItem(KHOA_VIEC, JSON.stringify({ id, ten }));
+    else sessionStorage.removeItem(KHOA_VIEC);
+  } catch { /* storage bi chan */ }
+}
+function nho_viec() {
+  try { return JSON.parse(sessionStorage.getItem(KHOA_VIEC)); } catch { return null; }
+}
+
 function cap_nhat_ui() {
   $("upload-submit").disabled = dang_gui || dang_xu_ly || dang_hoi || !$("video-file").files.length;
   $("upload-submit").textContent = dang_gui ? "Đang tải lên…" : "Bắt đầu ↗";
@@ -56,7 +69,9 @@ async function goi(duong, tuy = {}) {
   try { than = text ? JSON.parse(text) : null; } catch { than = null; }
   if (!kq.ok) {
     const detail = than?.detail;
-    throw new Error(Array.isArray(detail) ? detail.map((d) => d.msg).join("; ") : detail || text || kq.status);
+    const loi = new Error(Array.isArray(detail) ? detail.map((d) => d.msg).join("; ") : detail || text || kq.status);
+    loi.status = kq.status;
+    throw loi;
   }
   return than;
 }
@@ -107,6 +122,7 @@ $("form-tai-len").addEventListener("submit", async (e) => {
   try {
     const kq = await goi("/api/video", { method: "POST", body: form });
     cid = kq.id;
+    luu_viec(cid, file.name);
     dang_xu_ly = true;
     cho_hop = false;
     $("progress-label").textContent = "—";
@@ -202,6 +218,15 @@ async function hoi_tien_do() {
       dong_ho = setTimeout(hoi_tien_do, 1500);
     }
   } catch (err) {
+    if (err.status === 404) {
+      // Server khong con biet cong viec nay (vd. xoa work/subtitles.db): ngung theo doi, khong hoi mai.
+      luu_viec(null);
+      cid = null;
+      dang_xu_ly = false;
+      $("viec-trang-thai").textContent = "Không còn công việc này trên máy chủ. Hãy tải video lại.";
+      $("connection-status").textContent = "";
+      return;
+    }
     $("connection-status").textContent = "Không cập nhật được: " + err.message + ". Thông tin công việc vẫn được giữ.";
     $("poll-retry").hidden = false;
   } finally {
@@ -675,8 +700,16 @@ function dieu_huong() {
   if (ten === "tien-do" && cid && !dang_hoi && !dong_ho) hoi_tien_do();
 }
 window.addEventListener("resize", ve_hop);
+const cu = nho_viec();
+if (cu?.id) {
+  cid = cu.id;
+  dang_xu_ly = true;               // hoi_tien_do dat lai theo trang thai that cua server
+  $("viec-id").textContent = "Công việc " + cid;
+  $("video-name").textContent = cu.ten || "";
+}
 dieu_huong();
 cap_nhat_ui();
+if (cid) hoi_tien_do();            // F5 o man nao cung phai khoi phuc duoc cong viec dang chay
 // Optional enhancement: an import/WebGL failure leaves the static illustration and UI intact.
 import("./scene.js").then((module) => {
   scene = module.createScene($("scene"), $("scene-toggle"));

@@ -24,8 +24,10 @@ uv sync                              # cài môi trường
 $py -m uvicorn api.app:app --reload  # chạy web app → http://127.0.0.1:8000
 start_system.bat                     # tương đương, kèm mở trình duyệt
 
-$py test_pipeline.py                 # 48 test offline, không cần mạng/GPU/ffmpeg (= `npm test`)
+$py test_pipeline.py                 # 78 test offline, không cần mạng/GPU/ffmpeg (= `npm test`)
+$py tools_coverage.py --min 90       # đo độ phủ dòng của bộ test offline (hiện 91,2%), không cần cài thêm
 $py test_pipeline.py --smoke         # CHỈ test media (tests_smoke.smoke_media), cần ffmpeg
+$py test_pipeline.py --real          # GPU + Whisper + NLLB + ffmpeg THẬT (tests_real.py, ~1 phút); thiếu GPU/model → NOT RUN, không tự tải model
 $py test/runtime_logic.py            # V-11: uvicorn + ffmpeg + SQLite thật, không nằm trong runner trên
 npm ci && npx playwright install chromium          # chuẩn bị một lần
 $py -m http.server 8765 --bind 127.0.0.1 --directory web   # rồi ở terminal khác:
@@ -39,10 +41,12 @@ hàm `test_*`. Gọi trực tiếp:
 `$py -c "import test_pipeline as t; t.test_vung_mo_gan_tung_cau_thoai()"`
 
 Test offline nằm rải ở `tests_api.py` · `tests_db.py` · `tests_media.py` ·
-`tests_translate.py` (mỗi thành viên một file, đánh số `V-n` trỏ về plan), được
+`tests_translate.py` (mỗi thành viên một file, đánh số `V-n` trỏ về plan) và
+`tests_van_hanh.py` (tìm/lọc/phân trang, sao lưu, dọn dẹp, trigger, kiểm tuỳ chọn), được
 `test_pipeline.py` gom bằng `from tests_x import *`. **Thêm file test mới phải thêm
 dòng import đó**, không thì runner không thấy. Ngoại lệ có chủ ý: `tests_docx.py`
-(kiểm `tools_md2docx.py`, cần `uv sync --extra docs`) và `tests_smoke.py` chạy riêng.
+(kiểm `tools_md2docx.py`, cần `uv sync --extra docs`), `tests_smoke.py` (`--smoke`) và
+`tests_real.py` (`--real`, cần GPU + model đã tải) chạy riêng.
 
 CLI nội bộ (`main.py`) — **không phải sản phẩm**, dùng để gỡ lỗi và xử lý hàng loạt;
 nó đi qua đúng `pipeline/dieu_phoi.py` như web nên cho cùng kết quả:
@@ -51,6 +55,7 @@ nó đi qua đúng `pipeline/dieu_phoi.py` như web nên cho cùng kết quả:
 $py main.py phim.mp4 --nhom "Tên phim" --blur-box 0.3,0.855,0.4,0.09
 $py main.py batch ./thu_muc --nhom "Tên phim"
 $py main.py nhom set-term "Tên phim" "Ironhold" "Thành Sắt"
+$py main.py sao-luu | khoi-phuc FILE | don-dep [--thuc-hien] | lich-su   # vận hành CSDL và work/
 ```
 
 Mã thoát: `0` xong · `1` có lỗi/có cue giữ nguyên bản gốc/còn video chờ vẽ hộp · `130` Ctrl+C.

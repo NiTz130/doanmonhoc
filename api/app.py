@@ -16,13 +16,16 @@ from contextlib import asynccontextmanager, closing
 from pathlib import Path
 from typing import Annotated
 
+from dataclasses import replace
+
 from fastapi import (APIRouter, BackgroundTasks, Body, Depends, FastAPI, File,
-                     Form, HTTPException, UploadFile)
+                     Form, HTTPException, Response, UploadFile)
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from api import nhom, viec
+from api.nhom import liet_ke, loi_http
 from api.viec import ket_noi
 from pipeline import db, dieu_phoi
 from pipeline.dieu_phoi import DUOI_VIDEO, TuyChon
@@ -45,6 +48,10 @@ async def vong_doi(app: FastAPI):
     with closing(db.mo(viec.DB)) as con:
         with con:
             db.don_cong_viec_mat_ho_so(con, viec.dang_theo_doi())
+        # Moi lan khoi dong chup mot ban CSDL (giu 5 ban moi nhat): mat file la mat nhom,
+        # thuat ngu va nhat ky, khong dung artifact tren dia dung de dung lai.
+        dieu_phoi.sao_luu_tu_dong(con, viec.DB.parent / "sao_luu")
+    viec.don_khung_mo_coi(TAI_LEN)
     yield
 
 
@@ -60,6 +67,14 @@ app.add_middleware(TrustedHostMiddleware,
 @app.middleware("http")
 async def chan_khac_nguon(request, call_next):
     # Trinh duyet luon gui Origin voi POST khac nguon; CLI/TestClient/curl thi khong.
+    if request.method == "POST" and request.url.path == "/api/video":
+        # Tu choi tu tieu de: khong doi nhan het mot file khong lo roi moi bao loi.
+        try:
+            dai = int(request.headers.get("content-length", 0))
+        except ValueError:
+            dai = 0
+        if dai > TOI_DA_BYTE + (1 << 20):
+            return JSONResponse({"detail": "File vuot qua gioi han 4 GiB"}, status_code=413)
     goc = request.headers.get("origin")
     if (request.method not in {"GET", "HEAD", "OPTIONS"} and goc is not None
             and goc != f"{request.url.scheme}://{request.headers['host']}"):
@@ -165,8 +180,6 @@ def tai_len(
     force_asr: Annotated[bool, Form()] = False,
     force: Annotated[bool, Form()] = False,
 ) -> dict:
-    if blur not in {"auto", "on", "off"}:
-        raise HTTPException(400, "blur phai la auto, on hoac off")
     nhom_ten = nhom_ten or None
     if nhom_ten is not None and not nhom_ten.strip():
         raise HTTPException(400, "Ten nhom khong duoc chi gom khoang trang")
@@ -177,6 +190,14 @@ def tai_len(
             hop = kiem_hop(tach_hop(blur_box))
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from None
+
+    tc0 = TuyChon(nhom=nhom_ten, lang=lang, model=model, model_dich=model_dich,
+                  blur=blur, blur_box=hop, font_scale=font_scale, separate=separate,
+                  vad=vad, force_asr=force_asr, force=force)
+    with loi_http():
+        # Validator duy nhat cua CLI + whitelist model cua web: sai tuy chon la 400 ngay,
+        # khong phai mot job nen bao loi sau khi da nhan ca file.
+        dieu_phoi.kiem_tuy_chon(tc0, chat=True)
 
     tam, bam, ten_goc = _nhan_file(tep)
     video = _canonical(bam, nhom_ten)
@@ -191,12 +212,8 @@ def tai_len(
     try:
         _cong_bo(tam, video, bam)
         cid = str(uuid.uuid4())
-        tc = TuyChon(nhom=nhom_ten, lang=lang, model=model, model_dich=model_dich,
-                     blur=blur, blur_box=hop, font_scale=font_scale, separate=separate,
-                     vad=vad, force_asr=force_asr, force=force,
-                     # Ket qua va khung mau rieng tung CID: hai luot cung mot video
-                     # khong ghi de output cua nhau.
-                     ra=TAI_LEN / cid / f"{ten_goc}_vi.mp4",
+        # Ket qua va khung mau rieng tung CID: hai luot cung mot video khong ghi de nhau.
+        tc = replace(tc0, ra=TAI_LEN / cid / f"{ten_goc}_vi.mp4",
                      thu_muc_khung=TAI_LEN / cid / "khung")
         viec.dat(cid, video, tc, khoa)
         with con:
@@ -216,6 +233,36 @@ def tai_len(
                                       loi="Khong xep duoc lich xu ly; hay tai video lai")
         raise
     return {"id": cid, "trang_thai": "cho"}
+
+
+@api.get("/cong-viec")
+def danh_sach_cong_viec(con: Con, res: Response, trang_thai: str | None = None,
+                        sap_xep: str = "tao_luc", thu_tu: str = "desc", trang: int = 1,
+                        moi_trang: int = 50) -> list[dict]:
+    return liet_ke(res, dieu_phoi.cong_viec_tim, con, trang_thai=trang_thai, sap_xep=sap_xep,
+                   thu_tu=thu_tu, trang=trang, moi_trang=moi_trang)
+
+
+@api.get("/nhat-ky")
+def nhat_ky(con: Con, res: Response, video_id: int | None = None, buoc: str | None = None,
+            ket_qua: str | None = None, trang: int = 1, moi_trang: int = 50) -> list[dict]:
+    return liet_ke(res, dieu_phoi.nhat_ky_tim, con, video_id=video_id, buoc=buoc,
+                   ket_qua=ket_qua, trang=trang, moi_trang=moi_trang)
+
+
+@api.get("/lich-su")
+def lich_su(con: Con, res: Response, nhom: str | None = None, doi_tuong: str | None = None,
+            hanh_dong: str | None = None, trang: int = 1, moi_trang: int = 50) -> list[dict]:
+    """Ai doi gi trong nhom/thuat ngu (do trigger CSDL ghi, nen khong duong ghi nao bo sot)."""
+    return liet_ke(res, dieu_phoi.lich_su_tim, con, nhom=nhom, doi_tuong=doi_tuong,
+                   hanh_dong=hanh_dong, trang=trang, moi_trang=moi_trang)
+
+
+@api.post("/sao-luu", status_code=201)
+def sao_luu(con: Con) -> dict:
+    """Chup CSDL ra work/sao_luu. Khoi phuc chi qua CLI: web khong thay file dang mo."""
+    with loi_http(OSError):
+        return {"tep": dieu_phoi.sao_luu(con).name}
 
 
 @api.get("/cong-viec/{cid}")

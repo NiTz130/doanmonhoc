@@ -40,7 +40,7 @@
     {
       "id": "ds",
       "type": "external",
-      "label": "DeepSeek"
+      "label": "NLLB"
     }
   ],
   "segments": [
@@ -107,7 +107,7 @@
       "y": 340,
       "label": "cho_chon_khung + checkpoint",
       "variant": "return",
-      "note": "đã qua nhan_dien → sub_goc → vung_blur; CHƯA hề gọi DeepSeek"
+      "note": "đã qua nhan_dien → sub_goc → vung_blur; CHƯA nạp model dịch"
     },
     {
       "id": "m07",
@@ -226,7 +226,7 @@
       "items": [
         "Frontend = web/app.js · FastAPI = api/app.py · Tác vụ nền = api/viec.py",
         "Điều phối = pipeline/dieu_phoi.py — dùng chung cho cả web lẫn CLI main.py",
-        "DeepSeek = api.deepseek.com, gọi qua OpenAI SDK (timeout 120 s, retry 2)"
+        "NLLB = model dịch chạy tại máy (CTranslate2), chỉ nạp ở lần dịch đầu"
       ]
     },
     {

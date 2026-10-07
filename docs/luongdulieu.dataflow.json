@@ -145,7 +145,7 @@
       "from": "subgoc",
       "to": "subvi",
       "label": "dịch lô 25 câu",
-      "classification": "DeepSeek + glossary của nhóm",
+      "classification": "NLLB cục bộ + thuật ngữ của nhóm",
       "variant": "emphasis"
     },
     {
@@ -179,7 +179,7 @@
       "title": "Vì sao vùng mờ đứng trước bước dịch",
       "items": [
         "Bước duy nhất cần người, đặt sớm để máy và người chờ chồng lên nhau",
-        "Bỏ cuộc ở màn vẽ hộp thì không tốn một đồng tiền API",
+        "Bỏ cuộc ở màn vẽ hộp thì chưa tốn công dịch",
         "Thiếu hộp là trạng thái cho_chon_khung, KHÔNG phải lỗi"
       ]
     }

@@ -30,7 +30,7 @@ Tài liệu này xác định **hệ thống phải làm được những gì** 
 
 Hệ thống là một **ứng dụng web chạy cục bộ**. Người dùng mở trình duyệt, tải lên một video có thoại tiếng Anh, khoanh vùng phụ đề cứng bằng chuột trên khung hình mẫu, và tải về chính video đó với phụ đề tiếng Việt cháy vào hình, đồng thời vệt phụ đề cứng tiếng Anh đã bị làm mờ.
 
-**Trong phạm vi:** tiếp nhận video, lấy phụ đề gốc (tận dụng phụ đề sẵn có hoặc nhận dạng giọng nói), dịch Anh → Việt, quản lý thuật ngữ theo nhóm video, khoanh vùng và làm mờ phụ đề cứng, kết xuất video, theo dõi tiến độ, chạy lại an toàn.
+**Trong phạm vi:** tiếp nhận video, lấy phụ đề gốc (tận dụng phụ đề sẵn có hoặc nhận dạng giọng nói), dịch Anh → Việt, quản lý thuật ngữ theo nhóm video, khoanh vùng và làm mờ phụ đề cứng, kết xuất video, theo dõi tiến độ, chạy lại an toàn, vận hành dữ liệu (tìm kiếm, nhật ký, sao lưu, dọn dẹp; qua API và dòng lệnh).
 
 **Ngoài phạm vi:** lồng tiếng TTS, tự dò vùng chữ bằng OCR, giao diện desktop, phụ đề mềm nhúng, đăng nhập và phân quyền, hàng đợi ngoài (Celery/Redis), WebSocket, triển khai lên máy chủ công cộng, xử lý nhiều video song song, vùng mờ tự bám theo chuyển động trong một câu.
 
@@ -149,7 +149,7 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 | **FR-08** | Mỗi câu thoại nguồn ứng đúng một câu thoại kết quả | File phụ đề Việt có **đúng bằng** số câu của file gốc, và mốc bắt đầu/kết thúc của từng câu **giống hệt** bản gốc. Xác minh bằng test tự động so từng cặp câu | M |
 | **FR-09** | Hệ thống xử lý được phản hồi hỏng một phần mà không bỏ cả lô | Khi một phần phản hồi thiếu hoặc sai cấu trúc, hệ thống giữ những câu dịch tốt và gọi lại **đúng một lần** cho từng câu hỏng. Cả lô hỏng thì chia đôi tối đa hai tầng rồi mới gọi lẻ từng câu | M |
 | **FR-10** | Câu không dịch được vẫn giữ nguyên bản gốc và được báo rõ | Sau khi thử hết các bước cứu, câu vẫn hỏng thì giữ nguyên văn bản tiếng Anh; công việc kết thúc ở trạng thái **suy giảm** kèm số câu bị giữ nguyên. Công cụ dòng lệnh trả mã thoát khác 0 | M |
-| **FR-11** | Lỗi xác thực hoặc lỗi mạng dừng công việc thay vì thử lại vô ích | Sai khóa API hoặc mất mạng thì hệ thống dừng video đó với thông báo lỗi rõ ràng, **không** dùng cơ chế chia lô để thử lại, và **không** ghi ra file dịch dở | M |
+| **FR-11** | Lỗi nạp model dịch dừng công việc thay vì thử lại vô ích | Lần dịch đầu tiên cần tải model NLLB (khoảng 600 MB). Tải thất bại (mất mạng, hết chỗ) thì hệ thống dừng video đó với thông báo nêu cách xử lý, **không** dùng cơ chế chia lô để thử lại, và **không** ghi ra file dịch dở | M |
 
 ### 3.4 Nhóm D — Thuật ngữ và nhóm video
 
@@ -201,11 +201,11 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 
 ### 3.8 Nhóm H — Chạy lại an toàn
 
-**Mục đích:** chỉnh một chi tiết nhỏ không được bắt người dùng trả lại toàn bộ thời gian GPU và tiền API.
+**Mục đích:** chỉnh một chi tiết nhỏ không được bắt người dùng trả lại toàn bộ thời gian chạy GPU.
 
 | Mã | Yêu cầu | Tiêu chí chấp nhận | Ưu tiên |
 |---|---|---|---|
-| **FR-32** | Đổi cấu hình chỉ làm tính lại những bước bị ảnh hưởng | Đổi vùng mờ hoặc cỡ chữ rồi chạy lại thì hệ thống **không** gọi lại nhận dạng và **không** gọi lại API dịch. Xác minh bằng nhật ký: hai bước đó ghi là dùng lại kết quả cũ, số token tiêu thụ bằng 0 | M |
+| **FR-32** | Đổi cấu hình chỉ làm tính lại những bước bị ảnh hưởng | Đổi vùng mờ hoặc cỡ chữ rồi chạy lại thì hệ thống **không** gọi lại nhận dạng và **không** chạy lại bước dịch (cũng không nạp model dịch). Xác minh bằng nhật ký: hai bước đó ghi là dùng lại kết quả cũ, số token tiêu thụ bằng 0 | M |
 | **FR-33** | Thay nội dung video tại cùng đường dẫn vẫn bị phát hiện | Ghi đè một video khác lên cùng tên file rồi chạy lại thì mọi bước phụ thuộc đều được làm mới, vì chữ ký tính theo **nội dung** file chứ không theo đường dẫn | M |
 | **FR-34** | Ngắt giữa chừng không tạo file dở bị hiểu nhầm là hoàn tất | Dừng tiến trình giữa một bước rồi chạy lại thì bước đó được làm lại từ đầu, và kết quả tốt của lần chạy trước **không** bị xóa mất | M |
 | **FR-35** | Bản dịch người dùng sửa tay được giữ lại | Sửa tay file phụ đề Việt rồi chạy lại: nếu vẫn đủ số câu và đúng mốc thời gian thì bản sửa được giữ nguyên, không bị ghi đè bằng bản máy dịch | S |
@@ -220,7 +220,20 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 | **FR-37** | Chế độ hàng loạt xử lý cả một thư mục theo thứ tự | Các video chạy lần lượt để thuật ngữ tích lũy từ video trước sang video sau; mỗi video sinh file kết quả riêng. Hai video trùng tên file đích thì bị từ chối **trước khi ghi bất cứ thứ gì** | S |
 | **FR-38** | Mã thoát phản ánh đúng kết quả | `0` khi tất cả thành công; `1` khi có lỗi, có câu giữ nguyên bản gốc, hoặc còn video chờ vẽ hộp; `130` khi người dùng nhấn dừng | S |
 
-**Tổng cộng: 38 yêu cầu chức năng** — 28 bắt buộc (M), 10 nên có (S).
+### 3.10 Nhóm J — Vận hành dữ liệu
+
+**Mục đích:** giữ dữ liệu của nhóm an toàn và truy vết được. Các chức năng này có ở API và dòng lệnh; giao diện web chưa có màn riêng.
+
+| Mã | Yêu cầu | Tiêu chí chấp nhận | Ưu tiên |
+|---|---|---|---|
+| **FR-39** | Danh sách có tìm kiếm, lọc, sắp xếp và phân trang | Danh sách công việc, nhóm, thuật ngữ, nhật ký, lịch sử nhận `trang`, `moi_trang` (tối đa 200) và trả tổng số ở header `X-Tong-So`. Tìm nhóm không phân biệt dấu. Giá trị lọc hoặc sắp xếp ngoài danh sách trắng bị từ chối `400` | S |
+| **FR-40** | Xoá được nhóm và thuật ngữ, không xoá khi nhóm đang có việc chạy | Xoá nhóm kéo theo thuật ngữ của nhóm. Đối tượng không có trả `404`. Nhóm có việc đang chạy trả `409` và dữ liệu giữ nguyên | S |
+| **FR-41** | Mọi thay đổi nhóm và thuật ngữ để lại lịch sử | Tạo, sửa, xoá đều ghi vào `lich_su` do trigger của CSDL, kể cả thuật ngữ máy tự học và xoá dây chuyền. Lịch sử và nhật ký chạy từng bước đọc được qua API và dòng lệnh | S |
+| **FR-42** | Sao lưu và khôi phục CSDL | Sao lưu tạo file SQLite hợp lệ. Khôi phục từ chối file không phải SQLite, hỏng, hoặc thiếu bảng bắt buộc, và chụp bản hiện tại trước khi thay. Lúc khởi động hệ thống tự sao lưu và giữ 5 bản | S |
+| **FR-43** | Dọn kết quả và cache cũ mà không xoá nhầm | Mặc định chỉ liệt kê. Không xoá nguồn còn lock, nguồn mới, hoặc bất cứ thứ gì nằm ngoài `work/tai_len/` (kể cả qua liên kết) | S |
+| **FR-44** | Tuỳ chọn sai và file quá lớn bị từ chối sớm, không để rác | `lang`, `model`, `model_dich`, `font_scale`, độ dài tên nhóm và thuật ngữ sai thì trả `400`. `Content-Length` vượt 4 GiB trả `413` trước khi nhận file. Request bị từ chối không để lại file hay công việc | M |
+
+**Tổng cộng: 44 yêu cầu chức năng** — 29 bắt buộc (M), 15 nên có (S).
 
 ---
 
@@ -234,14 +247,14 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 | **NFR-04** | Chất lượng đầu ra | Video kết quả không bị giảm chất lượng do nén chồng | Chỉ đúng một lần mã hóa lại; thời lượng, độ phân giải và luồng âm thanh giữ nguyên so với bản gốc |
 | **NFR-05** | Độ tin cậy | Mọi lần ghi file đều nguyên vẹn | Ghi ra file tạm cùng thư mục, đóng, kiểm tra, rồi mới thay thế file đích. Mất điện giữa chừng chỉ làm mất cache, không sinh file hỏng |
 | **NFR-06** | Độ tin cậy | Một video chỉ được một tiến trình xử lý tại một thời điểm | Khóa theo thư mục làm việc; tiến trình thứ hai bị từ chối. Khóa sót sau khi máy treo **không** tự động bị coi là đã chết — người dùng xác minh rồi xóa tay |
-| **NFR-07** | Bảo mật, riêng tư | Video không rời khỏi máy người dùng | Chỉ **văn bản phụ đề** được gửi đến dịch vụ dịch; file video được xử lý hoàn toàn cục bộ. Khóa API đọc từ file cấu hình môi trường, không ghi vào mã nguồn và không đưa lên kho mã |
+| **NFR-07** | Bảo mật, riêng tư | Video không rời khỏi máy người dùng | Cả video lẫn văn bản phụ đề đều được xử lý tại máy: Whisper và NLLB chạy cục bộ, không có khóa API. Mạng chỉ dùng để tải model về lần đầu; sau đó chạy ngoại tuyến được |
 | **NFR-08** | Bảo mật | Dữ liệu vào từ bên ngoài đều được kiểm tại biên | Tên file tải lên chỉ lấy phần tên, loại bỏ đường dẫn; giới hạn kích thước 4 GiB kiểm **trong lúc** đọc; thông báo lỗi không tiết lộ đường dẫn thật trên máy chủ |
 | **NFR-09** | Khả dụng | Giao diện dùng được trên nhiều khổ màn hình | Bốn màn hiển thị đúng ở chiều rộng 360px, 768px và 1440px, có ảnh chụp làm bằng chứng |
 | **NFR-10** | Khả dụng | Thông báo lỗi bằng tiếng Việt và nêu được cách xử lý | Mỗi thông báo lỗi nói rõ chuyện gì xảy ra và người dùng nên làm gì tiếp theo |
 | **NFR-11** | Khả dụng | Giao diện dùng được khi không có đồ họa 3D | Phần trang trí bằng đồ họa 3D tắt được và **không** phải điều kiện để các chức năng chính hoạt động; tôn trọng thiết lập giảm chuyển động của hệ điều hành |
 | **NFR-12** | Khả bảo trì | Kiến trúc phụ thuộc một chiều | Các module xử lý không gọi cơ sở dữ liệu và không biết đến HTTP. Tầng web chỉ nhận yêu cầu, kiểm tra, gọi lớp điều phối rồi trả kết quả — **không** gọi `ffmpeg`, không nạp model |
 | **NFR-13** | Khả bảo trì | Một logic chỉ được cài đặt ở một chỗ | Kiểm tra hình học vùng mờ, chọn vùng chính, và toàn bộ luồng xử lý đều dùng chung một cài đặt cho cả web lẫn dòng lệnh |
-| **NFR-14** | Khả kiểm thử | Bộ kiểm thử chính chạy được ở máy bất kỳ | Chạy được mà **không** cần mạng, GPU, khóa API, cổng mạng hay màn hình. Thời gian chạy dưới 60 giây |
+| **NFR-14** | Khả kiểm thử | Bộ kiểm thử chính chạy được ở máy bất kỳ | Chạy được mà **không** cần mạng, GPU, model dịch, cổng mạng hay màn hình. Thời gian chạy dưới 60 giây |
 | **NFR-15** | Tương thích | Môi trường chạy xác định rõ | Python 3.12; `ffmpeg` 6 trở lên có sẵn các bộ lọc cần dùng; một trình duyệt hiện đại. Cài lại theo tài liệu hướng dẫn phải chạy được — có thành viên khác kiểm chứng |
 | **NFR-16** | Ràng buộc | Không dùng thành phần ngoài phạm vi đã chốt | Không thêm hàng đợi ngoài, không WebSocket, không ORM, không framework kiểm thử, không đăng nhập. Mọi bổ sung phải được cả nhóm thống nhất trước |
 
@@ -257,7 +270,7 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 |---|---|---|
 | **Người biên tập phụ đề** | Chính | Người dùng cuối, thao tác hoàn toàn qua trình duyệt |
 | **Người phát triển** | Phụ | Thành viên nhóm, dùng công cụ dòng lệnh để gỡ lỗi và chạy hàng loạt |
-| **Dịch vụ dịch thuật** | Hệ thống ngoài | Mô hình ngôn ngữ lớn nhận văn bản phụ đề và trả bản dịch |
+| **Model dịch NLLB** | Thành phần cục bộ | Model dịch máy chạy tại máy (CTranslate2), nhận lô câu và trả bản dịch. Không phải dịch vụ mạng |
 
 ### 5.2 Sơ đồ use case
 
@@ -279,7 +292,7 @@ Bản tương tác có thể mở bằng trình duyệt: [usecase.html](usecase.
 | **UC-08** | Xem và sửa bảng thuật ngữ | Người biên tập | FR-13, FR-14 |
 | **UC-09** | Đặt vùng mờ mặc định cho nhóm | Người biên tập | FR-21 |
 | **UC-10** | Chạy lại video với cấu hình khác | Người biên tập | FR-32, FR-33 |
-| **UC-11** | Xử lý hàng loạt qua dòng lệnh | Người phát triển | FR-36, FR-37, FR-38 |
+| **UC-11** | Xử lý hàng loạt qua dòng lệnh | Người phát triển | FR-36, FR-37, FR-38, FR-39, FR-41, FR-42, FR-43 |
 
 ### 5.4 Đặc tả use case chính
 
@@ -304,7 +317,7 @@ Bản tương tác có thể mở bằng trình duyệt: [usecase.html](usecase.
 | **Điều kiện sau** | Vùng mờ được lưu; công việc chạy tiếp từ bước dịch |
 | **Luồng chính** | 1. Hệ thống chuyển sang màn Vùng làm mờ và hiển thị khung hình của câu thoại đầu tiên<br>2. Người dùng chuyển qua lại vài khung để tìm câu phụ đề cao nhất<br>3. Kéo chuột trên khung để vẽ hộp bao lấy vệt phụ đề cứng<br>4. Kéo cạnh hoặc góc để chỉnh cho khít<br>5. Bấm gửi<br>6. Hệ thống kiểm tra hình học của hộp và lưu lại<br>7. Công việc chạy tiếp từ bước dịch |
 | **Luồng thay thế** | **4a.** Người dùng muốn xóa hộp → rút hộp về gần bằng không<br>**4b.** Câu có phụ đề nhảy chỗ → chuyển sang UC-04<br>**5a.** Người dùng tích ô đặt làm mặc định cho nhóm → hệ thống lưu thêm vùng chính vào nhóm<br>**6a.** Hộp không hợp lệ (vượt biên, quá nhỏ sau khi quy ra pixel) → hệ thống báo lỗi, người dùng vẽ lại<br>**\*a.** Người dùng bấm Bỏ qua → chuyển sang UC-05, không làm mờ nhưng **không** xóa vùng mặc định của nhóm |
-| **Ghi chú** | Bước này nằm **trước** bước dịch. Người dùng bỏ cuộc ở đây thì chưa phát sinh chi phí API nào |
+| **Ghi chú** | Bước này nằm **trước** bước dịch. Người dùng bỏ cuộc ở đây thì chưa tốn công dịch (chưa nạp model dịch) |
 
 #### UC-08 — Xem và sửa bảng thuật ngữ
 
@@ -362,7 +375,7 @@ Nguyên tắc chia: mỗi người theo **một lĩnh vực xuyên suốt cả b
 - Duyệt chéo vòng tròn: TV2 duyệt TV1 · TV3 duyệt TV2 · TV4 duyệt TV3 · TV1 duyệt TV4.
 - Đồng bộ 20–30 phút mỗi khi một cổng sắp đóng hoặc có người bị chặn.
 - **Thay đổi hợp đồng phải thống nhất trước khi gộp.** Có hai hợp đồng: chữ ký các module và bảng địa chỉ API. Đổi một trong hai giữa G3/G4 làm gãy phần của người khác.
-- Không đưa lên kho mã: file cấu hình môi trường, khóa API, thư mục môi trường ảo, model, video lớn, thư mục làm việc.
+- Không đưa lên kho mã: file cấu hình môi trường, khóa bí mật, thư mục môi trường ảo, model, video lớn, thư mục làm việc.
 
 ### 6.6 Nhật ký cá nhân
 
@@ -385,6 +398,7 @@ Mỗi thành viên tự ghi nhật ký theo mẫu tại [NHAT_KY_CA_NHAN.md](NHA
 | G — Công việc và tiến độ (FR-27→31) | UC-02, UC-06 |
 | H — Chạy lại (FR-32→35) | UC-10 |
 | I — Dòng lệnh (FR-36→38) | UC-11 |
+| J — Vận hành dữ liệu (FR-39→44) | UC-07, UC-08 *(xoá, tìm, lịch sử)*, UC-11 *(sao lưu, dọn dẹp)*, UC-01 *(FR-44, kiểm đầu vào)* |
 
 Mọi yêu cầu chức năng đều thuộc ít nhất một use case, và mọi use case đều truy về ít nhất một yêu cầu — không có yêu cầu mồ côi, không có use case ngoài phạm vi ở §1.2.
 
@@ -392,10 +406,10 @@ Mọi yêu cầu chức năng đều thuộc ít nhất một use case, và mọ
 
 | Mã | Nội dung | Ảnh hưởng | Cách giảm nhẹ |
 |---|---|---|---|
-| **R-01** | Dịch vụ dịch thay đổi giá hoặc ngừng phục vụ | Không dịch được | Lớp gọi dịch tách riêng, đổi nhà cung cấp chỉ sửa một module |
+| **R-01** | Kho model trên Hugging Face đổi hoặc gỡ model dịch | Máy mới không tải được model | Model đã tải nằm trong cache nên máy cũ vẫn chạy; hàm gọi dịch tách riêng, đổi model chỉ sửa `translate.py` |
 | **R-02** | Máy không có GPU, nhận dạng chậm | Thời gian chờ dài | Có sẵn đường lui về CPU; đo và ghi số thực vào báo cáo |
 | **R-03** | Video thử nghiệm có bản quyền | Rủi ro pháp lý khi demo | Dùng video tự quay hoặc video có giấy phép mở; video tổng hợp cho kiểm thử |
-| **R-04** | Chi phí API vượt dự kiến | Cạn ngân sách nhóm | Bước vẽ hộp đặt **trước** bước dịch nên bỏ cuộc không tốn tiền; cơ chế chạy lại không gọi dịch lần hai; ghi nhật ký số token từng lượt |
+| **R-04** | Dịch tại máy chậm hoặc thiếu VRAM | Thời gian chờ dài | Có đường lui về CPU; bước vẽ hộp đặt **trước** bước dịch nên bỏ cuộc không tốn công dịch; cơ chế chạy lại không dịch lần hai |
 | **R-05** | Hết thời gian trước khi xong frontend | Không đủ sản phẩm bảo vệ | Cắt G4 trước, giữ backend chạy được qua kiểm thử tự động |
 
 ### 7.3 Nguồn khảo sát

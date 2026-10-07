@@ -4,6 +4,7 @@ Ngày: 2026-09-09 — bản sửa v2 theo review và yêu cầu fix.
 
 Đồng bộ mô tả hiện trạng ngày 2026-09-12: các mã bước lịch sử được giữ để tra cứu,
 nhưng thứ tự chạy hiện tại là phụ đề gốc → vùng mờ → dịch → kết xuất.
+Đồng bộ ngày 2026-10-05: bước dịch nay chạy tại máy bằng NLLB (đã bỏ DeepSeek và khoá API), lô 25 câu, khung mẫu theo từng câu thoại, không còn khoá thuật ngữ. Các đoạn dưới đây nhắc DeepSeek, lô 400 hoặc 8 khung là thiết kế ban đầu; mô tả đúng với mã nằm ở `docs/BAO_CAO_TONG_HOP.md`.
 Kết quả kiểm tra cũ xem `docs/ketqua/`; bản cập nhật tài liệu này không phải lượt nghiệm thu mới.
 
 ## 1. Mục tiêu

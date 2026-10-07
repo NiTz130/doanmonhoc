@@ -5,6 +5,7 @@ frontend hoi theo chu ky. Bang nay chi bao tien do, khong quyet dinh resume.
 """
 from __future__ import annotations
 
+import shutil
 import threading
 from contextlib import closing
 from dataclasses import dataclass, replace
@@ -28,12 +29,14 @@ class HoSo:
     tc: TuyChon
     khoa: Path | None = None
     checkpoint: dict | None = None
+    xong: bool = False      # da ra trang thai cuoi: ho so chi con de tra cuu, duoc phep don
 
 
 # cid -> HoSo. Backend chay mot tien trinh nen dict la du; khoi dong lai server
 # thi cong viec dang do mat (LD-5 bao ro), artifact tren dia van con.
 _HO_SO: dict[str, HoSo] = {}
 _KHOA = threading.Lock()
+GIU_XONG = 20               # so ho so da xong giu lai trong RAM; cu hon thi bo
 
 
 def ket_noi():
@@ -48,6 +51,10 @@ def ket_noi():
 
 def dat(cid: str, video: Path, tc: TuyChon, khoa: Path | None = None) -> None:
     with _KHOA:
+        # Ho so da xong khong bao gio duoc don o cho khac: dict lon mai theo so luot tai len.
+        da_xong = [k for k, h in _HO_SO.items() if h.xong]
+        for k in da_xong[:max(0, len(da_xong) - GIU_XONG)]:
+            del _HO_SO[k]
         _HO_SO[cid] = HoSo(Path(video), tc, khoa)
 
 
@@ -112,6 +119,27 @@ def nha_claim(cid: str) -> None:
     _cap_nhat(cid, khoa=None)
 
 
+def _ket_thuc(cid: str, tc: TuyChon) -> None:
+    """Luot da ra trang thai cuoi: khung mau (mot PNG moi cue) het tac dung, xoa ngay.
+
+    Ket qua mp4 o lai cho nguoi dung tai; `dieu_phoi.don_dep` xoa no sau han.
+    """
+    _cap_nhat(cid, xong=True)
+    if tc.thu_muc_khung:
+        shutil.rmtree(tc.thu_muc_khung, ignore_errors=True)    # don dep, mat file khong thanh loi
+
+
+def don_khung_mo_coi(tai_len: Path) -> int:
+    """Luc khoi dong: khung mau cua luot khong con ai theo doi (server vua khoi dong lai)."""
+    dang = dang_theo_doi()
+    n = 0
+    for d in Path(tai_len).glob("*/khung"):
+        if d.is_dir() and d.parent.name != "nguon" and d.parent.name not in dang:
+            shutil.rmtree(d, ignore_errors=True)
+            n += 1
+    return n
+
+
 def tao_goi(tc: TuyChon):
     """Ham dich NLLB tai may; model nap muon, chi tai lan dau can dich that."""
     return dieu_phoi.tao_goi(tc.model_dich)
@@ -140,12 +168,14 @@ def chay_nen(cid: str) -> None:
                 khoa = gianh_khoa(thu_muc_lam_viec(video))
             except FileExistsError as exc:
                 ghi(trang_thai="loi", loi=str(exc))
+                _ket_thuc(cid, tc)
                 return
             _cap_nhat(cid, khoa=khoa)
         try:
             kq = dieu_phoi.chay(video, tc, tien, con=con, goi=tao_goi(tc), da_khoa=True)
         except BaseException as exc:        # ngoai le nen phai thanh trang thai loi
             ghi(trang_thai="loi", loi=f"{type(exc).__name__}: {exc}")
+            _ket_thuc(cid, tc)
             return
         finally:
             # Nha claim o moi loi ra, ke ca khi dung cho nguoi ve hop.
@@ -161,3 +191,5 @@ def chay_nen(cid: str) -> None:
             duong_dan_ra=str(kq.ra) if kq.ra else None,
             loi="; ".join(kq.canh_bao) or None,
             **({"tien_do": 1.0} if kq.ra else {}))
+        if kq.trang_thai != "cho_chon_khung":
+            _ket_thuc(cid, tc)

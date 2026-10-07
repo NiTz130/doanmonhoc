@@ -86,8 +86,8 @@ làm được ba việc mà không công cụ khảo sát nào làm đủ:
    thanh gốc.
 3. **Giữ thuật ngữ nhất quán giữa các tập** của cùng một bộ phim bằng một bảng thuật ngữ theo nhóm.
 
-Vì ứng dụng chạy cục bộ nên video **không rời khỏi máy người dùng**; chỉ phần văn bản phụ đề được gửi đi
-dịch, và người dùng chỉ trả tiền cho lượng API thật sự dùng.
+Vì ứng dụng chạy cục bộ nên video **không rời khỏi máy người dùng**. Cả nhận dạng (Whisper) lẫn dịch (NLLB)
+đều chạy tại máy: không có khoá API, không tốn phí dịch. Mạng chỉ dùng để tải model về lần đầu.
 
 ### 4. Phạm vi
 
@@ -128,19 +128,20 @@ Nhóm đã hoàn thành một ứng dụng web chạy được đầy đủ lu�
 theo dõi tiến độ, khoanh vùng phụ đề cứng trên khung hình thật, và tải về chính video đó với phụ đề tiếng
 Việt cháy vào hình cùng vùng phụ đề cũ đã được làm mờ — **qua đúng một lần nén**, âm thanh giữ nguyên.
 
-Về khối lượng, sản phẩm gồm khoảng **3 100 dòng mã** chia cho tầng xử lý, tầng API và giao diện, cùng khoảng
-**2 300 dòng mã kiểm thử**. Hệ thống cung cấp **12 thao tác API** trên 9 đường dẫn và **5 bảng** cơ sở dữ
-liệu. Mười bảy chức năng đặt ra ban đầu đều đã hiện thực xong.
+Về khối lượng, sản phẩm gồm khoảng **3 600 dòng mã** chia cho tầng xử lý, tầng API và giao diện, cùng khoảng
+**2 900 dòng mã kiểm thử**. Hệ thống cung cấp **18 thao tác API** trên 15 đường dẫn và **6 bảng** cơ sở dữ
+liệu. Mười tám chức năng liệt kê ở `BAO_CAO_TONG_HOP.md` §2 đều đã hiện thực xong.
 
-Về kiểm chứng, bốn tầng kiểm thử đều đạt: **34/34** kiểm thử ngoại tuyến chạy trong **7,8 giây**; kiểm media
-với ffmpeg thật, kiểm giao diện với trình duyệt thật và kiểm ranh giới runtime với máy chủ thật đều đạt.
+Về kiểm chứng, năm tầng kiểm thử đều đạt: **78/78** kiểm thử ngoại tuyến (độ phủ dòng **91,2 %**); kiểm media
+với ffmpeg thật, kiểm giao diện với trình duyệt thật, kiểm ranh giới runtime với máy chủ thật và **6/6** kiểm thử
+thật trên GPU (Whisper `base` và `large-v3`, NLLB, đầu-cuối) đều đạt.
 
 Một số kết quả đo đáng chú ý:
 
 - **Nhận dạng** chạy khoảng **0,4 lần** thời lượng video trên GPU và khoảng **2,2 lần** trên CPU.
 - **Kết xuất** chỉ tốn khoảng **0,03 lần** thời lượng video.
 - **Cơ chế chạy lại** rút bước nhận dạng từ hàng chục giây xuống dưới 0,2 giây — nhanh hơn khoảng **150 đến
-  270 lần** — và bước dịch xuống **0 giây, 0 token**, tức không tốn thêm tiền API.
+  270 lần** — và bước dịch xuống **0 giây, 0 token**: dùng lại bản dịch cũ, không nạp lại model dịch.
 
 ### 2. Những đóng góp chính
 
@@ -150,7 +151,7 @@ việc mà chỉ mã hoá lại một lần.
 
 **Hai là, đặt bước khoanh vùng trước bước dịch** dù xét về dữ liệu thì nó không cần đứng trước. Đây là bước
 duy nhất cần con người, nên đặt sớm khiến thời gian chờ của máy và của người chồng lên nhau, và người bỏ dở ở
-màn khoanh vùng **không tốn một đồng tiền API nào**.
+màn khoanh vùng **chưa tốn công dịch nào** (model dịch chưa được nạp).
 
 **Ba là, cơ chế chạy lại dựa trên chữ ký nội dung.** Mỗi bước ghi ra một tệp trung gian kèm chữ ký gồm phiên
 bản bước, mã băm nội dung của thứ nó phụ thuộc, và các tham số ảnh hưởng tới kết quả. Đổi một tuỳ chọn thì
@@ -158,7 +159,7 @@ chỉ bước bị ảnh hưởng chạy lại. Bản kê chữ ký luôn đư�
 chỉ khiến hệ thống tính lại, chứ không bao giờ báo xong nhầm.
 
 **Bốn là, bảng thuật ngữ theo nhóm.** Tên riêng được dịch ở tập đầu sẽ được dùng lại nguyên vẹn ở các tập
-sau, và người dùng có thể khoá một bản dịch để máy không tự đổi.
+sau, và người dùng sửa được bản dịch thuật ngữ ngay trên trang nhóm.
 
 ### 3. Hạn chế
 
@@ -168,9 +169,9 @@ Nhóm cho rằng việc nêu rõ hạn chế cũng quan trọng như nêu kết 
 như trọn thời lượng. Nhưng với video có nhạc nền, Whisper nghe nhầm tên riêng và cắt vụn lời hát. Cờ tách
 giọng hát đã được cài đặt nhưng **chưa chạy được lần nào** vì thư viện phụ trợ chưa cài.
 
-**Chi phí dịch chưa đo được trên phim dài.** Mọi số liệu hiện có đều từ video dưới ba phút. Mô hình dịch sinh
-ra lượng token đầu ra gấp 12 đến 25 lần token đầu vào và dao động mạnh giữa các lượt chạy giống hệt nhau, nên
-không thể ước lượng chi phí cho phim hai tiếng bằng phép nhân đơn giản.
+**Tốc độ và chất lượng dịch chưa đo trên phim dài.** Mọi số liệu hiện có đều từ video dưới ba phút. Bộ dịch
+cục bộ (NLLB) dịch từng câu riêng, không thấy câu liền kề, nên cách xưng hô có thể đổi giữa các câu. Nhóm chưa
+đo điểm chất lượng dịch (BLEU) cũng như thời gian dịch cả một phim hai tiếng.
 
 **Một số thao tác quản lý còn thiếu.** Hiện chưa có đường nào để xoá một thuật ngữ gõ nhầm, xoá một nhóm, xem
 lại lịch sử công việc hay huỷ một công việc đang chạy.
@@ -182,14 +183,14 @@ bị chữ che đi thì không còn để lấy lại.
 
 Nhóm xếp các việc tiếp theo theo tỉ lệ giá trị trên chi phí:
 
-**Trước mắt:** bổ sung tích hợp liên tục để bộ kiểm thử 7,8 giây được chạy tự động; thêm đường tải riêng tệp
+**Trước mắt:** bổ sung tích hợp liên tục để bộ kiểm thử 6 giây được chạy tự động; thêm đường tải riêng tệp
 phụ đề, vì tệp đã có sẵn mà chưa có cách lấy; dọn thư mục tạm khi công việc kết thúc.
 
 **Tiếp theo:** cho phép **sửa bản dịch ngay trên web** — đây là việc có giá trị cao nhất, vì phần lõi đã hỗ
 trợ sẵn việc giữ bản sửa tay, chỉ còn thiếu màn soạn thảo; thêm trang lịch sử công việc; bổ sung thao tác xoá.
 
 **Cần đo trước khi quyết:** chạy thử tách giọng hát để biết nó có thật sự cứu được nhận dạng trên nhạc không;
-đo trên một bộ phim dài thật để có bảng chi phí đáng tin.
+đo trên một bộ phim dài thật để có bảng thời gian và chất lượng đáng tin.
 
 Nhóm chủ trương **không** mở rộng theo hướng thêm hàng đợi phân tán, WebSocket hay hệ quản trị đối tượng.
 Với một ứng dụng chạy cục bộ, mỗi lần một video, những thứ đó chỉ thêm một tầng phải vận hành và một tầng

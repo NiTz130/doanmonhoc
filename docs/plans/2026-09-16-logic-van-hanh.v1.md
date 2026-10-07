@@ -1,5 +1,7 @@
 # Kế hoạch sửa logic vận hành — Claude Opus 5 thực thi, GPT‑5.6 Luna nghiệm thu
 
+> **Ghi chú ngày 05/10/2026 — tài liệu lưu trữ.** Mã nguồn đã đổi sau ngày viết: bước dịch chạy tại máy bằng NLLB (đã bỏ DeepSeek, SDK OpenAI, khoá API và `.env`); lô dịch là 25 câu (không phải 400); khung mẫu trích mỗi câu thoại một khung (không phải 8 khung); không còn khoá thuật ngữ (`khoa`, `--lock`) và chế độ vùng `che_do_vung`. Mô tả đúng với mã hiện tại: [BAO_CAO_TONG_HOP.md](../BAO_CAO_TONG_HOP.md). Nội dung dưới đây giữ nguyên làm lịch sử quyết định.
+
 ## Phần 1. Executor in codebase — Anthropic Claude Opus 5
 
 ### 1. Plan Metadata

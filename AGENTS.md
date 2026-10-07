@@ -14,11 +14,12 @@ This app translates English video subtitles into Vietnamese and renders subtitle
 Use Python 3.12, `uv`, and ffmpeg 6+ with subtitle/filter support. Run from the repository root:
 
 - `uv sync`: install Python dependencies.
-- `Copy-Item .env.example .env`: initialize local configuration in PowerShell; fill in the API key.
 - `.venv/Scripts/python.exe -m uvicorn api.app:app --reload`: serve the app at `http://127.0.0.1:8000`.
 - `.\start_system.bat`: Windows shortcut to start the backend and open the browser.
-- `.venv/Scripts/python.exe test_pipeline.py`: run offline regression checks.
+- `.venv/Scripts/python.exe test_pipeline.py`: run the 78 offline regression checks.
+- `.venv/Scripts/python.exe tools_coverage.py --min 90`: measure line coverage of the offline suite (no extra dependency; currently 91.2%).
 - `.venv/Scripts/python.exe test_pipeline.py --smoke`: run media smoke checks requiring ffmpeg; inspect generated images.
+- `.venv/Scripts/python.exe test_pipeline.py --real`: run real GPU, Whisper, NLLB and ffmpeg checks (`tests_real.py`, about 1 minute). A missing GPU or cached model reports `NOT RUN`; it never downloads models.
 - `npm ci` then `npx playwright install chromium`: prepare browser tests.
 - `.venv/Scripts/python.exe -m http.server 8765 --bind 127.0.0.1 --directory web`: serve frontend fixtures; run `npm run test:frontend` in another terminal.
 
@@ -28,7 +29,7 @@ Follow surrounding code: four-space Python indentation, type hints, and `snake_c
 
 ## Testing Guidelines
 
-Python uses plain assertions, fake callables, FastAPI `TestClient`, and in-memory SQLite. Name checks `test_*` and register/import them through `test_pipeline.py`. Browser tests use Playwright with mocked API responses. No numeric coverage threshold is configured. Cover changed behavior and relevant failures; distinguish offline/browser evidence from real ASR and translation acceptance.
+Python uses plain assertions, fake callables, FastAPI `TestClient`, and in-memory SQLite. Name checks `test_*` and register/import them through `test_pipeline.py`. Browser tests use Playwright with mocked API responses. `tools_coverage.py` measures line coverage only for the offline suite; no CI enforces its threshold. Cover changed behavior and relevant failures; distinguish offline/browser evidence from real ASR and translation acceptance. `tests_real.py` is run only by `--real`, not imported into the default runner. `test/runtime_logic.py` (real uvicorn + ffmpeg + SQLite) is not part of the `test_pipeline.py` runner; run it separately with `PYTHONUTF8=1`.
 
 ## Commit & Pull Request Guidelines
 
@@ -36,4 +37,4 @@ History uses short, descriptive Vietnamese or English subjects without mandatory
 
 ## Security & Configuration
 
-Never commit `.env`, API keys, media, models, or `work/`. Obtain explicit authorization before paid translation calls. Preserve cached artifacts and manually edited subtitles.
+Never commit secrets, media, models, or `work/`. Translation runs locally (NLLB); the app reads no API key or `.env`. The first translation downloads about 600 MB of model files, so ask before running it on a metered connection. Preserve cached artifacts and manually edited subtitles.

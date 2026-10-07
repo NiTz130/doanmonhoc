@@ -93,7 +93,7 @@ git restore <tên-file>      # bo sua doi cua mot file, quay ve nhu cu
 
 - Thấy dòng `DUNG LAI:` là bạn đang đứng nhầm nhánh — làm theo lệnh nó gợi ý,
   **đừng** thêm `--no-verify` để đi qua.
-- Không commit `.env`, khóa API, thư mục `work/`, model hay video lớn. `.gitignore` đã
+- Không commit file bí mật (như `.env`), thư mục `work/`, model hay video lớn. `.gitignore` đã
   chặn sẵn nhưng vẫn nên `git status` xem trước khi commit.
 - Ở Cách B: không sửa file của người khác. Đụng cùng file là lúc merge sinh xung đột.
 - Kẹt thì báo nhóm ngay, chụp màn hình lệnh và lỗi — đừng tự chạy lệnh lạ tìm trên mạng.

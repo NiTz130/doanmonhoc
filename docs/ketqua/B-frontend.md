@@ -17,7 +17,7 @@ Mã hiện tại dùng canvas với một khung cho mỗi cue, hỗ trợ vùng 
 
 ## Giới hạn kiểm chứng
 
-API trong lượt kiểm tra trình duyệt này là giả lập; tải thử dùng data URL sau khi xác nhận đường dẫn endpoint. Lượt này không chạy dịch/video thật hoặc gọi dịch vụ trả phí; các lượt ASR/DeepSeek thật riêng được ghi ở [V8.md](V8.md). Chưa đo FPS/bộ nhớ trên máy demo, kiểm tra trình đọc màn hình, tương phản tự động hoặc thao tác cảm ứng trên thiết bị thật. Đây là các mục chưa xác minh, không phải kết quả đạt.
+API trong lượt kiểm tra trình duyệt này là giả lập; tải thử dùng data URL sau khi xác nhận đường dẫn endpoint. Lượt này không chạy dịch/video thật hoặc gọi dịch vụ trả phí; các lượt ASR và dịch thật riêng (bộ dịch lúc đó là DeepSeek, nay đã thay bằng NLLB) được ghi ở [V8.md](V8.md). Chưa đo FPS/bộ nhớ trên máy demo, kiểm tra trình đọc màn hình, tương phản tự động hoặc thao tác cảm ứng trên thiết bị thật. Đây là các mục chưa xác minh, không phải kết quả đạt.
 
 ## Chạy lại
 

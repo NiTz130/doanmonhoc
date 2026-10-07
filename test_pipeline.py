@@ -1,4 +1,4 @@
-"""Chay assert offline: python test_pipeline.py; media: them --smoke.
+"""Chay assert offline: python test_pipeline.py; media: --smoke; GPU/model that: --real.
 
 Diem vao duy nhat cua ca nhom: import test cua tung nguoi roi chay runner o cuoi.
 """
@@ -14,6 +14,7 @@ from tests_api import *         # noqa: F401,F403  V-9
 from tests_db import *          # noqa: F401,F403  V-3
 from tests_media import *       # noqa: F401,F403  V-4, V-6
 from tests_translate import *   # noqa: F401,F403  V-5
+from tests_van_hanh import *   # noqa: F401,F403  V-12
 
 
 def test_srt_roundtrip_validation():
@@ -475,6 +476,10 @@ def test_batch_targets_and_cli():
 if __name__ == "__main__":
     import sys
     import traceback
+    if "--real" in sys.argv:
+        # V-13: GPU + Whisper + NLLB + ffmpeg that, khong callable gia; thieu dieu kien -> NOT RUN.
+        from tests_real import chay_that
+        raise SystemExit(chay_that())
     if "--smoke" in sys.argv:
         # V-7: can ffmpeg that, sinh video bang lavfi. Khong phai end-to-end (V-8).
         from tests_smoke import smoke_media

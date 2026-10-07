@@ -80,6 +80,20 @@
         320,
         110
       ]
+    },
+    {
+      "id": "lich_su",
+      "type": "database",
+      "label": "lich_su",
+      "sublabel": "id PK · doi_tuong · hanh_dong · không FK",
+      "pos": [
+        40,
+        380
+      ],
+      "size": [
+        320,
+        110
+      ]
     }
   ],
   "connections": [
@@ -106,6 +120,16 @@
       "from": "video",
       "to": "cong_viec",
       "label": "1 — N · CASCADE"
+    },
+    {
+      "id": "r-nhom-ls",
+      "from": "nhom",
+      "to": "lich_su",
+      "label": "trigger ghi",
+      "labelAt": [
+        200,
+        340
+      ]
     }
   ],
   "cards": [
@@ -115,7 +139,8 @@
       "items": [
         "trang_thai CHECK 6 giá trị: cho · dang_chay · cho_chon_khung · xong · suy_giam · loi",
         "UNIQUE (nhom_id, goc): một nhóm không có hai bản dịch cho cùng một từ",
-        "PRAGMA foreign_keys=ON bật lại mỗi lần mở kết nối"
+        "PRAGMA foreign_keys=ON bật lại mỗi lần mở kết nối",
+        "doi_tuong CHECK (nhom, thuat_ngu) · hanh_dong CHECK (tao, sua, xoa)"
       ]
     },
     {
@@ -126,16 +151,18 @@
         "video: thu_muc_work UNIQUE · rong · cao · thoi_luong · them_luc · xong_luc",
         "thuat_ngu: goc · dich",
         "nhat_ky: buoc · ket_qua · giay · token_vao · token_ra · loi · luc",
-        "cong_viec: trang_thai CHECK · buoc · tien_do · duong_dan_ra · loi · cap_nhat_luc"
+        "cong_viec: trang_thai CHECK · buoc · tien_do · duong_dan_ra · loi · cap_nhat_luc",
+        "lich_su: khoa · cu · moi · luc · nhom_id (không FK, để dòng lịch sử sống sau khi xoá nhóm)"
       ]
     },
     {
       "dot": "amber",
-      "title": "Hai điều dễ hiểu nhầm",
+      "title": "Điều dễ hiểu nhầm",
       "items": [
         "Bảng cong_viec CHỈ báo tiến độ cho frontend — resume quyết định bởi trang_thai.json trên đĩa",
         "nhat_ky kiêm dấu đã-áp-glossary: hàng buoc='translate_apply' mang hash artifact ở cột loi",
-        "Xoá subtitles.db mất nhóm, thuật ngữ, nhật ký — KHÔNG mất artifact trong work/"
+        "Xoá subtitles.db mất nhóm, thuật ngữ, nhật ký — KHÔNG mất artifact trong work/",
+        "lich_su chỉ do 6 trigger ls_* ghi: mọi đường ghi, kể cả thuật ngữ máy tự học và xoá dây chuyền, đều để lại dấu vết"
       ]
     }
   ]

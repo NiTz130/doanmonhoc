@@ -122,10 +122,10 @@
       "id": "translate",
       "type": "external",
       "label": "translate.py",
-      "sublabel": "deepseek-v4-flash",
+      "sublabel": "NLLB-200 600M",
       "stage": 3,
       "row": 1,
-      "tag": "API"
+      "tag": "NLLB"
     },
     {
       "id": "markbox",

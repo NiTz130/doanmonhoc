@@ -56,8 +56,8 @@
     {
       "id": "translator",
       "type": "external",
-      "label": "DeepSeek API",
-      "sublabel": "Hệ thống ngoài",
+      "label": "Model dịch NLLB",
+      "sublabel": "Chạy tại máy",
       "pos": [
         1110,
         118
@@ -66,7 +66,7 @@
         140,
         72
       ],
-      "tag": "trả tiền theo token"
+      "tag": "không cần mạng"
     },
     {
       "id": "uc01",
@@ -334,10 +334,10 @@
       "variant": "dashed"
     },
     {
-      "id": "call-deepseek",
+      "id": "call-nllb",
       "from": "uc12",
       "to": "translator",
-      "label": "gửi lô câu, nhận JSON",
+      "label": "gửi lô câu, nhận bản dịch",
       "variant": "emphasis"
     }
   ],
@@ -355,9 +355,9 @@
       "dot": "emerald",
       "title": "Vì sao UC-12 nằm sau UC-03",
       "items": [
-        "DeepSeek chỉ được gọi khi đã có vùng làm mờ: bước dich (dieu_phoi.py:438) chạy sau buoc_hop (:411)",
-        "Video cần khoanh vùng thì UC-01 dừng ở cho_chon_khung và chưa hề gọi API",
-        "Người bỏ cuộc ở màn vẽ hộp không tốn một đồng tiền dịch"
+        "Model dịch chỉ được nạp khi đã có vùng làm mờ: bước dich chạy sau _buoc_hop",
+        "Video cần khoanh vùng thì UC-01 dừng ở cho_chon_khung và chưa nạp model dịch",
+        "Người bỏ cuộc ở màn vẽ hộp không tốn công dịch"
       ]
     }
   ]

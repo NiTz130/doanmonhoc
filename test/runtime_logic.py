@@ -21,6 +21,11 @@ import urllib.error
 import urllib.request
 
 
+# Console Windows mac dinh cp1252 lam print() cuoi nem UnicodeEncodeError (thoat ma 1 du moi
+# kiem tra deu qua) va lam vo chu tieng Viet trong log cua tien trinh con.
+for _luong in (sys.stdout, sys.stderr):
+    _luong.reconfigure(encoding="utf-8", errors="replace")
+
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON = ROOT / ".venv" / "Scripts" / "python.exe"
 EVIDENCE = Path(os.environ.get(
@@ -211,11 +216,13 @@ def _start(root: Path, shim: Path, port: int) -> subprocess.Popen:
     environment = os.environ.copy()
     environment["PYTHONPATH"] = os.pathsep.join((str(shim), str(ROOT)))
     environment["PYTHONUNBUFFERED"] = "1"
+    environment["PYTHONUTF8"] = "1"
+    environment["PYTHONIOENCODING"] = "utf-8"
     return subprocess.Popen(
         [str(PYTHON), "-m", "uvicorn", "api.app:app", "--host", "127.0.0.1",
          "--port", str(port), "--workers", "1", "--no-access-log"],
         cwd=root, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
     )
 
 

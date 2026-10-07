@@ -8,7 +8,7 @@ Tải video tiếng Anh lên trình duyệt → hệ thống lấy phụ đề c
 [phân công](docs/PHAN_CONG.md) ·
 [thiết kế](docs/superpowers/specs/2026-09-09-video-dich-phu-de-design.md) ·
 [kế hoạch](docs/superpowers/plans/2026-09-09-dich-phu-de-video.md) ·
-[hướng dẫn Git](docs/GIT.md)
+[hướng dẫn Git](docs/GIT.md) · [tổng hợp theo mã](docs/BAO_CAO_TONG_HOP.md)
 
 ## Giới thiệu
 
@@ -126,6 +126,12 @@ $py main.py nhom list
 $py main.py nhom glossary "Tên phim"
 $py main.py nhom set-term "Tên phim" "Ironhold" "Thành Sắt"
 $py main.py nhom set-box "Tên phim" 0.3,0.855,0.4,0.09
+$py main.py nhom del-term "Tên phim" "Ironhold"   # xoá một thuật ngữ
+$py main.py nhom delete "Tên phim"                # xoá nhóm và thuật ngữ của nhóm
+$py main.py sao-luu                               # chụp work/subtitles.db
+$py main.py khoi-phuc work/sao_luu/subtitles-….db # thay CSDL bằng bản sao lưu
+$py main.py don-dep --ngay 7                      # liệt kê kết quả cũ; thêm --thuc-hien để xoá
+$py main.py lich-su --nhom "Tên phim"             # lịch sử đổi nhóm và thuật ngữ
 ```
 
 | Cờ | Ý nghĩa |
@@ -154,6 +160,8 @@ chỉ mất nhóm, thuật ngữ, nhật ký — không mất artifact.
 
 | Thư mục | Nội dung |
 |---|---|
+| `work/subtitles.db` | CSDL SQLite (chế độ WAL): nhóm, thuật ngữ, nhật ký, lịch sử, trạng thái công việc |
+| `work/sao_luu/` | Bản sao lưu CSDL: `subtitles-<thời gian>.db`, và `truoc-khoi-phuc-<thời gian>.db` chụp trước mỗi lần khôi phục |
 | `work/<tên>-<băm>/` | File trung gian; `vung_blur.json` (vùng + chỉ số câu), `trang_thai.json` (chữ ký từng bước) |
 | `work/tai_len/nguon/<băm nhóm>/<sha256>/` | Video tải lên, cất theo **nội dung và nhóm**, không theo tên file |
 | `work/tai_len/<id công việc>/` | Kết quả và khung mẫu của từng lượt (mỗi lần tải lên = công việc mới) |
@@ -167,14 +175,39 @@ chỉ mất nhóm, thuật ngữ, nhật ký — không mất artifact.
 - **Lock sót sau khi máy treo:** xoá tay `work/<tên>-<băm>/.lock` khi chắc chắn không
   còn tiến trình nào chạy. Hệ thống không tự đoán lock đã chết.
 - **Khởi động lại server:** công việc dở được đánh dấu **lỗi** kèm hướng dẫn tải lại;
-  công việc đã xong giữ nguyên và tải được.
+  công việc đã xong giữ nguyên và tải được. Server cũng tự sao lưu CSDL và giữ 5 bản mới nhất.
+- **F5 trên trình duyệt:** mã công việc đang theo dõi nằm trong `sessionStorage` của tab,
+  nên tải lại trang vẫn quay về đúng màn tiến độ hoặc màn vẽ hộp. Server báo 404 (mất
+  công việc) thì web ngừng theo dõi và báo cho bạn. Trình duyệt chặn storage thì trang vẫn
+  chạy, chỉ mất khả năng quay lại sau F5.
+
+### Sao lưu, khôi phục, dọn dẹp
+
+| Việc | CLI | API |
+|---|---|---|
+| Sao lưu CSDL | `main.py sao-luu [--dich FILE]` | `POST /api/sao-luu` |
+| Khôi phục | `main.py khoi-phuc FILE` (nên đóng server trước) | không có |
+| Dọn kết quả cũ | `main.py don-dep [--ngay 7] [--thuc-hien]` | không có |
+| Xem lịch sử nhóm/thuật ngữ | `main.py lich-su` | `GET /api/lich-su` |
+
+- `khoi-phuc` kiểm bản sao lưu (đúng là CSDL, đủ bảng, qua `integrity_check`) rồi mới
+  thay; bản hiện tại luôn được chụp trước. Bản hỏng bị từ chối, CSDL hiện tại giữ nguyên.
+- `don-dep` **chỉ liệt kê** nếu không có `--thuc-hien`. Nó chỉ xoá dưới `work/tai_len/`,
+  bỏ qua công việc đang chạy hoặc chờ vẽ hộp, thư mục có `.lock`, và mục mới hơn `--ngay`
+  ngày (mặc định 7). Nó không đụng `work/subtitles.db`.
+- Xoá nhóm hoặc thuật ngữ khi có công việc đang chạy trong nhóm → **409**.
+- Mọi lần tạo, sửa, xoá nhóm và thuật ngữ đều ghi vào bảng `lich_su` bằng trigger của
+  SQLite, nên cả web, API lẫn CLI đều để lại dấu vết.
+- Các chức năng này **chưa có giao diện web**; dùng qua CLI hoặc API.
 
 ## 5. Kiểm thử
 
 ```bash
 py=.venv/Scripts/python.exe
-$py test_pipeline.py             # 48 test offline (= npm test), không cần mạng/GPU/ffmpeg
+$py test_pipeline.py             # 78 test offline (= npm test), không cần mạng/GPU/ffmpeg
+$py tools_coverage.py --min 90   # đo độ phủ dòng của bộ offline (hiện 91,2%); lỗi nếu dưới 90%
 $py test_pipeline.py --smoke     # test media, cần ffmpeg; ghi smoke_*.png để nhìn tận mắt
+$py test_pipeline.py --real      # GPU + Whisper + NLLB + ffmpeg THẬT (~1 phút), không dùng hàm giả
 $py test/runtime_logic.py        # uvicorn + ffmpeg + SQLite thật
 
 npm ci && npx playwright install chromium                     # một lần
@@ -183,7 +216,18 @@ npm run test:frontend                                         # terminal 2
 ```
 
 Bộ offline dùng `assert` trần, callable giả, `TestClient`, SQLite `:memory:`; không nạp
-model dịch thật. `--smoke` **không phải** end-to-end. Số đo ASR/dịch thật ở
+model dịch thật. `--smoke` **không phải** end-to-end.
+
+`--real` **là** end-to-end: nó ép Whisper (`base`, `large-v3`) và NLLB chạy trên GPU (lùi
+về CPU thì test lỗi), rồi chạy cả chuỗi trên một video 30 giây và kiểm phụ đề Việt thật sự
+nằm trên hình. Test nào thiếu GPU hoặc model sẽ báo `NOT RUN` kèm lý do; test **không bao
+giờ tự tải model**. Lần đo gần nhất: RTX 4050 Laptop 6 GB, 6/6 qua.
+
+`tools_coverage.py` chỉ đo dòng lệnh chạy trong tiến trình test offline. Nó không đo nhánh,
+không đo tiến trình con (`runtime_logic.py` chạy uvicorn riêng). `pipeline/audio.py` (0%)
+và `render.py` (78%) cần ffmpeg thật nên bộ offline ít chạm tới; `--smoke` và `--real`
+kiểm hai file này nhưng không được tính vào con số 91,2%.
+Độ phủ cho biết test chạm tới dòng nào, không chứng minh dòng đó đúng. Số đo ASR/dịch thật ở
 [V8](docs/ketqua/V8.md), kiểm giao diện ở [B-frontend](docs/ketqua/B-frontend.md) —
 đều là bằng chứng của lượt đo được ghi lại, không phải cam kết cho phiên bản hiện tại.
 
@@ -206,7 +250,18 @@ pipeline/{audio,subs,asr,translate,markbox,render,srt,db}.py
 | `POST /api/video` | Tải video, tạo công việc |
 | `GET /api/cong-viec/{cid}` | Tiến độ (`/khung`, `/khung/{i}`, `/ket-qua`) |
 | `POST /api/cong-viec/{cid}/hop` | Gửi vùng mờ, chạy tiếp |
-| `/nhom` | Nhóm, thuật ngữ, khung mặc định |
+| `GET /api/cong-viec` | Danh sách công việc: lọc `trang_thai`, sắp xếp `sap_xep`/`thu_tu` |
+| `/api/nhom` | Nhóm, thuật ngữ, khung mặc định; `GET` tìm `q`, sắp xếp, phân trang; `DELETE` xoá nhóm/thuật ngữ |
+| `GET /api/nhat-ky` · `GET /api/lich-su` | Nhật ký chạy từng bước · lịch sử đổi nhóm và thuật ngữ (lọc + phân trang) |
+| `POST /api/sao-luu` | Chụp CSDL vào `work/sao_luu/` |
+
+Mọi danh sách nhận `trang` (từ 1) và `moi_trang` (mặc định 50, tối đa 200), trả tổng số
+bản ghi trong header `X-Tong-So`. Danh sách trả mảng JSON như trước nên frontend cũ không vỡ.
+`GET` chỉ đọc: tra một nhóm không tồn tại trả **404**, không tạo nhóm mới.
+
+Đầu vào sai bị chặn ngay ở cửa API với **400**: đuôi video, `blur`, `blur_box`, `lang`,
+`model`, `model_dich`, `font_scale` (>0, tối đa 5), tên nhóm (≤ 100 ký tự), thuật ngữ (≤ 200). Tiêu đề
+`Content-Length` vượt 4 GiB bị **413** trước khi nhận file.
 
 Nguyên tắc chính:
 
@@ -228,7 +283,9 @@ vào chia đôi.
 Lồng tiếng TTS · tự dò vùng chữ bằng OCR · giao diện desktop · phụ đề mềm ·
 hàng đợi ngoài · WebSocket · triển khai máy chủ · chạy nhiều video song song · vùng
 mờ bám chuyển động trong một câu (vùng vẫn đứng yên trong mỗi câu) · benchmark video
-dài cho cả một phim.
+dài cho cả một phim · giao diện web cho tìm kiếm, nhật ký, sao lưu và xoá nhóm (hiện chỉ
+có ở CLI và API) · khôi phục CSDL qua API · đo VRAM của Whisper `large-v3` trên phim dài
+(`--real` mới chạy video mẫu 30 giây trên GPU 6 GB).
 
 **Giới hạn đã biết của bước dịch (NLLB):**
 

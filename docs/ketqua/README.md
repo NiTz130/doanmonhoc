@@ -3,8 +3,8 @@
 Chụp tự động bằng Playwright + Chromium trên `http://127.0.0.1:8765`, ffmpeg và
 ffprobe thật. **Không có lỗi hay cảnh báo JavaScript nào** trong suốt lượt chạy.
 
-Chỉ tầng dịch được thay bằng bảng tra sẵn, vì nhóm chưa có `DEEPSEEK_API_KEY` —
-đó cũng chính là lý do V-8 ghi NOT RUN.
+Chỉ tầng dịch được thay bằng bảng tra sẵn (callable giả), để lượt chụp không phải tải model dịch.
+Số đo ASR và dịch thật nằm ở [V8.md](V8.md); bộ dịch trong V8 là DeepSeek, đã được thay bằng NLLB.
 
 | Ảnh | Chứng minh |
 |---|---|
