@@ -128,6 +128,10 @@ doanmonhoc/
 ├── tests_smoke.py        test media thật bằng lavfi, cần ffmpeg (chạy bằng --smoke)
 ├── tests_real.py         GPU + Whisper + NLLB + ffmpeg thật, không hàm giả (chạy bằng --real)
 ├── tools_coverage.py     đo độ phủ dòng của test offline (sys.monitoring, không thêm thư viện)
+├── tools_tai_video.py    tải test/video_3.mp4 từ Drive, kiểm dung lượng và SHA-256, giữ tệp đã có
+├── cai_dat.bat           đồng bộ môi trường bằng uv rồi tải video mẫu
+├── tests_tai_video.py    kiểm tải mẫu và lệnh cài đặt, dùng mạng giả
+├── test/README.md        nguồn mẫu, mã băm và cách thử luồng trên web
 ├── tests_docx.py         kiểm tools_md2docx.py, chạy riêng, cần extra docs
 ├── test/runtime_logic.py uvicorn + ffmpeg + SQLite thật, KHÔNG nằm trong cổng chạy
 ├── test/frontend.cjs     Playwright + API giả lập
@@ -745,30 +749,63 @@ $py main.py lich-su [--nhom TÊN] [--trang N] [--moi-trang N]
 
 Không framework: `assert` trần, callable giả, `TestClient`, SQLite `:memory:` (ràng buộc IC-1).
 
+**Cài trên máy mới:** chạy `uv run --locked python tools_tai_video.py` (Windows: `cai_dat.bat`).
+Lệnh đồng bộ môi trường và tải [video_3.mp4 trên Google Drive](https://drive.google.com/file/d/16sh5oYQUdVYngAkxV-8d_rh4v5B-4ngV/view?usp=drivesdk)
+vào `test/video_3.mp4`, chỉ khi thiếu. Công cụ kiểm 5 732 135 byte và SHA-256 trước khi lưu;
+không ghi đè tệp đã có. Mẫu dùng để thử luồng trên web, không phải kết quả dịch hay bộ đo chất lượng.
+Hướng dẫn và mã băm: [test/README.md](../test/README.md).
+`tests_tai_video.py` kiểm tải mẫu bằng mạng giả, chạy trong bộ offline.
+Các số đo bên dưới thuộc lượt đã ghi nhận trước khi thêm bộ test tải mẫu;
+`--real` vẫn dùng 30 giây đầu `test/video_2.mp4`, chưa tải tự động.
+
+**Kiểm sau khi thêm tải mẫu (2026-10-07):** bộ offline chạy 102 test, qua 102, lỗi 0.
+Trong đó `tests_tai_video.py` có 9 test về tải mẫu, tệp lỗi, bảo toàn dữ liệu và lệnh cài đặt.
+Độ phủ mới: 97,0% (2 109 dòng, 64 chưa chạy); riêng `tools_tai_video.py` đạt 96,3%.
+Đã tải từ Drive không đăng nhập vào thư mục tạm: đủ byte, đúng SHA-256;
+chạy lại không gọi mạng. `cai_dat.bat` đã chạy thành công trên môi trường hiện có.
+Đã thử trong thư mục mới chưa có `.venv` hoặc mẫu: lệnh cài tạo môi trường từ cache
+thư viện và tải đúng mẫu từ Drive. Đây là mô phỏng cài mới trên cùng máy;
+chưa kiểm trên thiết bị khác hoặc tải thư viện khi cache trống.
+GPU, smoke, runtime và frontend **NOT RUN** trong lượt thêm tải mẫu vì không đổi các luồng xử lý đó.
+
 | Tầng | Lệnh | Cần gì | Kết quả |
 |---|---|---|---|
-| Offline | `$py test_pipeline.py` | không mạng, GPU, ffmpeg | **78/78 PASS** |
-| Độ phủ | `$py tools_coverage.py --min 90` | như Offline | **91,2 %** dòng (2 039 dòng, 179 chưa chạy) |
+| Offline | `$py test_pipeline.py` | không mạng, GPU, ffmpeg | **93/93 PASS** |
+| Độ phủ | `$py tools_coverage.py --min 90` | như Offline | **97,0 %** dòng (2 055 dòng, 62 chưa chạy; mọi module từ 93 % trở lên) |
 | Media | `$py test_pipeline.py --smoke` | ffmpeg | **PASS** (`smoke media: OK`) |
 | Thật | `$py test_pipeline.py --real` | GPU NVIDIA, model Whisper `base` và `large-v3`, NLLB đã tải, ffmpeg | **6/6 PASS** (RTX 4050 Laptop 6 GB) |
 | Runtime | `$py test/runtime_logic.py` | uvicorn, ffmpeg, SQLite thật | **PASS** (`status: PASS`) |
 | Giao diện | `npm run test:frontend` | Playwright, server tĩnh `web/` cổng 8765 | **4/4 nhóm PASS** |
 
-Số 78 gồm: `test_pipeline.py` 11 · `tests_api.py` 20 · `tests_media.py` 12 · `tests_translate.py` 6 · `tests_db.py` 2 · `tests_van_hanh.py` 27.
-Số 6 của `--real` là các hàm `real_*` trong `tests_real.py`, không thuộc 78 test offline.
+Số 93 gồm: `test_pipeline.py` 11 · `tests_api.py` 20 · `tests_media.py` 12 · `tests_translate.py` 6 · `tests_db.py` 2 · `tests_van_hanh.py` 27 · `tests_lap_khoang.py` 15.
+Số 6 của `--real` là các hàm `real_*` trong `tests_real.py`, không thuộc 93 test offline.
 
 Lưu ý khi chạy:
 
-- `--smoke` **chỉ** chạy `tests_smoke.smoke_media()` rồi thoát; không chạy 78 test kia. Nó ghi `smoke_*.png` (bị `.gitignore`).
+- `--smoke` **chỉ** chạy `tests_smoke.smoke_media()` rồi thoát; không chạy 93 test kia. Nó ghi `smoke_*.png` (bị `.gitignore`).
 - `--real` cũng chạy riêng rồi thoát. Thiếu GPU, model hoặc ffmpeg thì từng test báo `NOT RUN` kèm lý do, **không tự pass**
   và **không tự tải model** (`large-v3` nặng khoảng 3 GB). Test ép Whisper và NLLB chạy trên GPU; lùi về CPU là lỗi.
 - Khi chạy offline, dòng `WARNING … CUDA không sẵn sàng; thử CPU/int8` là test cố ý giả lập lỗi CUDA để kiểm đường lùi, không phải GPU hỏng.
 - `test/runtime_logic.py` không nằm trong cổng chạy. Đầu ra nay tự đặt `utf-8` nên không còn lỗi `UnicodeEncodeError` (cp1252);
   lỗi cũ làm test thoát mã 1 dù kết quả `PASS`.
-- `tools_coverage.py` chỉ đo **dòng** trong tiến trình test offline: không đo nhánh, không đo tiến trình con. `pipeline/audio.py` (0 %)
-  và `render.py` (78 %) cần ffmpeg thật nên bộ offline ít chạm tới; `--smoke`, `--real` kiểm hai file này nhưng không vào con số 91,2 %.
+- `tools_coverage.py` chỉ đo **dòng** trong tiến trình test offline: không đo nhánh, không đo tiến trình con. Bộ offline thay ffmpeg, ffprobe và demucs bằng hàm giả nên đo được cả `audio.py` và `render.py`; `--smoke`, `--real` chạy ffmpeg thật nhưng không vào con số 97,0 %.
 - `npm run test:frontend` ghi đè các ảnh `docs/ketqua/B-*.png`; xem `git status` trước khi commit.
 - `tests_docx.py` chạy riêng, cần `uv sync --extra docs`.
+
+**Đo hiệu năng trên phim dài (một lần, 2026-10-07).** Máy: RTX 4050 Laptop 6 GB. Phim thử: 970 giây, 1080p, 225 MB,
+ghép từ một đoạn 162 giây lặp sáu lần (nên nội dung lặp lại). Cấu hình: Whisper `large-v3`, NLLB, một hộp làm mờ, `blur=on`.
+Kết quả: trạng thái `xong`, tổng **446 giây (0,46 lần thời gian thực)**.
+
+| Bước | Thời gian | Ghi chú |
+|---|---|---|
+| Tách âm và nhận dạng (Whisper) | 302 giây | chiếm 68 % tổng |
+| Dịch (NLLB) | 15 giây | |
+| Kết xuất (ffmpeg, một lần nén) | 129 giây | file ra 640 MB, lớn hơn nguồn 225 MB vì nén lại ở chất lượng cố định |
+
+VRAM đỉnh 4 727 MiB trên 6 141 MiB (đo toàn máy, gồm khoảng 860 MiB của hệ điều hành). Giới hạn của số đo: một lần chạy,
+một máy, phim lặp nội dung, chưa thử phim trên hai giờ. Script đo là script tạm, không nằm trong repo.
+Lần chạy đầu phát hiện lỗi thật: Whisper trả câu cuối segment có `start == end`, làm hỏng cả bước nhận dạng
+(đã sửa trong `tach_cau`, có test hồi quy `test_tach_cau_manh_co_moc_khong_do_dai_thi_giu_nguyen_segment`).
 
 `test_pipeline.py` quét `globals()` tìm hàm `test_*`, chạy **hết** rồi mới báo. Thêm file test mới phải thêm dòng
 `from tests_x import *`. Chạy một test lẻ:

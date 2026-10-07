@@ -50,7 +50,9 @@ def tach_cau(s) -> list[Cue]:
     cum = [c for c in cum if c]
     if len(cum) < 2:
         return [cue]
-    return [Cue(0, c[0].start, c[-1].end, ''.join(w.word for w in c).strip()) for c in cum]
+    cues = [Cue(0, c[0].start, c[-1].end, ''.join(w.word for w in c).strip()) for c in cum]
+    # Whisper hay cho tu cuoi segment start==end; manh nhu vay lam kiem_cue chan ca buoc ASR.
+    return cues if all(c.bat_dau < c.ket_thuc for c in cues) else [cue]
 
 
 def nhan_dang(wav: Path, ra: Path, lang: str = 'en', model: str = 'large-v3',

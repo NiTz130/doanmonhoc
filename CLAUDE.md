@@ -21,11 +21,12 @@ Cần Python 3.12, `uv`, ffmpeg 6+. Không có formatter/linter.
 py=.venv/Scripts/python.exe          # Windows; repo dùng uv, không dùng pip trực tiếp
 
 uv sync                              # cài môi trường
+uv run --locked python tools_tai_video.py # cài môi trường và tải test/video_3.mp4 (Windows: cai_dat.bat)
 $py -m uvicorn api.app:app --reload  # chạy web app → http://127.0.0.1:8000
 start_system.bat                     # tương đương, kèm mở trình duyệt
 
-$py test_pipeline.py                 # 78 test offline, không cần mạng/GPU/ffmpeg (= `npm test`)
-$py tools_coverage.py --min 90       # đo độ phủ dòng của bộ test offline (hiện 91,2%), không cần cài thêm
+$py test_pipeline.py                 # 102 test offline, không cần mạng/GPU/ffmpeg (= `npm test`)
+$py tools_coverage.py --min 90       # đo độ phủ dòng của bộ test offline (hiện 97,0%), không cần cài thêm
 $py test_pipeline.py --smoke         # CHỈ test media (tests_smoke.smoke_media), cần ffmpeg
 $py test_pipeline.py --real          # GPU + Whisper + NLLB + ffmpeg THẬT (tests_real.py, ~1 phút); thiếu GPU/model → NOT RUN, không tự tải model
 $py test/runtime_logic.py            # V-11: uvicorn + ffmpeg + SQLite thật, không nằm trong runner trên
@@ -42,11 +43,17 @@ hàm `test_*`. Gọi trực tiếp:
 
 Test offline nằm rải ở `tests_api.py` · `tests_db.py` · `tests_media.py` ·
 `tests_translate.py` (mỗi thành viên một file, đánh số `V-n` trỏ về plan) và
-`tests_van_hanh.py` (tìm/lọc/phân trang, sao lưu, dọn dẹp, trigger, kiểm tuỳ chọn), được
+`tests_van_hanh.py` (tìm/lọc/phân trang, sao lưu, dọn dẹp, trigger, kiểm tuỳ chọn) và
+`tests_lap_khoang.py` (render/subs/audio/CLI với ffmpeg và pipeline giả) và
+`tests_tai_video.py` (tải mẫu, bảo toàn tệp, lỗi mạng và lệnh cài đặt), được
 `test_pipeline.py` gom bằng `from tests_x import *`. **Thêm file test mới phải thêm
 dòng import đó**, không thì runner không thấy. Ngoại lệ có chủ ý: `tests_docx.py`
 (kiểm `tools_md2docx.py`, cần `uv sync --extra docs`), `tests_smoke.py` (`--smoke`) và
 `tests_real.py` (`--real`, cần GPU + model đã tải) chạy riêng.
+
+Video mẫu `test/video_3.mp4` được tải khi chạy lệnh cài đặt ở trên, không tải lúc
+khởi động backend hoặc chạy test offline. Nguồn Drive, mã băm và cách thử bằng tay ở
+`test/README.md`. `--real` vẫn dùng `test/video_2.mp4`, chưa tải tự động.
 
 CLI nội bộ (`main.py`) — **không phải sản phẩm**, dùng để gỡ lỗi và xử lý hàng loạt;
 nó đi qua đúng `pipeline/dieu_phoi.py` như web nên cho cùng kết quả:

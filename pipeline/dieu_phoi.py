@@ -562,7 +562,18 @@ def nhat_ky_tim(con, **loc) -> tuple[list[dict], int]:
 
 
 def lich_su_tim(con, nhom: str | None = None, **loc) -> tuple[list[dict], int]:
-    return db.liet_ke_lich_su(con, nhom_id=None if nhom is None else db.tim_nhom(con, nhom), **loc)
+    if nhom is None:
+        return db.liet_ke_lich_su(con, **loc)
+    try:
+        nid = db.tim_nhom(con, nhom)
+    except KhongCo:
+        # Nhom da xoa: dong 'xoa' van con trong lich_su, lan theo no de xem ai xoa va khi nao.
+        row = con.execute("SELECT nhom_id FROM lich_su WHERE doi_tuong='nhom' AND khoa=? "
+                          "ORDER BY id DESC LIMIT 1", (nhom,)).fetchone()
+        if row is None:
+            raise
+        nid = row[0]
+    return db.liet_ke_lich_su(con, nhom_id=nid, **loc)
 
 
 # --------------------------------------------------- sao luu, khoi phuc, don dep
@@ -588,6 +599,7 @@ def khoi_phuc(con, nguon: Path, thu_muc: Path = Path("work") / "sao_luu") -> Pat
     """Khoi phuc tu `nguon`. Ban hien tai duoc chup truoc, nen khoi phuc nham van quay lai duoc."""
     nguon = Path(nguon)
     db._kiem_file_db(nguon)             # tu choi som, truoc khi dong vao ban hien tai
+    db._kiem_khong_ban(con)             # dang ban thi khong chup them mot ban an toan vo ich
     an_toan = db.sao_luu(con, Path(thu_muc) / f"truoc-khoi-phuc-{_dau_thoi_gian()}.db")
     db.khoi_phuc(con, nguon)
     with con:                           # tien trinh nay khong co cong viec nao dang chay that

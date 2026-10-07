@@ -132,7 +132,7 @@ Về khối lượng, sản phẩm gồm khoảng **3 600 dòng mã** chia cho t
 **2 900 dòng mã kiểm thử**. Hệ thống cung cấp **18 thao tác API** trên 15 đường dẫn và **6 bảng** cơ sở dữ
 liệu. Mười tám chức năng liệt kê ở `BAO_CAO_TONG_HOP.md` §2 đều đã hiện thực xong.
 
-Về kiểm chứng, năm tầng kiểm thử đều đạt: **78/78** kiểm thử ngoại tuyến (độ phủ dòng **91,2 %**); kiểm media
+Về kiểm chứng, năm tầng kiểm thử đều đạt: **93/93** kiểm thử ngoại tuyến (độ phủ dòng **97,0 %**); kiểm media
 với ffmpeg thật, kiểm giao diện với trình duyệt thật, kiểm ranh giới runtime với máy chủ thật và **6/6** kiểm thử
 thật trên GPU (Whisper `base` và `large-v3`, NLLB, đầu-cuối) đều đạt.
 

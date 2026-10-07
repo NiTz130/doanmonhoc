@@ -7,6 +7,7 @@ voi web se cho ket qua khac nhau.
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 import shutil
 import sqlite3
@@ -50,7 +51,10 @@ async def vong_doi(app: FastAPI):
             db.don_cong_viec_mat_ho_so(con, viec.dang_theo_doi())
         # Moi lan khoi dong chup mot ban CSDL (giu 5 ban moi nhat): mat file la mat nhom,
         # thuat ngu va nhat ky, khong dung artifact tren dia dung de dung lai.
-        dieu_phoi.sao_luu_tu_dong(con, viec.DB.parent / "sao_luu")
+        try:
+            dieu_phoi.sao_luu_tu_dong(con, viec.DB.parent / "sao_luu")
+        except (OSError, sqlite3.Error) as exc:     # luoi an toan phu: loi o day khong duoc chan server
+            logging.warning("Khong sao luu duoc luc khoi dong: %s", exc)
     viec.don_khung_mo_coi(TAI_LEN)
     yield
 
@@ -196,7 +200,8 @@ def tai_len(
                   vad=vad, force_asr=force_asr, force=force)
     with loi_http():
         # Validator duy nhat cua CLI + whitelist model cua web: sai tuy chon la 400 ngay,
-        # khong phai mot job nen bao loi sau khi da nhan ca file.
+        # khong phai mot job nen bao loi muon. (FastAPI da spool xong file; chi
+        # Content-Length trong middleware moi tu choi som theo kich thuoc.)
         dieu_phoi.kiem_tuy_chon(tc0, chat=True)
 
     tam, bam, ten_goc = _nhan_file(tep)
@@ -262,7 +267,7 @@ def lich_su(con: Con, res: Response, nhom: str | None = None, doi_tuong: str | N
 def sao_luu(con: Con) -> dict:
     """Chup CSDL ra work/sao_luu. Khoi phuc chi qua CLI: web khong thay file dang mo."""
     with loi_http(OSError):
-        return {"tep": dieu_phoi.sao_luu(con).name}
+        return {"tep": dieu_phoi.sao_luu(con, viec.DB.parent / "sao_luu").name}
 
 
 @api.get("/cong-viec/{cid}")

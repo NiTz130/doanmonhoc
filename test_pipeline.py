@@ -15,6 +15,8 @@ from tests_db import *          # noqa: F401,F403  V-3
 from tests_media import *       # noqa: F401,F403  V-4, V-6
 from tests_translate import *   # noqa: F401,F403  V-5
 from tests_van_hanh import *   # noqa: F401,F403  V-12
+from tests_lap_khoang import *  # noqa: F401,F403  V-12b
+from tests_tai_video import *   # noqa: F401,F403  video mau khi cai dat
 
 
 def test_srt_roundtrip_validation():

@@ -4,7 +4,7 @@
     python tools_coverage.py --min 90        # thoat ma 1 neu tong do phu < 90%
     python tools_coverage.py -- --smoke      # moi thu sau `--` chuyen cho test_pipeline.py
 
-Pham vi: pipeline/, api/ va main.py, TRONG tien trinh nay. Khong do duoc tien trinh con
+Pham vi: pipeline/, api/, main.py va tools_tai_video.py, TRONG tien trinh nay. Khong do duoc tien trinh con
 (test/runtime_logic.py chay uvicorn rieng) va khong do nhanh (branch), chi do dong.
 Dong "thuc thi duoc" lay tu bang dong cua ma bien dich, nen comment/docstring khong tinh.
 Con so nay do muc test CHAM toi dong ma, khong chung minh dong ma dung.
@@ -19,7 +19,7 @@ from pathlib import Path
 
 GOC = Path(__file__).resolve().parent
 PHAM_VI = ("pipeline", "api")
-FILE_LE = ("main.py",)
+FILE_LE = ("main.py", "tools_tai_video.py")
 TOOL = sys.monitoring.COVERAGE_ID
 
 

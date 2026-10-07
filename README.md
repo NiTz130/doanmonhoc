@@ -53,8 +53,28 @@ Cần: **Python 3.12**, [`uv`](https://docs.astral.sh/uv/), **ffmpeg 6+** (có `
 ```bash
 git clone https://github.com/NiTz130/doanmonhoc.git
 cd doanmonhoc
-uv sync
+uv run --locked python tools_tai_video.py
 ```
+
+Lệnh trên tạo hoặc đồng bộ `.venv` theo `uv.lock`, rồi tự tải video mẫu vào
+`test/video_3.mp4`. Trên Windows có thể chạy `.\cai_dat.bat` thay cho lệnh này.
+`uv run` đồng bộ môi trường trước khi chạy theo [tài liệu uv](https://docs.astral.sh/uv/guides/projects/#running-commands).
+
+### Video mẫu để kiểm thử
+
+Người cài trên máy mới dùng [video_3.mp4 trên Google Drive](https://drive.google.com/file/d/16sh5oYQUdVYngAkxV-8d_rh4v5B-4ngV/view?usp=drivesdk)
+để thử luồng tải lên → chọn vùng làm mờ → dịch → tải video kết quả.
+Đây là dữ liệu kiểm thử, không phải video đầu ra của hệ thống.
+Mẫu dài khoảng 101 giây, 640×360, dung lượng 5,5 MiB; tải được bằng liên kết, không cần đăng nhập.
+
+- `tools_tai_video.py` chỉ tải khi thiếu mẫu; kiểm dung lượng và SHA-256 trước khi lưu.
+- Tệp đã có được giữ nguyên. Nếu nội dung khác mẫu, công cụ báo lỗi; chuyển tệp đi trước khi tải lại.
+- Mất mạng, Drive từ chối hoặc ngắt tải: công cụ không để lại video dở. Có thể chạy lại cùng lệnh.
+- Video không nằm trong Git. Không tải lại lúc khởi động backend hoặc chạy test offline.
+- Muốn cài riêng thư viện, chưa tải mẫu: dùng `uv sync`.
+
+Chi tiết, SHA-256 và cách thử trên web: [test/README.md](test/README.md).
+`--real` vẫn dùng `test/video_2.mp4`; video này chưa được tải tự động.
 
 | Tuỳ chọn | Lệnh | Ghi chú |
 |---|---|---|
@@ -204,8 +224,8 @@ chỉ mất nhóm, thuật ngữ, nhật ký — không mất artifact.
 
 ```bash
 py=.venv/Scripts/python.exe
-$py test_pipeline.py             # 78 test offline (= npm test), không cần mạng/GPU/ffmpeg
-$py tools_coverage.py --min 90   # đo độ phủ dòng của bộ offline (hiện 91,2%); lỗi nếu dưới 90%
+$py test_pipeline.py             # 102 test offline (= npm test), không cần mạng/GPU/ffmpeg
+$py tools_coverage.py --min 90   # đo độ phủ dòng của bộ offline (hiện 97,0%); lỗi nếu dưới 90%
 $py test_pipeline.py --smoke     # test media, cần ffmpeg; ghi smoke_*.png để nhìn tận mắt
 $py test_pipeline.py --real      # GPU + Whisper + NLLB + ffmpeg THẬT (~1 phút), không dùng hàm giả
 $py test/runtime_logic.py        # uvicorn + ffmpeg + SQLite thật
@@ -223,10 +243,10 @@ về CPU thì test lỗi), rồi chạy cả chuỗi trên một video 30 giây 
 nằm trên hình. Test nào thiếu GPU hoặc model sẽ báo `NOT RUN` kèm lý do; test **không bao
 giờ tự tải model**. Lần đo gần nhất: RTX 4050 Laptop 6 GB, 6/6 qua.
 
-`tools_coverage.py` chỉ đo dòng lệnh chạy trong tiến trình test offline. Nó không đo nhánh,
-không đo tiến trình con (`runtime_logic.py` chạy uvicorn riêng). `pipeline/audio.py` (0%)
-và `render.py` (78%) cần ffmpeg thật nên bộ offline ít chạm tới; `--smoke` và `--real`
-kiểm hai file này nhưng không được tính vào con số 91,2%.
+`tools_coverage.py` đo `pipeline/`, `api/`, `main.py` và `tools_tai_video.py`
+trong tiến trình test offline. Nó không đo nhánh,
+không đo tiến trình con (`runtime_logic.py` chạy uvicorn riêng). Bộ offline thay ffmpeg, ffprobe và demucs bằng hàm giả nên đo được cả `audio.py` và `render.py`;
+`--smoke` và `--real` chạy ffmpeg thật nhưng không được tính vào con số 97,0%.
 Độ phủ cho biết test chạm tới dòng nào, không chứng minh dòng đó đúng. Số đo ASR/dịch thật ở
 [V8](docs/ketqua/V8.md), kiểm giao diện ở [B-frontend](docs/ketqua/B-frontend.md) —
 đều là bằng chứng của lượt đo được ghi lại, không phải cam kết cho phiên bản hiện tại.

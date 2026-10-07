@@ -4,7 +4,7 @@ cd /d "%~dp0"
 
 if not exist ".venv\Scripts\python.exe" (
     echo Khong tim thay moi truong Python .venv.
-    echo Hay chay: uv sync
+    echo Hay chay: cai_dat.bat
     pause
     exit /b 1
 )

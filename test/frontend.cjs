@@ -15,7 +15,7 @@ const screenshotDir = process.env.SCREENSHOT_DIR || 'docs/ketqua';
     let uploadDelay=120;
     let uploads=0, rejectUpload=true, state='dang_chay', polls=0, inFlight=0, maxInFlight=0;
     let stepBuoc='dịch phụ đề';
-    let failPoll=false, failSave=false, failImage=false, staleHop=true, boxPayload, termPayload;
+    let failPoll=false, failSave=false, failImage=false, staleHop=true, bigTerms=false, boxPayload, termPayload;
     const sampleImage = '<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"><rect width="1280" height="720" fill="#becfba"/><text x="100" y="220" font-size="55" fill="#234638">KHUNG MAU / DU LIEU GIA LAP</text><text x="320" y="620" font-size="40">This is a sample subtitle.</text></svg>';
     let imageWidth=1280, imageHeight=720;
     await page.route('**/api/**', async route => {
@@ -38,6 +38,9 @@ const screenshotDir = process.env.SCREENSHOT_DIR || 'docs/ketqua';
       if(path==='/api/nhom') return route.fulfill({json:req.method()==='POST'?{ten:'Mẫu'}:[{ten:'Nhóm mẫu',blur_x:null}]});
       if(path.endsWith('/thuat-ngu')) {
         if(req.method()==='POST'){termPayload=req.postDataJSON();if(failSave)return route.fulfill({status:500,json:{detail:'Lưu thất bại'}});}
+        if(bigTerms){const q=new URL(req.url()).searchParams,t=+q.get('trang')||1,m=+q.get('moi_trang')||50;
+          const all=Array.from({length:450},(_,i)=>['g'+String(i).padStart(3,'0'),'d'+i]);
+          return route.fulfill({headers:{'X-Tong-So':'450'},json:Object.fromEntries(all.slice((t-1)*m,t*m))});}
         return route.fulfill({json:{Ironhold:'Thành Sắt'}});
       }
       if(path.endsWith('/hop'))return route.fulfill({json:{x:.3,y:.855,w:.4,h:.09}});
@@ -269,6 +272,11 @@ const screenshotDir = process.env.SCREENSHOT_DIR || 'docs/ketqua';
     failSave=false;await page.locator('#form-thuat-ngu button').click();
     await page.waitForFunction(()=>document.getElementById('bao').textContent==='Đã lưu thuật ngữ.');
     await page.screenshot({path:`${screenshotDir}/B-glossary.png`,fullPage:true,animations:'disabled'});
+    bigTerms=true;   // backend phan trang 200/trang: man hinh phai doc het 450 thuat ngu, khong cat o trang dau
+    await page.getByRole('button',{name:'Xem thuật ngữ'}).click();
+    await page.getByRole('cell',{name:'d449',exact:true}).waitFor();
+    assert.equal(await page.locator('#bang-thuat-ngu tbody tr').count(),450);
+    bigTerms=false;
     await page.locator('nav a[href="#tai-len"]').click();
     await page.emulateMedia({reducedMotion:'reduce'});
     await page.waitForFunction(()=>document.getElementById('scene').dataset.scene==='static');

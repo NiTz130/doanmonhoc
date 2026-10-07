@@ -62,8 +62,9 @@ function hien(ten) {
   if (location.hash !== "#" + ten) history.replaceState(null, "", "#" + ten);
 }
 
-async function goi(duong, tuy = {}) {
+async function goi(duong, tuy = {}, tong = null) {
   const kq = await fetch(duong, tuy);
+  if (tong) tong.n = Number(kq.headers.get("X-Tong-So"));
   const text = await kq.text();
   let than = null;
   try { than = text ? JSON.parse(text) : null; } catch { than = null; }
@@ -74,6 +75,20 @@ async function goi(duong, tuy = {}) {
     throw loi;
   }
   return than;
+}
+
+// Danh sach nhom/thuat ngu duoc phan trang o backend (toi da 200/trang): doc het cac trang
+// theo X-Tong-So de man hinh khong im lang cat bot du lieu.
+async function goi_het(duong) {
+  let ra = null, da = 0;
+  for (let trang = 1; ; trang++) {
+    const tong = {};
+    const phan = await goi(`${duong}?trang=${trang}&moi_trang=200`, {}, tong);
+    const n = Array.isArray(phan) ? phan.length : Object.keys(phan).length;
+    ra = ra === null ? phan : Array.isArray(phan) ? ra.concat(phan) : { ...ra, ...phan };
+    da += n;
+    if (!n || !(da < tong.n)) return ra;
+  }
 }
 
 // ------------------------------------------------------------ 1. tai len
@@ -581,7 +596,7 @@ function khoa_form(form, busy) {
 
 async function nap_nhom() {
   let ds;
-  try { ds = await goi("/api/nhom"); } catch (err) { bao(err.message); return; }
+  try { ds = await goi_het("/api/nhom"); } catch (err) { bao(err.message); return; }
   const ul = $("nhom-ds");
   $("nhom-goi-y").replaceChildren(...ds.map((n) => {
     const option = document.createElement("option"); option.value = n.ten; return option;
@@ -612,7 +627,7 @@ async function xem_nhom(ten) {
   tbody.textContent = "";
   tbody.insertRow().insertCell().textContent = "Đang tải thuật ngữ…";
   try {
-    const tu = await goi(`/api/nhom/${encodeURIComponent(ten)}/thuat-ngu`);
+    const tu = await goi_het(`/api/nhom/${encodeURIComponent(ten)}/thuat-ngu`);
     if (lan !== lan_nhom) return;
     ve_thuat_ngu(tu);
   } catch (err) {

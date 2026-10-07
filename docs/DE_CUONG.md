@@ -52,7 +52,7 @@ Bộ dữ liệu thử nghiệm dự kiến: video ngắn có sidecar, video ng�
 
 **Cơ sở dữ liệu** `work/subtitles.db` — 6 bảng `nhom`, `video`, `thuat_ngu`, `nhat_ky`, `cong_viec`, `lich_su`: bảng thuật ngữ dùng lại cho video sau, nhật ký thời gian/token của từng bước, trạng thái các công việc đang chạy, và lịch sử đổi nhóm, thuật ngữ do trigger ghi. Chế độ WAL; có sao lưu và khôi phục.
 
-**Mã nguồn:** `api/` (3 file) + `pipeline/` (9 module) + `web/` (frontend) + `main.py` (công cụ nội bộ) + 6 file kiểm thử offline chạy bằng `assert` (78 test, độ phủ dòng 91,2 %; không cần mạng, GPU, cổng mạng hay màn hình), cùng kiểm thử media, runtime, giao diện và kiểm thử thật trên GPU (`--real`) chạy riêng.
+**Mã nguồn:** `api/` (3 file) + `pipeline/` (9 module) + `web/` (frontend) + `main.py` (công cụ nội bộ) + 7 file kiểm thử offline chạy bằng `assert` (93 test, độ phủ dòng 97,0 %; không cần mạng, GPU, cổng mạng hay màn hình), cùng kiểm thử media, runtime, giao diện và kiểm thử thật trên GPU (`--real`) chạy riêng.
 
 **Tài liệu:** README hướng dẫn cài đặt và sử dụng, tài liệu thiết kế, và ma trận kết quả kiểm thử ghi rõ PASS/FAIL/NOT RUN kèm bằng chứng.
 
