@@ -1,0 +1,25 @@
+from pathlib import Path
+from contextlib import contextmanager
+import os, json, hashlib, sqlite3, subprocess
+import tests_real
+root = Path.cwd()
+out = root / '.cache/tuan6-20261014/phien-01'
+out.mkdir(exist_ok=False)
+@contextmanager
+def giu_mau():
+    old = Path.cwd()
+    os.chdir(out)
+    try:
+        yield out
+    finally:
+        os.chdir(old)
+tests_real._tam = giu_mau
+tests_real.real_dau_cuoi_whisper_nllb_ffmpeg()
+files = []
+for p in sorted(out.rglob('*')):
+    if p.is_file():
+        files.append({'file':p.relative_to(out).as_posix(),'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
+probe = json.loads(subprocess.run(['ffprobe','-v','error','-show_streams','-show_format','-of','json',str(out/'ra_vi.mp4')],capture_output=True,text=True,check=True).stdout)
+summary = {'id':'PHIEN-01','status':'PASS','test':'real_dau_cuoi_whisper_nllb_ffmpeg','source':'test/video_2.mp4','seconds':30,'model_asr':'base','blur':'off','method':'Same existing test and assertions; only _tam context retains artifacts in a new directory.','files':files,'output_probe':probe}
+(out/'ket_qua.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
+print('PHIEN-01 PASS; artifacts:',len(files))

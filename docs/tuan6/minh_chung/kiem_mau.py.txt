@@ -1,0 +1,39 @@
+from pathlib import Path
+import json, shutil
+from pipeline.markbox import kiem_hop
+from pipeline.srt import doc_srt
+from pipeline.db import _kiem_file_db
+from tests_api import _san
+root=Path.cwd()
+out=root/'docs/tuan6'
+samples=out/'du_lieu_loi'
+samples.mkdir(parents=True,exist_ok=True)
+for name in ['hop_loi.json','hop_hop_le.json','phu_de_loi.srt','tep_rong.mp4','khong_phai_video.txt','co_so_du_lieu_hong.db']:
+    shutil.copy2(root/'docs/tuan5/du_lieu_demo'/name,samples/name)
+rows=[]
+def rejected(code, sample, call):
+    try:
+        call()
+    except ValueError as e:
+        rows.append({'id':code,'sample':sample,'expected':'ValueError','actual':str(e),'status':'PASS','level':'validator'})
+    else:
+        raise AssertionError(code+' accepted bad data')
+for i,box in enumerate(json.loads((samples/'hop_loi.json').read_text()),1):
+    rejected(f'PL-{i:02}',f'hop_loi.json[{i-1}]',lambda:kiem_hop(box))
+rejected('PL-05','phu_de_loi.srt',lambda:doc_srt(samples/'phu_de_loi.srt'))
+rejected('PL-06','co_so_du_lieu_hong.db',lambda:_kiem_file_db(samples/'co_so_du_lieu_hong.db'))
+with _san() as (client,video):
+    for i,name in enumerate(['tep_rong.mp4','khong_phai_video.txt'],7):
+        with (samples/name).open('rb') as stream:
+            response=client.post('/api/video',files={'file':(name,stream,'video/mp4' if name.endswith('.mp4') else 'text/plain')})
+        assert response.status_code==400,(name,response.status_code)
+        assert list(Path('work/tai_len').glob('**/*'))==[]
+        rows.append({'id':f'PL-{i:02}','sample':name,'expected':'HTTP 400, no upload artifacts','actual':response.json(),'status':'PASS','level':'FastAPI TestClient, test fixture'})
+assert len(doc_srt(samples/'phu_de_loi.srt',bo_cue_hong=True))==1
+rows.append({'id':'DC-01','sample':'phu_de_loi.srt','expected':'1 valid cue in tolerant mode','actual':'1 valid cue','status':'PASS','level':'parser'})
+assert kiem_hop(json.loads((samples/'hop_hop_le.json').read_text()))['w']==0.8
+rows.append({'id':'DC-02','sample':'hop_hop_le.json','expected':'valid box accepted','actual':'accepted','status':'PASS','level':'validator'})
+evidence=out/'minh_chung'
+evidence.mkdir(exist_ok=True)
+(evidence/'mau_loi.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2),encoding='utf-8')
+print('Sample checks: run',len(rows),'passed',len(rows),'failed 0')

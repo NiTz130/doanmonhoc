@@ -1,0 +1,282 @@
+{
+  "counters": {
+    "asr": 7,
+    "audio": 7,
+    "dich": 5,
+    "render": 6
+  },
+  "crash": "07ef3ed0-5d06-4ae1-a079-67007a07c12e",
+  "crash_lock_detail": "Video có thể đang xử lý hoặc có khoá còn sót sau sự cố. Chỉ xoá tay file khoá work/nguon-920e1704/.lock khi chắc chắn không còn tiến trình nào chạy.",
+  "first": "38bd8ca1-1175-45e1-90c8-912606f09a92",
+  "other": "38dae57d-7964-4c2a-9d9f-fdc730ad905e",
+  "output_sha256": "3c009856541e4bbeeb7594402e954b43fbdb657e26c4e1aa2a94b2ae016d2fd8",
+  "poll": [
+    {
+      "buoc": null,
+      "cid": "38bd8ca1-1175-45e1-90c8-912606f09a92",
+      "tien_do": 0.0,
+      "trang_thai": "cho"
+    },
+    {
+      "buoc": "nhan_dien",
+      "cid": "38bd8ca1-1175-45e1-90c8-912606f09a92",
+      "tien_do": 0.0,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "sub_goc",
+      "cid": "38bd8ca1-1175-45e1-90c8-912606f09a92",
+      "tien_do": 0.1,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "vung_blur",
+      "cid": "38bd8ca1-1175-45e1-90c8-912606f09a92",
+      "tien_do": 0.4,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "vung_blur",
+      "cid": "38bd8ca1-1175-45e1-90c8-912606f09a92",
+      "tien_do": 0.4,
+      "trang_thai": "cho_chon_khung"
+    },
+    {
+      "buoc": "vung_blur",
+      "cid": "38bd8ca1-1175-45e1-90c8-912606f09a92",
+      "tien_do": 0.4,
+      "trang_thai": "cho"
+    },
+    {
+      "buoc": "nhan_dien",
+      "cid": "38bd8ca1-1175-45e1-90c8-912606f09a92",
+      "tien_do": 0.0,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "render",
+      "cid": "38bd8ca1-1175-45e1-90c8-912606f09a92",
+      "tien_do": 0.85,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "render",
+      "cid": "38bd8ca1-1175-45e1-90c8-912606f09a92",
+      "tien_do": 1.0,
+      "trang_thai": "xong"
+    },
+    {
+      "buoc": null,
+      "cid": "4a4e79d2-b4f3-4e3f-af9a-0718a50d8f6b",
+      "tien_do": 0.0,
+      "trang_thai": "cho"
+    },
+    {
+      "buoc": "nhan_dien",
+      "cid": "4a4e79d2-b4f3-4e3f-af9a-0718a50d8f6b",
+      "tien_do": 0.0,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "sub_goc",
+      "cid": "4a4e79d2-b4f3-4e3f-af9a-0718a50d8f6b",
+      "tien_do": 0.1,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "render",
+      "cid": "4a4e79d2-b4f3-4e3f-af9a-0718a50d8f6b",
+      "tien_do": 0.85,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "render",
+      "cid": "4a4e79d2-b4f3-4e3f-af9a-0718a50d8f6b",
+      "tien_do": 1.0,
+      "trang_thai": "xong"
+    },
+    {
+      "buoc": "nhan_dien",
+      "cid": "38dae57d-7964-4c2a-9d9f-fdc730ad905e",
+      "tien_do": 0.0,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "sub_goc",
+      "cid": "38dae57d-7964-4c2a-9d9f-fdc730ad905e",
+      "tien_do": 0.1,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "render",
+      "cid": "38dae57d-7964-4c2a-9d9f-fdc730ad905e",
+      "tien_do": 0.85,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "render",
+      "cid": "38dae57d-7964-4c2a-9d9f-fdc730ad905e",
+      "tien_do": 1.0,
+      "trang_thai": "xong"
+    },
+    {
+      "buoc": "dich",
+      "cid": "7f589870-a63a-4e26-adc4-07bbfee5774f",
+      "tien_do": 0.5,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "render",
+      "cid": "7f589870-a63a-4e26-adc4-07bbfee5774f",
+      "tien_do": 0.85,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "render",
+      "cid": "7f589870-a63a-4e26-adc4-07bbfee5774f",
+      "tien_do": 1.0,
+      "trang_thai": "xong"
+    },
+    {
+      "buoc": null,
+      "cid": "70711c8c-7a3e-4da5-9f2d-6d2cbd2eb3e2",
+      "tien_do": 0.0,
+      "trang_thai": "cho"
+    },
+    {
+      "buoc": "nhan_dien",
+      "cid": "70711c8c-7a3e-4da5-9f2d-6d2cbd2eb3e2",
+      "tien_do": 0.0,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "sub_goc",
+      "cid": "70711c8c-7a3e-4da5-9f2d-6d2cbd2eb3e2",
+      "tien_do": 0.1,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "vung_blur",
+      "cid": "70711c8c-7a3e-4da5-9f2d-6d2cbd2eb3e2",
+      "tien_do": 0.4,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "vung_blur",
+      "cid": "70711c8c-7a3e-4da5-9f2d-6d2cbd2eb3e2",
+      "tien_do": 0.4,
+      "trang_thai": "cho_chon_khung"
+    },
+    {
+      "buoc": "dich",
+      "cid": "70711c8c-7a3e-4da5-9f2d-6d2cbd2eb3e2",
+      "tien_do": 0.5,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "render",
+      "cid": "70711c8c-7a3e-4da5-9f2d-6d2cbd2eb3e2",
+      "tien_do": 0.85,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "render",
+      "cid": "70711c8c-7a3e-4da5-9f2d-6d2cbd2eb3e2",
+      "tien_do": 1.0,
+      "trang_thai": "xong"
+    },
+    {
+      "buoc": null,
+      "cid": "e346883c-431d-4fed-be37-52a76fedcc72",
+      "tien_do": 0.0,
+      "trang_thai": "cho"
+    },
+    {
+      "buoc": "nhan_dien",
+      "cid": "e346883c-431d-4fed-be37-52a76fedcc72",
+      "tien_do": 0.0,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "sub_goc",
+      "cid": "e346883c-431d-4fed-be37-52a76fedcc72",
+      "tien_do": 0.1,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "vung_blur",
+      "cid": "e346883c-431d-4fed-be37-52a76fedcc72",
+      "tien_do": 0.4,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "vung_blur",
+      "cid": "e346883c-431d-4fed-be37-52a76fedcc72",
+      "tien_do": 0.4,
+      "trang_thai": "cho_chon_khung"
+    },
+    {
+      "buoc": null,
+      "cid": "e47694d6-550d-42ca-970d-03dc301131bd",
+      "tien_do": 0.0,
+      "trang_thai": "cho"
+    },
+    {
+      "buoc": "sub_goc",
+      "cid": "e47694d6-550d-42ca-970d-03dc301131bd",
+      "tien_do": 0.1,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "vung_blur",
+      "cid": "e47694d6-550d-42ca-970d-03dc301131bd",
+      "tien_do": 0.4,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "vung_blur",
+      "cid": "e47694d6-550d-42ca-970d-03dc301131bd",
+      "tien_do": 0.4,
+      "trang_thai": "cho_chon_khung"
+    },
+    {
+      "buoc": null,
+      "cid": "11666388-f8ab-48d7-97d2-51b75740659f",
+      "tien_do": 0.0,
+      "trang_thai": "cho"
+    },
+    {
+      "buoc": "nhan_dien",
+      "cid": "11666388-f8ab-48d7-97d2-51b75740659f",
+      "tien_do": 0.0,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "sub_goc",
+      "cid": "11666388-f8ab-48d7-97d2-51b75740659f",
+      "tien_do": 0.1,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "render",
+      "cid": "11666388-f8ab-48d7-97d2-51b75740659f",
+      "tien_do": 0.85,
+      "trang_thai": "dang_chay"
+    },
+    {
+      "buoc": "render",
+      "cid": "11666388-f8ab-48d7-97d2-51b75740659f",
+      "tien_do": 1.0,
+      "trang_thai": "xong"
+    }
+  ],
+  "post_race": "70711c8c-7a3e-4da5-9f2d-6d2cbd2eb3e2",
+  "python": "C:\\codev2\\doanmonhoc\\.venv\\Scripts\\python.exe",
+  "race": "7f589870-a63a-4e26-adc4-07bbfee5774f",
+  "repo": "C:\\codev2\\doanmonhoc",
+  "restart": "e47694d6-550d-42ca-970d-03dc301131bd",
+  "second": "4a4e79d2-b4f3-4e3f-af9a-0718a50d8f6b",
+  "stale": "e346883c-431d-4fed-be37-52a76fedcc72",
+  "status": "PASS",
+  "temp_root_cleaned": true
+}

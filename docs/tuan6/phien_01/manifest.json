@@ -1,0 +1,77 @@
+{
+  "id": "PHIEN-01",
+  "date": "2026-10-14",
+  "status": "PASS",
+  "source": "test/video_2.mp4",
+  "source_sha256": "df5f35493970ac9cf265bc01e70876a38e452e32ac476a608617a890a04051ac",
+  "asr": "Whisper base on CUDA",
+  "translation": "NLLB local cached model",
+  "blur": "off",
+  "cue_count": 5,
+  "timestamp_preserved": true,
+  "probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_type": "video",
+        "width": 640,
+        "height": 360
+      },
+      {
+        "codec_type": "audio"
+      }
+    ],
+    "format": {
+      "duration": "30.071708"
+    }
+  },
+  "capture": "Existing real_dau_cuoi_whisper_nllb_ffmpeg test with unchanged assertions, _tam replaced solely to retain files.",
+  "files": [
+    {
+      "path": "clip.mp4",
+      "bytes": 2282615,
+      "sha256": "f0f9fcd1c49830c2de41880f52f40d37dbbf5c8d0adebd9e6fbced50ebe30932"
+    },
+    {
+      "path": "khung_phu_de.png",
+      "bytes": 165681,
+      "sha256": "c9f40281ea621d2e048e3a52c7d7a319211fa201e1ddbee0dbb36116eedab905"
+    },
+    {
+      "path": "ra_vi.mp4",
+      "bytes": 4024971,
+      "sha256": "9bf72d7f2e6c4b6131aed72e23487df41b6eddb189dd1b19a5f17729f8307848"
+    },
+    {
+      "path": "s.db",
+      "bytes": 69632,
+      "sha256": "2e44fcf1fc6827ee57ad0da535b64c681aae2a7c936d2ec92dd863636a474e71"
+    },
+    {
+      "path": "sub_goc.srt",
+      "bytes": 596,
+      "sha256": "c20c201c7791617d576888cad4403b9b78b984855e0faac19609f9aaca8b3682"
+    },
+    {
+      "path": "sub_vi.ass",
+      "bytes": 1408,
+      "sha256": "95a9fe907f8a3fee9765786dc5f15b27e63b5b9d7a4f877a0355ca5d92fc8a8d"
+    },
+    {
+      "path": "sub_vi.srt",
+      "bytes": 801,
+      "sha256": "d07ff22c075f3d2b45b3108eda041be0144d3d2b5fb64e52c66bbbee2e408863"
+    },
+    {
+      "path": "trang_thai.json",
+      "bytes": 544,
+      "sha256": "9d6c64c6e9b954a706ad485683aeaf26ee70612fb7c6c1b26a70d5ce33182b72"
+    },
+    {
+      "path": "vung_blur.json",
+      "bytes": 18,
+      "sha256": "bbc2158e0a2b60150f0b5afe8283bb1892f4ee780e10ecf622867ad916455d31"
+    }
+  ]
+}

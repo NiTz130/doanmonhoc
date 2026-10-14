@@ -1,0 +1,86 @@
+[
+  {
+    "id": "PL-01",
+    "sample": "hop_loi.json[0]",
+    "expected": "ValueError",
+    "actual": "Hop vuot ra ngoai khung hinh",
+    "status": "PASS",
+    "level": "validator"
+  },
+  {
+    "id": "PL-02",
+    "sample": "hop_loi.json[1]",
+    "expected": "ValueError",
+    "actual": "w va h phai duong",
+    "status": "PASS",
+    "level": "validator"
+  },
+  {
+    "id": "PL-03",
+    "sample": "hop_loi.json[2]",
+    "expected": "ValueError",
+    "actual": "Toa do hop phai la so huu han, nhan duoc True",
+    "status": "PASS",
+    "level": "validator"
+  },
+  {
+    "id": "PL-04",
+    "sample": "hop_loi.json[3]",
+    "expected": "ValueError",
+    "actual": "Hop thieu khoa: ['h']",
+    "status": "PASS",
+    "level": "validator"
+  },
+  {
+    "id": "PL-05",
+    "sample": "phu_de_loi.srt",
+    "expected": "ValueError",
+    "actual": "Khoi SRT hong hoac rong",
+    "status": "PASS",
+    "level": "validator"
+  },
+  {
+    "id": "PL-06",
+    "sample": "co_so_du_lieu_hong.db",
+    "expected": "ValueError",
+    "actual": "Không phải file CSDL hợp lệ: file is not a database",
+    "status": "PASS",
+    "level": "validator"
+  },
+  {
+    "id": "PL-07",
+    "sample": "tep_rong.mp4",
+    "expected": "HTTP 400, no upload artifacts",
+    "actual": {
+      "detail": "File rong"
+    },
+    "status": "PASS",
+    "level": "FastAPI TestClient, test fixture"
+  },
+  {
+    "id": "PL-08",
+    "sample": "khong_phai_video.txt",
+    "expected": "HTTP 400, no upload artifacts",
+    "actual": {
+      "detail": "Chi nhan .avi, .mkv, .mov, .mp4, .ts, .webm"
+    },
+    "status": "PASS",
+    "level": "FastAPI TestClient, test fixture"
+  },
+  {
+    "id": "DC-01",
+    "sample": "phu_de_loi.srt",
+    "expected": "1 valid cue in tolerant mode",
+    "actual": "1 valid cue",
+    "status": "PASS",
+    "level": "parser"
+  },
+  {
+    "id": "DC-02",
+    "sample": "hop_hop_le.json",
+    "expected": "valid box accepted",
+    "actual": "accepted",
+    "status": "PASS",
+    "level": "validator"
+  }
+]

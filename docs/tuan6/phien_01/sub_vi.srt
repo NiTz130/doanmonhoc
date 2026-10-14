@@ -1,0 +1,19 @@
+1
+00:00:00,000 --> 00:00:04,340
+Đó là trò chơi mà bạn đấm cây, chiến đấu với rồng, và xây dựng một máy tính hoạt động.
+
+2
+00:00:05,300 --> 00:00:07,000
+Đây là Minecraft giải thích nhanh.
+
+3
+00:00:07,820 --> 00:00:15,040
+Minecraft là một trò chơi sandbox thế giới mở nơi bạn khai thác khối, công cụ thủ công, và xây dựng theo nghĩa đen bất cứ điều gì bạn có thể tưởng tượng.
+
+4
+00:00:15,900 --> 00:00:22,280
+Được tạo ra bởi Marcus Nauch Person và phát hành vào năm 2009, nó đã nổ ra từ một trò chơi độc lập nhỏ
+
+5
+00:00:22,280 --> 00:00:28,620
+thành một công ty lớn về văn hóa, cuối cùng được Microsoft mua vào năm 2014 với giá 2,5 tỷ USD.

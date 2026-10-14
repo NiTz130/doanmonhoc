@@ -1,0 +1,13 @@
+      NVIDIA GeForce RTX 4050 Laptop GPU, 6141 MiB
+PASS     real_gpu_ctranslate2_cuda  (4.0s)
+      base: 5 cue, 6.0s, ('cuda', 'int8_float16')
+PASS     real_whisper_base_tren_gpu  (12.0s)
+      large-v3: 5 cue, 25.5s, ('cuda', 'int8_float16')
+PASS     real_whisper_large_v3_tren_gpu  (25.8s)
+      NLLB: 4.4s, device=cuda
+PASS     real_nllb_dich_tren_gpu_va_ep_thuat_ngu  (4.4s)
+PASS     real_dich_giu_dung_so_cue_khi_goi_model_that  (3.9s)
+      5 cue, 6 lan bao tien do, lech day/dinh = 17.0/0.4
+PASS     real_dau_cuoi_whisper_nllb_ffmpeg  (10.9s)
+
+Test that: chay 6 / qua 6 / loi 0 / NOT RUN 0

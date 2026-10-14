@@ -1,0 +1,18 @@
+[Script Info]
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+PlayResX: 640
+PlayResY: 360
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,22,&H00FFFFFF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,2,20,20,30,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:04.34,Default,,0,0,0,,Đó là trò chơi mà bạn đấm cây, chiến đấu với rồng, và xây dựng một máy tính hoạt động.
+Dialogue: 0,0:00:05.30,0:00:07.00,Default,,0,0,0,,Đây là Minecraft giải thích nhanh.
+Dialogue: 0,0:00:07.82,0:00:15.04,Default,,0,0,0,,Minecraft là một trò chơi sandbox thế giới mở nơi bạn khai thác khối, công cụ thủ công, và xây dựng theo nghĩa đen bất cứ điều gì bạn có thể tưởng tượng.
+Dialogue: 0,0:00:15.90,0:00:22.28,Default,,0,0,0,,Được tạo ra bởi Marcus Nauch Person và phát hành vào năm 2009, nó đã nổ ra từ một trò chơi độc lập nhỏ
+Dialogue: 0,0:00:22.28,0:00:28.62,Default,,0,0,0,,thành một công ty lớn về văn hóa, cuối cùng được Microsoft mua vào năm 2014 với giá 2,5 tỷ USD.

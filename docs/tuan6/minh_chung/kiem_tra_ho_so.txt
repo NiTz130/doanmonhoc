@@ -1,0 +1,8 @@
+14/10/2026
+BAO_CAO_MUC_TIEU: PASS DOCX structure and required content
+PHIEU_LOI: PASS DOCX structure and required content
+PHIEN-01: PASS all manifest hashes
+Evidence counts: PASS
+Run 4 / passed 4 / failed 0
+NOT RUN 1: visual pagination in Word/PDF; LibreOffice unavailable.
+Review: only new submission files, no product source changes. Existing week-5 changes preserved.

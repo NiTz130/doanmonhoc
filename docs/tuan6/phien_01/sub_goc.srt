@@ -1,0 +1,19 @@
+1
+00:00:00,000 --> 00:00:04,340
+It's the game where you punch trees, fight dragons, and build a working calculator.
+
+2
+00:00:05,300 --> 00:00:07,000
+Here's Minecraft Explained Fast.
+
+3
+00:00:07,820 --> 00:00:15,040
+Minecraft is an open-world sandbox game where you mine blocks, craft tools, and build literally anything you can imagine.
+
+4
+00:00:15,900 --> 00:00:22,280
+Created by Marcus Nauch Person and released in 2009, it exploded from a small indie game
+
+5
+00:00:22,280 --> 00:00:28,620
+into a cultural juggernaut, eventually bought by Microsoft in 2014 for $2.5 billion.
