@@ -2,6 +2,23 @@
 
 Dành cho giảng viên và nhóm thực hiện. Bộ hồ sơ chứng minh một phiên xử lý video và phản hồi với dữ liệu sai, kiểm ngày 14/10/2026.
 
+## Bộ báo cáo Markdown tuần 6
+
+Nội dung báo cáo lấy từ BAO_CAO_MUC_TIEU.md, PHIEU_LOI.md, phien_01/, du_lieu_loi/ và minh_chung/ trong thư mục này. Báo cáo bám ảnh yêu cầu tuần 6: mục tiêu, hoạt động kiểm thử, sản phẩm nộp và bốn tiêu chí chấm. Tài liệu tuần 3–5 chỉ dùng tham khảo bố cục; không dùng làm bằng chứng hoàn thành tuần 6.
+
+| Tài liệu | Nội dung |
+|---|---|
+| [Báo cáo tổng tuần 6](BAO_CAO_TUAN6_TONG.md) | Mục tiêu, dữ liệu phiên, tích hợp, kiểm thử, phiếu lỗi và tiêu chí nộp |
+| [Nguyễn Lê Đức Bình](NguyenLeDucBinh-23050025.md) | Nền tảng, CSDL, điều phối và tích hợp |
+| [Đinh Hoàng Phú](DinhHoangPhu-23050002.md) | Đầu vào, nhận dạng, vùng mờ và tiến độ |
+| [Phạm Tuấn Kiệt](PhamTuanKiet-23050046.md) | Dịch, thuật ngữ, làm mờ và xuất video |
+| [Bộ ca kiểm thử tuần 6](TEST_CASE.md) | Dữ liệu đúng, mẫu sai, điều kiện kiểm và kết quả từ bằng chứng tuần 6 |
+| [Kịch bản demo](KICH_BAN_DEMO.md) | Chuẩn bị, phân vai dự kiến, thao tác và biên bản cần ghi |
+| [Báo cáo mục tiêu chi tiết](BAO_CAO_MUC_TIEU.md) | Dữ liệu PHIEN-01 và kết quả chạy kiểm đã có |
+| [Phiếu lỗi](PHIEU_LOI.md) | Tám mẫu sai, cách kích hoạt và phản hồi thực tế |
+
+Các báo cáo theo thành viên chia phần trình bày bằng chứng tuần 6; chưa xác nhận ai trực tiếp thực hiện từng việc. Không dùng kết quả kiểm thử chung để tự tính mức đóng góp cá nhân.
+
 ## Mở tài liệu
 
 - BAO_CAO_MUC_TIEU.docx: báo cáo kết quả, dữ liệu phiên và giới hạn kiểm chứng.
@@ -10,7 +27,7 @@ Dành cho giảng viên và nhóm thực hiện. Bộ hồ sơ chứng minh mộ
 - du_lieu_loi/: các tệp mẫu sai và một vùng mờ đúng để đối chứng.
 - minh_chung/: kết quả kiểm thử và bản lệnh giữ dữ liệu/tái hiện mẫu lỗi.
 
-Các bản Markdown là nguồn của tài liệu Word. Bộ mẫu không dùng dữ liệu cũ của work/. Video không được theo dõi trong Git; khi chuyển hồ sơ, dùng ZIP đầy đủ thay vì chỉ tải các tệp Git.
+Hai bản DOCX được tạo từ BAO_CAO_MUC_TIEU.md và PHIEU_LOI.md tại lần đóng gói trước. Các báo cáo MD mới chưa có bản Word tương ứng. Bộ mẫu không dùng dữ liệu cũ của work/. Video không được theo dõi trong Git; khi chuyển dữ liệu phiên, cần kèm tệp media thay vì chỉ tải các tệp Git.
 
 ## Chạy lại kiểm chứng
 
