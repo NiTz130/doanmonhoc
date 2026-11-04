@@ -85,7 +85,7 @@
       "id": "lich_su",
       "type": "database",
       "label": "lich_su",
-      "sublabel": "id PK · doi_tuong · hanh_dong · không FK",
+      "sublabel": "id PK · doi_tuong · hanh_dong · không FK · khớp nhom_id lúc đăng ký trigger",
       "pos": [
         40,
         380
@@ -151,7 +151,7 @@
         "video: thu_muc_work UNIQUE · rong · cao · thoi_luong · them_luc · xong_luc",
         "thuat_ngu: goc · dich",
         "nhat_ky: buoc · ket_qua · giay · token_vao · token_ra · loi · luc",
-        "cong_viec: trang_thai CHECK · buoc · tien_do · duong_dan_ra · loi · cap_nhat_luc",
+        "cong_viec: trang_thai CHECK · buoc · tien_do · duong_dan_ra · loi · tao_luc · cap_nhat_luc",
         "lich_su: khoa · cu · moi · luc · nhom_id (không FK, để dòng lịch sử sống sau khi xoá nhóm)"
       ]
     },
@@ -162,7 +162,7 @@
         "Bảng cong_viec CHỈ báo tiến độ cho frontend — resume quyết định bởi trang_thai.json trên đĩa",
         "nhat_ky kiêm dấu đã-áp-glossary: hàng buoc='translate_apply' mang hash artifact ở cột loi",
         "Xoá subtitles.db mất nhóm, thuật ngữ, nhật ký — KHÔNG mất artifact trong work/",
-        "lich_su chỉ do 6 trigger ls_* ghi: mọi đường ghi, kể cả thuật ngữ máy tự học và xoá dây chuyền, đều để lại dấu vết"
+        "lich_su do 6 trigger ls_* ghi: nhóm và thuật ngữ, kể cả xoá dây chuyền; NLLB hiện không tự học từ mới"
       ]
     }
   ]

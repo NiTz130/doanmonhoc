@@ -1,12 +1,12 @@
 # Tài liệu tổng hợp để viết báo cáo
 
-**Ngày rà:** 2026-10-07 · **Nhánh:** `main` · **Nguồn duy nhất:** mã nguồn trong repo tại thời điểm rà.
+**Ngày rà mã:** 2026-11-04 · **Nhánh:** `main` · **Nguồn:** mã nguồn trong repo; các số đo cũ giữ nguyên ngày đo và không coi là kết quả chạy lại.
 
 **Người đọc:** thành viên nhóm viết báo cáo, slide và chuẩn bị bảo vệ.
 **Mục đích:** cho mỗi con số, tên hàm, khoá JSON và chữ ký cache một chỗ tra đúng với mã.
 
 Tài liệu này không dẫn lại `DE_CUONG.md`, `DAC_TA_YEU_CAU.md` hay thiết kế cũ. Khi có xung đột, mã thắng.
-Tài liệu **không ghi số dòng** (số dòng đổi sau mỗi lần sửa): tìm theo tên hàm bằng `grep`.
+Tài liệu **không ghi số dòng** (số dòng đổi sau mỗi lần sửa): tìm theo tên hàm bằng `rg`.
 
 ---
 
@@ -16,22 +16,22 @@ Web app chạy cục bộ. Người dùng tải một video có thoại tiếng 
 
 1. lấy phụ đề gốc (file `.srt` cạnh video → track chữ nhúng → nhận dạng Whisper);
 2. dừng lại để người dùng khoanh vùng phụ đề cứng trên khung hình thật;
-3. dịch sang tiếng Việt **tại máy bằng NLLB-200** (không khoá API, không gửi gì ra mạng sau lần tải model đầu);
+3. dịch sang tiếng Việt **tại máy bằng NLLB-200** (không khoá API, không gửi nội dung phụ đề cho dịch vụ dịch; thao tác tải/kiểm tra model có thể dùng mạng);
 4. kết xuất video có phụ đề Việt cháy vào hình và vùng phụ đề cứng đã làm mờ — **một lần nén**, audio giữ nguyên bằng `-c:a copy`.
 
 Bốn khối mã: `web/` (giao diện) → `api/` (HTTP) → `pipeline/dieu_phoi.py` (điều phối) → `pipeline/*.py` (xử lý).
 `main.py` là CLI nội bộ để gỡ lỗi. Nó đi qua đúng `dieu_phoi.chay()` như web.
 
-Quy mô mã (số dòng, đo ngày rà):
+Quy mô mã (đếm `splitlines()` ngày 2026-11-04; không tính `__init__.py`, font hoặc thư viện vendored):
 
 | Khối | Dòng | Chi tiết |
 |---|---|---|
-| `pipeline/` | 2 097 | `dieu_phoi` 679 · `db` 521 · `render` 206 · `translate` 196 · `srt` 161 · `markbox` 150 · `asr` 92 · `subs` 50 · `audio` 42 |
-| `api/` | 662 | `app` 362 · `viec` 195 · `nhom` 105 |
-| `web/` | 1 272 | `app.js` 718 · `style.css` 324 · `scene.js` 156 · `index.html` 74 |
+| `pipeline/` | 2 111 | `dieu_phoi` 691 · `db` 521 · `render` 206 · `translate` 196 · `srt` 161 · `markbox` 150 · `asr` 94 · `subs` 50 · `audio` 42 |
+| `api/` | 667 | `app` 367 · `viec` 195 · `nhom` 105 |
+| `web/` | 1 287 | `app.js` 733 · `style.css` 324 · `scene.js` 156 · `index.html` 74 |
 | `main.py` | 234 | CLI nội bộ |
-| Test | 3 874 | 6 file offline 2 534 · `tests_real.py` 258 · `tests_smoke.py` 204 · `tests_docx.py` 39 · `test/runtime_logic.py` 492 · `test/frontend.cjs` 347 |
-| Công cụ | 118 | `tools_coverage.py` (đo độ phủ dòng, không thêm thư viện) |
+| Test | 4 485 | runner + 7 file offline 3 137 · `tests_real.py` 258 · `tests_smoke.py` 204 · `tests_docx.py` 39 · `test/runtime_logic.py` 492 · `test/frontend.cjs` 355 |
+| Hai công cụ kiểm thử/cài mẫu | 185 | `tools_coverage.py` 118 · `tools_tai_video.py` 67; không gồm công cụ tài liệu |
 
 Phụ thuộc Python khai trong `pyproject.toml`: `faster-whisper`, `fastapi`, `uvicorn`, `python-multipart`.
 Extra `demucs` (tách giọng) và `docs` (xuất `.docx`). Bước dịch dùng `ctranslate2`, `huggingface_hub`, `tokenizers`:
@@ -92,8 +92,8 @@ cả ba đi kèm `faster-whisper`, không khai riêng. **Không còn** SDK OpenA
 | `api/` không chứa logic xử lý | Không `subprocess`, không nạp model, không ghép filtergraph; kiểm video bằng `dieu_phoi.nhan_dien` | `api/app._nhan_file` |
 | Phụ thuộc một chiều | `asr`, `audio`, `subs`, `translate`, `markbox`, `render`, `srt` không import `db`, không biết `fastapi` | kiểm: `grep -ln "import db\|fastapi" pipeline/*.py` |
 | Công việc không treo sau restart | Lifespan đánh `loi` cho công việc mất chủ sở hữu | `app.vong_doi`, `db.don_cong_viec_mat_ho_so` |
-| Web chỉ phục vụ máy cục bộ | Host chỉ `127.0.0.1`, `localhost`; POST khác nguồn bị `403` | `app.chan_khac_nguon` |
-| Từ chối file quá lớn sớm | `Content-Length` quá 4 GiB bị `413` trước khi nhận thân request | `app.chan_khac_nguon` |
+| Kiểm Host và Origin | Host cho phép `127.0.0.1`, `localhost`, `testserver`; request ghi có Origin khác nguồn bị `403`. Đây không phải xác thực hay kiểm địa chỉ IP khách | `app.chan_khac_nguon` |
+| Từ chối file quá lớn sớm | `POST /api/video` có `Content-Length` quá 4 GiB + 1 MiB bị `413`; phần dư dành cho multipart. Nội dung file vẫn giới hạn 4 GiB khi đọc | `app.chan_khac_nguon`, `_nhan_file` |
 | `GET` không ghi dữ liệu | Tra nhóm không có thì `404`, không tạo; chỉ đường ghi mới dùng `lay_nhom` | `db.tim_nhom` |
 | Không đường ghi nào bỏ sót lịch sử | Trigger SQLite, không phải mã ứng dụng: CLI, API, thuật ngữ học trong job, xoá dây chuyền đều ghi | `db.SCHEMA` `ls_*` |
 | Khôi phục không làm mất bản đang dùng | Kiểm file (`integrity_check`, đủ bảng) **trước**, chụp bản hiện tại, rồi mới thay | `dieu_phoi.khoi_phuc`, `db._kiem_file_db` |
@@ -109,7 +109,7 @@ doanmonhoc/
 │   ├── app.py            router /api: tải lên · trạng thái · khung · hộp · kết quả · danh sách · nhật ký · lịch sử · sao lưu; lifespan; chặn khác nguồn
 │   ├── viec.py           tác vụ nền, sổ hồ sơ cid → HoSo trong RAM, giữ và nhả claim
 │   └── nhom.py           router /api/nhom: nhóm · thuật ngữ · vùng mặc định · tìm, phân trang, xoá
-├── pipeline/             toàn bộ xử lý; chỉ dieu_phoi.py được biết SQLite
+├── pipeline/             xử lý media; dieu_phoi.py điều phối và gọi db.py
 │   ├── dieu_phoi.py      điều phối 5 mốc, manifest, cache, quản lý nhóm, batch, sao lưu, dọn dẹp
 │   ├── db.py             schema 6 bảng, 6 trigger, 4 chỉ mục và mọi truy vấn
 │   ├── render.py         khoảng bật mờ, sinh ASS, filtergraph, chọn encoder
@@ -123,8 +123,9 @@ doanmonhoc/
 │   ├── index.html        một file, 4 <section> ẩn/hiện theo hash
 │   ├── app.js · scene.js · style.css · fonts/ · vendor/three/
 ├── main.py               CLI nội bộ: video · batch · nhom · sao-luu · khoi-phuc · don-dep · lich-su
-├── test_pipeline.py      cổng chạy duy nhất của test offline (gom 5 file tests_*.py); cờ --smoke, --real
+├── test_pipeline.py      runner offline (gom 7 file tests_*.py); cờ --smoke, --real chạy riêng
 ├── tests_api.py · tests_db.py · tests_media.py · tests_translate.py · tests_van_hanh.py    test offline
+├── tests_lap_khoang.py    hồi quy khoảng làm mờ, thuộc runner offline
 ├── tests_smoke.py        test media thật bằng lavfi, cần ffmpeg (chạy bằng --smoke)
 ├── tests_real.py         GPU + Whisper + NLLB + ffmpeg thật, không hàm giả (chạy bằng --real)
 ├── tools_coverage.py     đo độ phủ dòng của test offline (sys.monitoring, không thêm thư viện)
@@ -146,7 +147,7 @@ doanmonhoc/
    Tên API và tham số đã công bố giữ nguyên.
 2. Comment trong `.py` phần lớn không dấu. Chuỗi hiển thị cho người dùng có dấu (ví dụ `db.LOI_MAT_HO_SO`).
 3. Hàm bắt đầu bằng `_` là nội bộ module. Ngoại lệ có chủ ý: test thay `dieu_phoi._nap` bằng bản giả.
-4. File test đặt tên theo người phụ trách, không theo module được kiểm. `tests_van_hanh.py` gom test của các chức năng vận hành.
+4. File test hiện đặt theo phạm vi kiểm: `tests_api.py`, `tests_media.py`, `tests_translate.py`, `tests_van_hanh.py`…; runner gom bằng import.
 
 **Tài liệu trong `docs/`:**
 
@@ -172,7 +173,7 @@ web/index.html + app.js + scene.js + style.css
 api/app.py  (/api)            api/nhom.py  (/api/nhom)
    │  api/viec.py: BackgroundTasks, sổ hồ sơ cid → HoSo trong RAM
    ▼                              ▼
-pipeline/dieu_phoi.py  ◄── chỉ file này gọi db.py
+pipeline/dieu_phoi.py  ◄── điều phối nghiệp vụ và truy vấn nhóm
    │  _nap("ten") nạp module muộn
    ├── audio.py      ffmpeg → WAV mono 16 kHz PCM16 (+ Demucs)
    ├── asr.py        faster-whisper, CUDA → CPU một lần
@@ -188,12 +189,13 @@ Ba điều cần nói trong báo cáo:
 
 1. **`_nap(ten)`** nạp module xử lý muộn bằng `importlib`. Test thay hàm này bằng bản giả nên chạy được toàn bộ
    luồng mà không cần ffmpeg, GPU hay mạng. Đổi sang `import` thẳng ở đầu file là phá tầng test offline.
-2. **Module xử lý trả dữ liệu thuần.** Không module nào biết `sqlite3` hay `fastapi`.
+2. **Module xử lý media trả dữ liệu thuần.** Các module media không biết `sqlite3` hay `fastapi`.
    CLI và web không lệch kết quả vì cùng gọi `dieu_phoi.chay()`.
 3. **`api/nhom.py` không gọi `db.py`.** Nó đi qua các hàm `nhom_*` của `dieu_phoi`: `nhom_danh_sach`, `nhom_tim`,
    `nhom_tao`, `nhom_hop`, `nhom_thuat_ngu`, `nhom_thuat_ngu_tim`, `nhom_dat_thuat_ngu`, `nhom_dat_hop`, `nhom_xoa`,
    `nhom_xoa_thuat_ngu`. Các route danh sách của `api/app.py` cũng đi qua `dieu_phoi` (`cong_viec_tim`, `nhat_ky_tim`,
    `lich_su_tim`, `sao_luu`).
+   Riêng `api/app.py` và `api/viec.py` gọi `db` trực tiếp để quản lý kết nối, trạng thái công việc và dọn hồ sơ mồ côi; không có quy tắc tuyệt đối rằng chỉ `dieu_phoi` được gọi `db`.
 
 ---
 
@@ -281,7 +283,7 @@ Ba trường `nguon_sub`, `force_dich`, `ky_cue` là trạng thái của một l
 | Hàm | Vai trò |
 |---|---|
 | `app.vong_doi` | lifespan lúc khởi động: `db.don_cong_viec_mat_ho_so`, `sao_luu_tu_dong`, `viec.don_khung_mo_coi` |
-| `app.chan_khac_nguon` | middleware: POST có `Origin` khác `scheme://host` bị `403`; `POST /api/video` có `Content-Length` quá giới hạn bị `413` |
+| `app.chan_khac_nguon` | middleware: request ngoài GET/HEAD/OPTIONS có `Origin` khác `scheme://host` bị `403`; `POST /api/video` có `Content-Length` > 4 GiB + 1 MiB bị `413` |
 | `app._nhan_file(tep)` | ghi ra ngoài `work/`, tính SHA256 theo khối, `ffprobe` xong mới nhận |
 | `app._canonical(bam, nhom)` | đường dẫn `nguon/<băm nhóm>/<sha256>/nguon.media` |
 | `app._cong_bo(tam, dich, bam)` | đích đã có thì **phải trùng nội dung**, lệch là `409` |
@@ -344,7 +346,7 @@ dịch(indexes, depth = 0):
         nếu vẫn không có       → GIỮ NGUYÊN bản gốc, ghi i vào giu_nguon
 ```
 
-Chặn ở `depth < 2` nên chi phí xấu nhất là hằng số. Cue nguồn không bao giờ mất; xấu nhất là không được dịch,
+Chặn ở `depth < 2` giới hạn số lần chia đôi mỗi lô; số lời gọi vẫn tăng theo số cue/lô. Cue nguồn không bao giờ mất; xấu nhất là không được dịch,
 và điều đó nổi lên thành trạng thái `suy_giam`.
 
 ### A3 — Ép thuật ngữ bằng thẻ giữ chỗ (NLLB)
@@ -374,8 +376,8 @@ không làm kiểu chữ nhảy sang vùng khác.
 
 ```
 bx = ⌊x·W⌋ làm tròn xuống số chẵn            by = ⌊y·H⌋ làm tròn xuống số chẵn
-bw = min(W − bx, ⌈w·W⌉ làm tròn lên chẵn) rồi làm tròn xuống chẵn
-bh = min(H − by, ⌈h·H⌉ làm tròn lên chẵn) rồi làm tròn xuống chẵn
+bw = min(W − bx, round(w·W) làm tròn lên chẵn) rồi làm tròn xuống chẵn
+bh = min(H − by, round(h·H) làm tròn lên chẵn) rồi làm tròn xuống chẵn
 bw < 2 hoặc bh < 2 → ValueError
 ```
 
@@ -420,6 +422,7 @@ ngược lại:
 
 Nhiều track chữ: chọn track có `tags.language` khớp alias của ngôn ngữ; không có thì lấy track chữ đầu.
 Track dạng ảnh (`hdmv_pgs_subtitle`, `dvd_subtitle`) coi như không có. Chế độ nguồn nằm trong chữ ký `sub_goc`.
+Sidecar là file cạnh video trên máy chủ/đường dẫn CLI. Web chỉ tải một file video và đổi tên lưu thành `nguon.media`; file `.srt` nằm cạnh video trên máy người dùng không tự được gửi cùng.
 
 ### A9 — Tách câu ASR
 
@@ -429,8 +432,9 @@ cho đến khi gặp dấu kết câu. Kết quả: mỗi cue là một câu tr�
 
 ### A10 — Phát hiện nhận dạng hỏng im lặng
 
-Nguồn `asr` mà phụ đề phủ dưới 25% thời lượng video thì công việc kết thúc `suy_giam`, kèm gợi ý
+Nguồn `asr` mà khoảng từ đầu cue sớm nhất tới cuối cue muộn nhất dưới 25% thời lượng video thì công việc kết thúc `suy_giam`, kèm gợi ý
 tắt VAD (`--vad off`) hoặc tách giọng (`--separate`). Nguyên nhân hay gặp: Silero VAD coi nhạc nền là không phải tiếng nói.
+Đây là độ trải thời gian (`max(ket_thuc) - min(bat_dau)`), không phải tổng/hợp các khoảng có lời thoại, nên không phát hiện mọi khoảng thiếu phụ đề ở giữa video.
 
 ---
 
@@ -538,6 +542,7 @@ và trả `PhanHoi(content, finish_reason, token_vao, token_ra)`.
 - **Model.** `JustFrederik/nllb-200-distilled-600M-ct2-int8` (khoảng 600 MB), CTranslate2, `beam_size=4`,
   tiền tố ngôn ngữ đích `vie_Latn`. Nạp **muộn** ở lần `goi` đầu tiên: công việc chờ vẽ hộp hoặc trúng cache
   dịch không phải tải model. Tải lần đầu thất bại → `RuntimeError` hướng dẫn kiểm tra mạng rồi chạy lại.
+- Bộ dịch luôn mã hoá nguồn bằng `eng_Latn`, đích `vie_Latn`; `lang` điều khiển tìm phụ đề/ASR, không đổi cặp ngôn ngữ của NLLB. `snapshot_download(repo)` không bật `local_files_only`, nên có cache không đồng nghĩa ứng dụng tuyệt đối không truy cập mạng.
 - **Giới hạn.** `context` được gửi nhưng bộ dịch cục bộ **không dùng** nó: mỗi câu dịch riêng, không thấy câu liền kề,
   nên cách xưng hô (anh/em/tôi) có thể đổi giữa các câu. Giữ CS-1 (một cue vào, một cue ra) thì không ghép câu cho model.
 - **Đếm token.** NLLB không tính token ra: `token_vao` là số token đầu vào, `token_ra = 0`. Cache hit trả `0, 0`.
@@ -557,7 +562,7 @@ Tệp `docs/openapi.json` sinh từ chính ứng dụng.
 
 | Method | Đường dẫn | Vào | Ra | Lỗi |
 |---|---|---|---|---|
-| POST | `/api/video` | `multipart`: `file`, `nhom`, `lang`, `model`, `model_dich`, `blur`, `blur_box`, `font_scale`, `separate`, `vad`, `force_asr`, `force` | `202 {id, trang_thai:"cho"}` | `400` sai đuôi, rỗng, > 4 GiB khi đã nhận, ffprobe không đọc được, `blur` lạ, hộp sai, `lang` sai dạng, `model`/`model_dich` ngoài danh sách, `font_scale` ≤ 0 hoặc > 5, tên nhóm trống hoặc > 100 ký tự · `409` đang có tiến trình xử lý video này, hoặc nguồn đã lưu lệch nội dung · `413` `Content-Length` vượt 4 GiB (từ chối từ tiêu đề, chưa nhận file) |
+| POST | `/api/video` | `multipart`: `file`, `nhom`, `lang`, `model`, `model_dich`, `blur`, `blur_box`, `font_scale`, `separate`, `vad`, `force_asr`, `force` | `202 {id, trang_thai:"cho"}` | `400` sai đuôi, rỗng, > 4 GiB khi đã nhận, ffprobe không đọc được, `blur` lạ, hộp sai, `lang` sai dạng, `model`/`model_dich` ngoài danh sách, `font_scale` ≤ 0 hoặc > 5, tên nhóm trống hoặc > 100 ký tự · `409` đang có tiến trình xử lý video này, hoặc nguồn đã lưu lệch nội dung · `413` `Content-Length` vượt 4 GiB + 1 MiB (từ chối từ tiêu đề); `422` nếu FastAPI từ chối kiểu hoặc thiếu trường |
 | GET | `/api/cong-viec` | `trang_thai`, `sap_xep` (`tao_luc`, `cap_nhat_luc`, `tien_do`), `thu_tu`, `trang`, `moi_trang` | `[{id, trang_thai, buoc, tien_do, …}]` + `X-Tong-So` | `400` giá trị lọc hoặc sắp xếp lạ |
 | GET | `/api/cong-viec/{cid}` | — | `{id, trang_thai, buoc, tien_do, loi, co_ket_qua}` | `404` |
 | GET | `/api/cong-viec/{cid}/khung` | — | `[{i, giay, text}]` | `404` · `409` chưa có phụ đề gốc |
@@ -747,6 +752,12 @@ $py main.py lich-su [--nhom TÊN] [--trang N] [--moi-trang N]
 
 ## 18. Kiểm thử — kết quả đo ngày 2026-10-07
 
+**Rà lại 2026-11-04 trên môi trường hiện tại:** `.venv/Scripts/python.exe test_pipeline.py` chạy 102 test: **100 PASS, 2 FAIL**. Hai test `test_ket_xuat_filtergraph_loai_tru_chung_va_loi_ffmpeg` và `test_kieu_chu_bam_hop_ap_cho_moi_cau` báo `RuntimeError: Thieu ffmpeg trong PATH`. Do đó bộ mang tên offline hiện vẫn cần có executable ffmpeg trên PATH ở hai nhánh kiểm này, dù thao tác xử lý media được giả lập.
+
+`tools_coverage.py --min 90` thoát mã 1 do test lỗi; số đo in ra **95,4% (2 012/2 109 dòng)** chỉ là quan sát của lượt lỗi, **không phải kết quả nghiệm thu đạt**. Các PASS, số đo GPU, runtime, smoke và hiệu năng bên dưới là lịch sử 2026-10-07, không được suy thành đã chạy lại ngày 2026-11-04.
+
+**Frontend 2026-11-04: PASS** toàn bộ kịch bản `test/frontend.cjs`, dùng Chrome cài sẵn qua `executablePath` vì Chromium mặc định của Playwright chưa có. API vẫn giả lập; ảnh chuyển tới `work/docs-audit/frontend` qua `SCREENSHOT_DIR`, không ghi đè bằng chứng trong `docs/ketqua/`. Không chạy lại GPU/model thật trong lượt này.
+
 Không framework: `assert` trần, callable giả, `TestClient`, SQLite `:memory:` (ràng buộc IC-1).
 
 **Cài trên máy mới:** chạy `uv run --locked python tools_tai_video.py` (Windows: `cai_dat.bat`).
@@ -782,14 +793,14 @@ Số 6 của `--real` là các hàm `real_*` trong `tests_real.py`, không thu�
 
 Lưu ý khi chạy:
 
-- `--smoke` **chỉ** chạy `tests_smoke.smoke_media()` rồi thoát; không chạy 93 test kia. Nó ghi `smoke_*.png` (bị `.gitignore`).
+- `--smoke` **chỉ** chạy `tests_smoke.smoke_media()` rồi thoát; không chạy 102 test offline hiện tại. Nó ghi `smoke_*.png` (bị `.gitignore`).
 - `--real` cũng chạy riêng rồi thoát. Thiếu GPU, model hoặc ffmpeg thì từng test báo `NOT RUN` kèm lý do, **không tự pass**
   và **không tự tải model** (`large-v3` nặng khoảng 3 GB). Test ép Whisper và NLLB chạy trên GPU; lùi về CPU là lỗi.
 - Khi chạy offline, dòng `WARNING … CUDA không sẵn sàng; thử CPU/int8` là test cố ý giả lập lỗi CUDA để kiểm đường lùi, không phải GPU hỏng.
 - `test/runtime_logic.py` không nằm trong cổng chạy. Đầu ra nay tự đặt `utf-8` nên không còn lỗi `UnicodeEncodeError` (cp1252);
   lỗi cũ làm test thoát mã 1 dù kết quả `PASS`.
 - `tools_coverage.py` chỉ đo **dòng** trong tiến trình test offline: không đo nhánh, không đo tiến trình con. Bộ offline thay ffmpeg, ffprobe và demucs bằng hàm giả nên đo được cả `audio.py` và `render.py`; `--smoke`, `--real` chạy ffmpeg thật nhưng không vào con số 97,0 %.
-- `npm run test:frontend` ghi đè các ảnh `docs/ketqua/B-*.png`; xem `git status` trước khi commit.
+- `npm run test:frontend` mặc định ghi ảnh `docs/ketqua/B-*.png`; đặt `SCREENSHOT_DIR` để chuyển ảnh sang thư mục khác và giữ bằng chứng cũ.
 - `tests_docx.py` chạy riêng, cần `uv sync --extra docs`.
 
 **Đo hiệu năng trên phim dài (một lần, 2026-10-07).** Máy: RTX 4050 Laptop 6 GB. Phim thử: 970 giây, 1080p, 225 MB,
@@ -861,7 +872,7 @@ chạy video dài cả một phim, bộ nhớ GPU của `large-v3` khi chạy l�
 - Vùng làm mờ là hình chữ nhật, đứng yên trong mỗi câu.
 - Trích khung mẫu chạy 4 luồng nhưng vẫn một ffmpeg mỗi cue: phim dài vẫn tốn thời gian và dung lượng; chưa đo lại (mục 10).
 - Tìm kiếm, nhật ký, lịch sử, sao lưu và xoá nhóm chưa có giao diện web; khôi phục CSDL chỉ có ở CLI.
-- Chưa đo bộ nhớ GPU của Whisper `large-v3` trên phim dài; `--real` mới chạy video 30 giây.
+- `--real` chỉ chạy video 30 giây. Có số đo toàn máy của clip 970 giây lặp nội dung ở §18; chưa có phép đo đại diện cho phim dài hai giờ hay tách riêng VRAM của Whisper.
 - SQLite ở chế độ WAL chịu được vài request đồng thời của một người dùng; chưa thiết kế cho nhiều người dùng.
 - Khởi động lại server làm mất công việc đang chạy; công việc chuyển `loi` kèm hướng dẫn, artifact trên đĩa còn.
 - Chưa đo chất lượng tự động (WER, BLEU).

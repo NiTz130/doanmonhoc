@@ -5451,8 +5451,8 @@
         <ul>
           <li>&bull; Tác vụ nền chạy bằng BackgroundTasks trong chính tiến trình backend, không hàng đợi ngoài</li>
           <li>&bull; CS-6: api/ không gọi ffmpeg, không nạp model, không ghép filtergraph</li>
-          <li>&bull; IC-2: chỉ dieu_phoi.py được gọi db.py; module xử lý không biết HTTP lẫn SQLite</li>
-          <li>&bull; _nap(&#39;ten&#39;) nạp module muộn — điểm tiêm duy nhất để test chạy offline</li>
+          <li>&bull; dieu_phoi.py điều phối dữ liệu; api/app.py và api/viec.py cũng gọi db.py cho vòng đời công việc</li>
+          <li>&bull; _nap(&#39;ten&#39;) nạp module muộn; callable goi/tao_model cũng cho phép kiểm tra offline</li>
         </ul>
       </div>
 
@@ -5463,7 +5463,7 @@
         </div>
         <ul>
           <li>&bull; work/&lt;stem&gt;-&lt;hash&gt;: artifact + trang_thai.json — nơi QUYẾT ĐỊNH resume</li>
-          <li>&bull; SQLite: nhóm, thuật ngữ, nhật ký, tiến độ — xoá đi không mất artifact</li>
+          <li>&bull; SQLite: 6 bảng gồm nhóm, video, thuật ngữ, nhật ký, công việc và lịch sử; artifact lưu riêng</li>
           <li>&bull; api/ đọc PNG khung mẫu thẳng từ thư mục của CID, không qua pipeline</li>
         </ul>
       </div>

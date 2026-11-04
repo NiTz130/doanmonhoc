@@ -30,7 +30,7 @@ Chúng em xin chân thành cảm ơn.
 
 Nhóm sinh viên thực hiện
 
-**[Họ tên TV1]** — [MSSV] · **[Họ tên TV2]** — [MSSV] · **[Họ tên TV3]** — [MSSV] · **[Họ tên TV4]** — [MSSV]
+**Nguyễn Lê Đức Bình** — 23050025 · **Đinh Hoàng Phú** — 23050002 · **Phạm Tuấn Kiệt** — 23050046
 
 ---
 
@@ -58,36 +58,25 @@ nhóm: công cụ tạo và dịch phụ đề (Subtitle Edit, VEED.IO, Kapwing)
 (GhostCut/Media.io). Dữ liệu lấy từ trang chủ và trang giá chính thức, truy cập ngày **16/09/2026**, có ảnh
 chụp màn hình làm bằng chứng lưu tại `docs/khaosat/`.
 
-Bốn nhận xét rút ra:
+Các nhận xét khảo sát sau thuộc hồ sơ ngày 16/09/2026, không phải xác nhận tính năng hoặc giá dịch vụ tại thời điểm đọc:
 
-**Một là, không công cụ nào làm cả hai việc trong một lượt.** Nhóm công cụ dịch phụ đề không xử lý phụ đề
-cứng; nhóm công cụ xoá phụ đề cứng thì không dịch. Người dùng cần cả hai buộc phải chạy qua hai phần mềm,
-nghĩa là **video bị nén lại hai lần** và mất chất lượng hai lần.
-
-**Hai là, không công cụ nào giữ thuật ngữ nhất quán giữa các tập.** Với một bộ phim nhiều tập, tên riêng được
-dịch ở tập đầu không được nhớ sang tập sau; người dùng phải tự dò và sửa tay.
-
-**Ba là, các công cụ web đều yêu cầu tải video lên máy chủ của họ.** Với video chưa phát hành hoặc có bản
-quyền, đây là rào cản thật. Chi phí cũng đáng kể: chức năng dịch của VEED chỉ có từ gói Pro 21 USD mỗi người
-mỗi tháng, còn gói miễn phí của Kapwing giới hạn 10 phút phụ đề, video tối đa 4 phút, chất lượng 720p và có
-dấu chìm.
-
-**Bốn là, xoá phụ đề cứng không có lời giải hoàn hảo.** Các công cụ dùng AI để dựng lại nền thường để lại vệt
-nhoè. Nhóm chọn cách trung thực hơn: **làm mờ vùng đó rồi đặt phụ đề tiếng Việt đè lên**, che gần hết vệt cũ
-mà không giả vờ phục hồi được thứ không còn.
+- Nhóm cần một luồng kết hợp dịch và làm mờ phụ đề cứng trong một lần encode. Hồ sơ khảo sát chưa đủ để kết luận mọi công cụ khác đều thiếu luồng này hoặc luôn phải nén hai lần.
+- Nhóm cần bảng thuật ngữ dùng lại giữa các video; không suy ra rằng mọi sản phẩm được khảo sát đều không có tính năng tương tự.
+- Chạy cục bộ tránh phải gửi video đến dịch vụ xử lý bên ngoài. Giá và hạn mức dịch vụ trong hồ sơ cũ cần kiểm tra lại khi dùng làm căn cứ lựa chọn.
+- Làm mờ không phục hồi nền đã bị chữ che. Sản phẩm chỉ làm mờ rồi ghép chữ Việt lên, không thực hiện inpainting.
 
 ### 3. Mục tiêu của đề tài
 
 Từ khoảng trống tìm được, nhóm đặt mục tiêu xây dựng một ứng dụng web **chạy cục bộ trên máy người dùng**,
-làm được ba việc mà không công cụ khảo sát nào làm đủ:
+kết hợp ba việc trong cùng một luồng:
 
 1. **Dịch phụ đề Anh → Việt** có tận dụng phụ đề sẵn có, chỉ nhận dạng bằng Whisper khi không có phụ đề.
 2. **Làm mờ vùng phụ đề cứng và cháy phụ đề tiếng Việt vào hình trong một lần nén duy nhất**, giữ nguyên âm
    thanh gốc.
 3. **Giữ thuật ngữ nhất quán giữa các tập** của cùng một bộ phim bằng một bảng thuật ngữ theo nhóm.
 
-Vì ứng dụng chạy cục bộ nên video **không rời khỏi máy người dùng**. Cả nhận dạng (Whisper) lẫn dịch (NLLB)
-đều chạy tại máy: không có khoá API, không tốn phí dịch. Mạng chỉ dùng để tải model về lần đầu.
+Khi chạy backend trên máy người dùng theo cấu hình mặc định, video được lưu và xử lý tại máy đó. Cả nhận dạng (Whisper) lẫn dịch (NLLB)
+đều chạy tại máy: không có khoá API, không tốn phí dịch. Cần mạng khi cài phụ thuộc, tải video mẫu và tải model; xử lý có thể chạy với model đã lưu cục bộ.
 
 ### 4. Phạm vi
 
@@ -101,13 +90,11 @@ khai lên máy chủ; xử lý nhiều video song song.
 
 ### 5. Phương pháp thực hiện
 
-Nhóm chia sản phẩm làm hai giai đoạn: **backend và pipeline xử lý làm trước, giao diện web làm sau**. Bốn
+Nhóm chia sản phẩm làm hai giai đoạn: **backend và pipeline xử lý làm trước, giao diện web làm sau**. Ba
 thành viên mỗi người phụ trách một lĩnh vực xuyên suốt cả ba tầng — module xử lý, route API và màn hình
 tương ứng — để ranh giới file không chồng lên nhau mà cũng không ai phải học lại phần của người khác.
 
-Toàn bộ mã được kiểm bằng **bốn tầng kiểm thử**: kiểm đơn vị và tích hợp chạy ngoại tuyến, kiểm media với
-ffmpeg thật, kiểm giao diện bằng trình duyệt thật, và kiểm ranh giới runtime với máy chủ thật. Kết quả và
-bằng chứng được ghi lại đầy đủ để có thể kiểm chứng lại.
+Dự án có **năm nhóm kiểm thử**: đơn vị/tích hợp ngoại tuyến, media với ffmpeg, giao diện bằng trình duyệt, runtime với máy chủ thật và model thật qua `--real`. Mỗi nhóm có điều kiện chạy riêng; kết quả phải ghi kèm môi trường, PASS/FAIL/NOT RUN và bằng chứng của lượt chạy.
 
 ### 6. Bố cục báo cáo
 
@@ -128,15 +115,11 @@ Nhóm đã hoàn thành một ứng dụng web chạy được đầy đủ lu�
 theo dõi tiến độ, khoanh vùng phụ đề cứng trên khung hình thật, và tải về chính video đó với phụ đề tiếng
 Việt cháy vào hình cùng vùng phụ đề cũ đã được làm mờ — **qua đúng một lần nén**, âm thanh giữ nguyên.
 
-Về khối lượng, sản phẩm gồm khoảng **3 600 dòng mã** chia cho tầng xử lý, tầng API và giao diện, cùng khoảng
-**2 900 dòng mã kiểm thử**. Hệ thống cung cấp **18 thao tác API** trên 15 đường dẫn và **6 bảng** cơ sở dữ
-liệu. Mười tám chức năng liệt kê ở `BAO_CAO_TONG_HOP.md` §2 đều đã hiện thực xong.
+Hệ thống gồm tầng xử lý `pipeline/`, HTTP API `api/`, giao diện `web/` và CLI `main.py`, dùng SQLite với 6 bảng. Danh mục chức năng, route và kiểm thử đối chiếu tại [BAO_CAO_TONG_HOP.md](BAO_CAO_TONG_HOP.md).
 
-Về kiểm chứng, năm tầng kiểm thử đều đạt: **93/93** kiểm thử ngoại tuyến (độ phủ dòng **97,0 %**); kiểm media
-với ffmpeg thật, kiểm giao diện với trình duyệt thật, kiểm ranh giới runtime với máy chủ thật và **6/6** kiểm thử
-thật trên GPU (Whisper `base` và `large-v3`, NLLB, đầu-cuối) đều đạt.
+**Kiểm tra lại ngày 04/11/2026:** bộ offline có 102 kiểm thử, 100 PASS và 2 FAIL do thiếu `ffmpeg` trong PATH ở hai kiểm thử render. Lượt đo độ phủ ghi 95,4% nhưng thoát với lỗi do kiểm thử thất bại; không coi đó là lượt nghiệm thu đạt. Số liệu 93/93 và 97,0% trong bản trước là kết quả lịch sử. Các kết quả media, trình duyệt, runtime và 6/6 kiểm thử thật từng được ghi trong hồ sơ cũ cần giữ kèm môi trường/lượt đo, không suy thành đã chạy lại trên máy hiện tại.
 
-Một số kết quả đo đáng chú ý:
+Một số kết quả đo lịch sử trong báo cáo (không đo lại trong lượt cập nhật này):
 
 - **Nhận dạng** chạy khoảng **0,4 lần** thời lượng video trên GPU và khoảng **2,2 lần** trên CPU.
 - **Kết xuất** chỉ tốn khoảng **0,03 lần** thời lượng video.
@@ -156,10 +139,9 @@ màn khoanh vùng **chưa tốn công dịch nào** (model dịch chưa được
 **Ba là, cơ chế chạy lại dựa trên chữ ký nội dung.** Mỗi bước ghi ra một tệp trung gian kèm chữ ký gồm phiên
 bản bước, mã băm nội dung của thứ nó phụ thuộc, và các tham số ảnh hưởng tới kết quả. Đổi một tuỳ chọn thì
 chỉ bước bị ảnh hưởng chạy lại. Bản kê chữ ký luôn được ghi **sau** tệp sản phẩm, nên một lần ngắt giữa chừng
-chỉ khiến hệ thống tính lại, chứ không bao giờ báo xong nhầm.
+khiến bước chưa có cache hợp lệ được tính lại; kiểm tra artifact và chữ ký giảm nguy cơ coi file dở là hoàn tất.
 
-**Bốn là, bảng thuật ngữ theo nhóm.** Tên riêng được dịch ở tập đầu sẽ được dùng lại nguyên vẹn ở các tập
-sau, và người dùng sửa được bản dịch thuật ngữ ngay trên trang nhóm.
+**Bốn là, bảng thuật ngữ theo nhóm.** Người dùng nhập/sửa thuật ngữ để áp dụng cho video sau. Adapter NLLB hiện không tự học thuật ngữ mới; nếu model làm hỏng thẻ giữ chỗ, nó cảnh báo rồi dịch lại không ép thuật ngữ. Vì vậy không bảo đảm tên riêng luôn giữ nguyên ở mọi câu.
 
 ### 3. Hạn chế
 
@@ -167,14 +149,13 @@ Nhóm cho rằng việc nêu rõ hạn chế cũng quan trọng như nêu kết 
 
 **Chất lượng nhận dạng phụ thuộc vào loại video.** Với video thoại nói bình thường, phụ đề nhận được phủ gần
 như trọn thời lượng. Nhưng với video có nhạc nền, Whisper nghe nhầm tên riêng và cắt vụn lời hát. Cờ tách
-giọng hát đã được cài đặt nhưng **chưa chạy được lần nào** vì thư viện phụ trợ chưa cài.
+giọng hát có trong mã và cần Demucs tùy chọn; hồ sơ cũ chưa có kết quả chạy thành công. Không suy từ việc có cờ rằng chất lượng trên nhạc đã được kiểm chứng.
 
 **Tốc độ và chất lượng dịch chưa đo trên phim dài.** Mọi số liệu hiện có đều từ video dưới ba phút. Bộ dịch
 cục bộ (NLLB) dịch từng câu riêng, không thấy câu liền kề, nên cách xưng hô có thể đổi giữa các câu. Nhóm chưa
 đo điểm chất lượng dịch (BLEU) cũng như thời gian dịch cả một phim hai tiếng.
 
-**Một số thao tác quản lý còn thiếu.** Hiện chưa có đường nào để xoá một thuật ngữ gõ nhầm, xoá một nhóm, xem
-lại lịch sử công việc hay huỷ một công việc đang chạy.
+**Giao diện quản lý chưa phủ hết backend.** API/CLI đã có xóa nhóm, xóa thuật ngữ, truy vấn công việc, nhật ký và lịch sử, cùng sao lưu CSDL; CLI có khôi phục và dọn dữ liệu cũ. Giao diện web chưa có đầy đủ các màn/nút cho chúng. Chưa có thao tác hủy công việc đang chạy.
 
 **Việc làm mờ không phục hồi được hình.** Đây là giới hạn của bài toán chứ không phải của cách làm: phần hình
 bị chữ che đi thì không còn để lấy lại.
@@ -183,11 +164,11 @@ bị chữ che đi thì không còn để lấy lại.
 
 Nhóm xếp các việc tiếp theo theo tỉ lệ giá trị trên chi phí:
 
-**Trước mắt:** bổ sung tích hợp liên tục để bộ kiểm thử 6 giây được chạy tự động; thêm đường tải riêng tệp
-phụ đề, vì tệp đã có sẵn mà chưa có cách lấy; dọn thư mục tạm khi công việc kết thúc.
+**Trước mắt:** bổ sung tích hợp liên tục để bộ kiểm thử được chạy tự động; thêm đường tải riêng tệp
+phụ đề, vì tệp đã có sẵn mà chưa có cách lấy; hoàn thiện trải nghiệm dọn dữ liệu, dựa trên lệnh CLI hiện có (mặc định xem trước, chỉ xóa khi yêu cầu thực hiện).
 
 **Tiếp theo:** cho phép **sửa bản dịch ngay trên web** — đây là việc có giá trị cao nhất, vì phần lõi đã hỗ
-trợ sẵn việc giữ bản sửa tay, chỉ còn thiếu màn soạn thảo; thêm trang lịch sử công việc; bổ sung thao tác xoá.
+trợ sẵn việc giữ bản sửa tay, chỉ còn thiếu màn soạn thảo; đưa danh sách công việc, lịch sử và thao tác xóa đã có ở API lên giao diện.
 
 **Cần đo trước khi quyết:** chạy thử tách giọng hát để biết nó có thật sự cứu được nhận dạng trên nhạc không;
 đo trên một bộ phim dài thật để có bảng thời gian và chất lượng đáng tin.

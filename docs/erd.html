@@ -5348,7 +5348,7 @@
           <li>&bull; video: thu_muc_work UNIQUE · rong · cao · thoi_luong · them_luc · xong_luc</li>
           <li>&bull; thuat_ngu: goc · dich</li>
           <li>&bull; nhat_ky: buoc · ket_qua · giay · token_vao · token_ra · loi · luc</li>
-          <li>&bull; cong_viec: trang_thai CHECK · buoc · tien_do · duong_dan_ra · loi · cap_nhat_luc</li>
+          <li>&bull; cong_viec: trang_thai CHECK · buoc · tien_do · duong_dan_ra · loi · tao_luc · cap_nhat_luc</li>
           <li>&bull; lich_su: khoa · cu · moi · luc · nhom_id (không FK, để dòng lịch sử sống sau khi xoá nhóm)</li>
         </ul>
       </div>
@@ -5362,7 +5362,7 @@
           <li>&bull; Bảng cong_viec CHỈ báo tiến độ cho frontend — resume quyết định bởi trang_thai.json trên đĩa</li>
           <li>&bull; nhat_ky kiêm dấu đã-áp-glossary: hàng buoc=&#39;translate_apply&#39; mang hash artifact ở cột loi</li>
           <li>&bull; Xoá subtitles.db mất nhóm, thuật ngữ, nhật ký — KHÔNG mất artifact trong work/</li>
-          <li>&bull; lich_su chỉ do 6 trigger ls_* ghi: mọi đường ghi, kể cả thuật ngữ máy tự học và xoá dây chuyền, đều để lại dấu vết</li>
+          <li>&bull; lich_su do 6 trigger ls_* ghi: nhóm và thuật ngữ, kể cả xoá dây chuyền; NLLB hiện không tự học từ mới</li>
         </ul>
       </div>
     </div>

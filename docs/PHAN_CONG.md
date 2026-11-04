@@ -25,7 +25,9 @@ Tài liệu kỹ thuật dùng chung:
 - [Thiết kế hệ thống](superpowers/specs/2026-09-09-video-dich-phu-de-design.md).
 - [Kế hoạch triển khai và tiêu chí kiểm thử](superpowers/plans/2026-09-09-dich-phu-de-video.md).
 
-File này phân công công việc tương lai, không xác nhận các chức năng đã được hoàn thành. Mọi ô kiểm ban đầu đều chưa hoàn tất.
+File này lưu phân công và bảng bàn giao của nhóm. Các ô kiểm và mốc PASS bên dưới là ghi nhận lịch sử, không tự chứng minh người thực hiện hoặc kết quả trên mã hiện tại; giữ nguyên để nhóm đối chiếu PR/nhật ký.
+
+**Đối chiếu mã ngày 04/11/2026:** NLLB chạy cục bộ, không dùng API dịch bên ngoài; không tự sinh thuật ngữ mới. API/CLI đã có xóa nhóm/thuật ngữ, truy vấn công việc/nhật ký/lịch sử và sao lưu; CLI có khôi phục và dọn dữ liệu. Các chức năng này chưa có đầy đủ giao diện web. Bộ offline hiện tập hợp 102 kiểm thử; lượt chạy lại đạt 100 PASS, 2 FAIL do thiếu ffmpeg trong PATH (hai kiểm thử render), không được ghi tất cả PASS. Xem [BAO_CAO_TONG_HOP.md](BAO_CAO_TONG_HOP.md) để đối chiếu kết quả hiện tại.
 
 ## 2. Trách nhiệm chính của 3 thành viên
 
@@ -41,7 +43,7 @@ Ranh giới file không chồng nhau — đó là điều kiện để ba nhánh
 
 **Việc của TV4 cũ được chia lại theo lĩnh vực kỹ thuật, không chia đều:**
 
-- **Sang TV2:** `markbox.py` (trích khung theo từng câu thoại, validator hộp, đổi phần trăm ↔ pixel, gộp khoảng mờ) và route khung ảnh/nhận hộp — vì cùng dùng ffmpeg với `audio.py` và route nằm sẵn trong `api/app.py` của TV2.
+- **Sang TV2:** `markbox.py` (trích khung theo từng câu thoại, validator hộp, đổi phần trăm ↔ pixel, kiểm tra hộp; hàm gộp khoảng nằm ở `render.py`) và route khung ảnh/nhận hộp — vì cùng dùng ffmpeg với `audio.py` và route nằm trong `api/app.py` do TV2 phụ trách.
 - **Sang TV3:** `render.py` (một lần encode, chữ Việt, audio), canvas vẽ hộp và trang kết quả — vì TV3 đang nhẹ nhất và `api/nhom.py` đã xử lý hộp mặc định.
 - **Sang TV1:** tổng hợp kiểm thử, `tests_smoke.py`, ảnh/video kết quả, demo. Chỉ nhận việc ở G5 vì TV1 đã nằm trên đường găng hai lần (G0, G2); không nhận thêm việc ở giữa.
 
@@ -57,7 +59,7 @@ Sáu giai đoạn nối tiếp; trong một giai đoạn thì ba người chạy
 |---|---|---|---|---|
 | **G0 — Hợp đồng dữ liệu**<br>(chặn mọi việc khác) | Chốt phạm vi và tiêu chí; tạo repo và quy tắc nhánh; dựng Python 3.12/uv; **làm STEP-1 (`Cue`, `srt.py`, ghi file an toàn, manifest) và merge thẳng vào `main`** | Kiểm ffmpeg/ffprobe, CUDA/CPU (PC-2, PC-3); kiểm NVENC bằng **encode thật** (PC-2); kiểm `uvicorn` khởi động và `TestClient` gọi được route rỗng; chuẩn bị video mẫu có/không sidecar, video synthetic, SRT giả; chốt tọa độ phần trăm | Chuẩn bị JSON mẫu và callable dịch giả; thống nhất glossary với TV1; chốt công thức style phụ đề | `srt.py` có trên `main`; chữ ký module §8 spec và bảng route được chốt; PC-1–PC-3 có kết quả ghi lại; V-1 pass |
 | **G1 — Các module song song**<br>(sau G0) | STEP-2: schema SQLite gồm bảng `cong_viec`, FK, transaction glossary | STEP-3: tìm sidecar/track chữ, tách audio 16 kHz, Whisper, fallback CUDA→CPU. STEP-5a: trích khung theo từng câu thoại, validator hộp, gộp khoảng mờ | STEP-4: chia lô 25 cue, ánh xạ dòng, kiểm đầu ra, phục hồi hữu hạn. STEP-5b: render một lần encode | Mỗi module chạy độc lập với dữ liệu giả; V-3, V-4, V-5 và phần hộp của V-6 pass |
-| **G2 — Điều phối**<br>(sau G1) | STEP-6: `dieu_phoi.chay()`, cache/chạy lại, lock, batch, `bao_tien_do`; CLI gọi vào đó | Kiểm sidecar bỏ ASR, không sidecar chạy ASR, không audio, `--force-asr`, resume; `--blur off` không gọi lại ASR/API | Kiểm JSON sai/rỗng và lỗi mạng; glossary giữa lô và giữa video; transaction resume; kiểm chữ Việt và vùng mờ ở 720p/1080p, ngang/dọc | Chạy trọn một video qua CLI; V-2 và V-6 pass; batch hai video không ghi đè nhau |
+| **G2 — Điều phối**<br>(sau G1) | STEP-6: `dieu_phoi.chay()`, cache/chạy lại, lock, batch, `bao_tien_do`; CLI gọi vào đó | Kiểm sidecar bỏ ASR, không sidecar chạy ASR, không audio, `--force-asr`, resume; `--blur off` tái dùng ASR/bản dịch khi cache hợp lệ | Kiểm phản hồi sai/rỗng và lỗi nạp model; glossary giữa lô và giữa video; transaction resume; kiểm chữ Việt và vùng mờ ở 720p/1080p, ngang/dọc | Chạy trọn một video qua CLI; V-2 và V-6 pass; batch hai video không ghi đè nhau |
 | **G3 — Backend API**<br>(sau G2) | Duyệt kiến trúc: giữ `api/` mỏng, không để logic rơi vào route (CS-6) | STEP-8: `app.py` + `viec.py` — tải lên, tạo công việc, chạy nền, tiến độ, mã lỗi; route trả khung PNG và nhận hộp; trạng thái `cho_chon_khung` chạy tiếp đúng | `api/nhom.py`: route nhóm, thuật ngữ, khung mặc định; chốt khuôn dạng JSON hộp với TV2 | V-9 pass; chạy trọn một video qua `TestClient`, cho cùng kết quả với CLI |
 | **G4 — Frontend web**<br>(sau G3) | Khung trang, điều hướng, gộp bốn màn, xử lý lỗi chung | Trang tải lên và bảng tiến độ hỏi theo chu kỳ | Trang quản lý nhóm và thuật ngữ; canvas vẽ hộp trên các khung câu thoại (hộp giữ nguyên khi chuyển khung); trang kết quả | V-10: tải lên → vẽ hộp → tải kết quả chạy được trên trình duyệt, có ảnh chụp màn hình |
 | **G5 — Nghiệm thu**<br>(sau G4) | STEP-7: README, hướng dẫn cài/chạy; chốt tính năng; V-7 smoke media; tổng hợp ma trận test, ảnh kết quả, video demo; tổng hợp báo cáo và slide; nộp bài | Chương ASR và vùng mờ, bảng kết quả; kiểm cài lại môi trường theo README | Chương dịch và kết xuất, ví dụ trước/sau, bảng thời gian đo được | V-1–V-7, V-9, V-10 có kết quả; V-8 PASS hoặc NOT RUN kèm lý do; mã nguồn, báo cáo, slide, demo sẵn sàng |
@@ -92,7 +94,7 @@ Sáu giai đoạn nối tiếp; trong một giai đoạn thì ba người chạy
 - [ ] Tìm sidecar/track chữ và kiểm tra phụ đề nguồn.
 - [ ] Tách audio và đường Demucs tùy chọn.
 - [ ] Nhận dạng Whisper, CPU fallback và lưu SRT.
-- [ ] `markbox.py`: trích khung mẫu cho từng câu thoại (seek tại đầu câu + 0,3 s); validator hộp dùng chung cho mọi nguồn; đổi phần trăm ↔ pixel, tính và gộp khoảng blur. *(nhận từ TV4 cũ)*
+- [ ] `markbox.py`: trích khung mẫu cho từng câu thoại (seek tại đầu câu + 0,3 s); validator hộp dùng chung cho mọi nguồn; đổi phần trăm ↔ pixel; phối hợp với `render.py` để tính và gộp khoảng blur. *(nhận từ TV4 cũ)*
 - [ ] Route tải lên, tạo công việc, chạy nền và trả tiến độ; mã lỗi 400/404/409 đúng.
 - [ ] Route trả khung PNG và nhận hộp; trạng thái `cho_chon_khung` chạy tiếp đúng. *(nhận từ TV4 cũ)*
 - [ ] Trang tải lên và bảng tiến độ ở frontend.
@@ -100,9 +102,9 @@ Sáu giai đoạn nối tiếp; trong một giai đoạn thì ba người chạy
 
 ### TV3 — Dịch, thuật ngữ, quản lý nhóm và kết xuất
 
-- [ ] Thống nhất prompt, dữ liệu phản hồi và glossary.
+- [ ] Thống nhất hợp đồng callable dịch, dữ liệu phản hồi và glossary.
 - [ ] Làm chia lô, giữ thứ tự và timestamp qua ánh xạ cue.
-- [ ] Làm API adapter và kiểm tra JSON tại biên.
+- [ ] Làm adapter NLLB cục bộ và kiểm tra dữ liệu phản hồi tại biên.
 - [ ] Làm retry hữu hạn, cảnh báo dòng giữ nguyên nguồn.
 - [ ] Duy trì glossary giữa lô/video, phối hợp transaction với TV1.
 - [ ] `render.py`: render một lần encode, kiểm audio và output. *(nhận từ TV4 cũ)*
@@ -132,7 +134,7 @@ Sáu giai đoạn nối tiếp; trong một giai đoạn thì ba người chạy
 | Cài đặt | Thành viên khác làm theo README, khởi động được server và chạy được test offline | TV1 + TV2 |
 | Phụ đề/ASR | Có sidecar dùng đúng; không sidecar nhận dạng được; lỗi input/fallback có test | TV2 |
 | Dịch | Đủ cue, giữ timestamp, có glossary; phản hồi lỗi được xử lý hữu hạn | TV3 |
-| Vùng mờ | Khung 8 điểm, hộp validate đúng, khoảng blur gộp đúng | TV2 |
+| Vùng mờ | Một khung mỗi cue (đầu cue + 0,3 s), hộp validate đúng, khoảng blur gộp đúng | TV2 |
 | Render | Output phát được, audio còn, chữ Việt rõ và đúng vùng; blur on/off đúng | TV3 |
 | Resume/batch | Không dùng file dở/cấu hình cũ, không trùng đích, có lỗi trả exit code khác 0 | TV1 |
 | Backend API | Tải lên → tiến độ → nhận hộp → tải kết quả chạy trọn qua `TestClient`; API và CLI cho cùng artifact; 400/404/409 đúng chỗ | TV2 |
@@ -149,10 +151,10 @@ Test offline không cần mạng, không cần GPU, không mở cổng mạng. D
 | **G0** | `srt.py` trên `main`, chữ ký module và bảng route chốt, PC-1–PC-3 có kết quả, V-1 pass | `pipeline/srt.py`; V-1 PASS | — | — | [ ] |
 | **G1** | Các module chạy độc lập với dữ liệu giả; V-3, V-4, V-5 pass | `db.py`, `subs/audio/asr.py`, `translate.py`, `markbox.py`, `render.py`; V-3/V-4/V-5 và phần hộp V-6 PASS | — | — | [ ] |
 | **G2** | Chạy trọn một video qua CLI; V-2, V-6 pass; batch hai video không ghi đè | `dieu_phoi.py`, `main.py`; V-2, V-6 PASS | — | — | [ ] |
-| **G3** | V-9 pass; chạy trọn một video qua `TestClient`, cùng kết quả với CLI | `api/app.py`, `api/viec.py`, `api/nhom.py`; V-9 PASS (4 test, gồm `test_api_va_cli_cung_ket_qua`) | — | — | [ ] |
+| **G3** | V-9 pass; chạy trọn một video qua `TestClient`, cùng kết quả với CLI | `api/app.py`, `api/viec.py`, `api/nhom.py`; V-9 PASS lịch sử (4 test lúc ghi nhận, gồm `test_api_va_cli_cung_ket_qua`; không phải tổng số test API hiện tại) | — | — | [ ] |
 | **G4** | V-10: tải lên → vẽ hộp → tải kết quả chạy được trên trình duyệt | `web/index.html`, `app.js`, `style.css`; **V-10 PASS** — chạy thật trên Chromium, không lỗi JS, ảnh ở [docs/ketqua](ketqua/) | — | — | [x] |
-| **G5** | V-7 có kết quả nhìn được; V-8 PASS hoặc NOT RUN có lý do; báo cáo/slide/demo xong | `README.md`; V-7 PASS có ảnh khung 720p/1080p, blur bật/tắt đúng khoảng. **V-8 PASS** trên video thật 2 phút (xem [V8.md](ketqua/V8.md)): ASR + dịch + kết xuất chạy trọn, đường lui CUDA→CPU kích hoạt thật, có bảng thời gian đo được. Nhờ lượt này tìm ra lỗi `vad_filter` nuốt 90% phụ đề. `batch` hai video và video thoại nói đều PASS. Thuật ngữ truyền được từ tập 1 sang tập 2 và bản khóa đè được lên bản máy học — chứng minh bằng phép thử nhân quả, không phải trùng khớp | Báo cáo, slide, demo; V-8 | Cả nhóm | [ ] |
+| **G5** | V-7 có kết quả nhìn được; V-8 PASS hoặc NOT RUN có lý do; báo cáo/slide/demo xong | `README.md`; V-7 PASS có ảnh khung 720p/1080p, blur bật/tắt đúng khoảng. **V-8 PASS** trên video thật 2 phút (xem [V8.md](ketqua/V8.md)): ASR + dịch + kết xuất chạy trọn, đường lui CUDA→CPU kích hoạt thật, có bảng thời gian đo được. Nhờ lượt này tìm ra lỗi `vad_filter` nuốt 90% phụ đề. `batch` hai video và video thoại nói đều PASS. Hồ sơ cũ ghi phép thử truyền thuật ngữ và ưu tiên bản khóa; không suy thành NLLB hiện tại tự rút thuật ngữ mới (adapter trả `thuat_ngu_moi` rỗng) | Báo cáo, slide, demo; V-8 | Cả nhóm | [ ] |
 
 Trạng thái V-1–V-10 chi tiết nằm ở §Verification của plan; bảng này chỉ ghi cổng đã đóng hay chưa.
 
-Nếu một người bị chặn, nhóm trưởng điều chỉnh người hỗ trợ và ghi lại trong bảng; không giảm kiểm tra bảo vệ dữ liệu hoặc che lỗi để đóng cổng sớm. Nếu phải cắt phạm vi thì cắt G4 trước, không cắt kiểm thử. Giữ một demo đã kiểm chứng để dùng khi mạng hoặc API không hoạt động lúc bảo vệ.
+Nếu một người bị chặn, nhóm trưởng điều chỉnh người hỗ trợ và ghi lại trong bảng; không giảm kiểm tra bảo vệ dữ liệu hoặc che lỗi để đóng cổng sớm. Nếu phải cắt phạm vi thì cắt G4 trước, không cắt kiểm thử. Giữ một demo đã kiểm chứng để dùng khi môi trường/model không sẵn sàng lúc bảo vệ.

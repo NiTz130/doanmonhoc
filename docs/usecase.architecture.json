@@ -16,7 +16,7 @@
           "label": "Use case do tác nhân trực tiếp thực hiện"
         },
         "backend": {
-          "label": "Use case hệ thống thực hiện, được «include»"
+          "label": "Bước xử lý do hệ thống thực hiện"
         },
         "external": {
           "label": "Tác nhân"
@@ -66,13 +66,13 @@
         140,
         72
       ],
-      "tag": "không cần mạng"
+      "tag": "tải model lần đầu"
     },
     {
       "id": "uc01",
       "type": "frontend",
       "label": "UC-01 Tải video lên",
-      "sublabel": "và tạo công việc xử lý",
+      "sublabel": "tạo job, có thể chờ hộp",
       "pos": [
         245,
         66
@@ -142,7 +142,7 @@
       "id": "uc08",
       "type": "frontend",
       "label": "UC-08 Sửa bảng thuật ngữ",
-      "sublabel": "xem, sửa, khoá bản dịch",
+      "sublabel": "xem, thêm, sửa, xoá",
       "pos": [
         245,
         386
@@ -302,14 +302,14 @@
       "id": "inc-uc01",
       "from": "uc01",
       "to": "uc12",
-      "label": "«include»",
+      "label": "tiếp tục xử lý",
       "variant": "dashed"
     },
     {
       "id": "inc-uc03",
       "from": "uc03",
       "to": "uc12",
-      "label": "«include»",
+      "label": "tiếp tục xử lý",
       "variant": "dashed"
     },
     {
@@ -347,7 +347,7 @@
       "title": "Quy ước quan hệ",
       "items": [
         "Association tác nhân – use case: không mang nhãn, hai đầu đã nói hết nghĩa",
-        "«include»: hành vi LUÔN được thực hiện, mũi tên từ use case cơ sở sang use case được gộp",
+        "Liên kết đến UC-12 là bước xử lý tiếp theo, có thể chờ hộp hoặc dùng cache",
         "«extend»: hành vi CHỈ xảy ra khi có điều kiện, mũi tên từ phần mở rộng về use case cơ sở"
       ]
     },
@@ -355,7 +355,7 @@
       "dot": "emerald",
       "title": "Vì sao UC-12 nằm sau UC-03",
       "items": [
-        "Model dịch chỉ được nạp khi đã có vùng làm mờ: bước dich chạy sau _buoc_hop",
+        "Dịch sau bước vùng mờ: có hộp, vùng nhóm, hoặc blur=off; cache hợp lệ không nạp model",
         "Video cần khoanh vùng thì UC-01 dừng ở cho_chon_khung và chưa nạp model dịch",
         "Người bỏ cuộc ở màn vẽ hộp không tốn công dịch"
       ]

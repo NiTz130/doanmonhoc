@@ -40,7 +40,7 @@
     {
       "id": "sidecar",
       "type": "external",
-      "label": "Phụ đề sidecar",
+      "label": "Phụ đề có sẵn",
       "stage": 0,
       "row": 3,
       "width": 130,
@@ -121,7 +121,7 @@
       "from": "sidecar",
       "to": "subgoc",
       "label": "rút thẳng, bỏ qua ASR",
-      "classification": "ưu tiên 1",
+      "classification": "sidecar → track chữ nhúng",
       "variant": "dashed"
     },
     {
@@ -170,15 +170,15 @@
       "title": "Từng artifact là gì",
       "items": [
         "audio.wav mono 16 kHz PCM16 · sub_goc.srt phụ đề Anh utf-8",
-        "khung_<i>.png một khung mỗi câu · vung_blur.json vùng theo % 0–1",
-        "thuat_ngu (SQLite) vừa là đầu vào bắt buộc vừa nhận từ mới — xem sơ đồ CSDL"
+        "khung_<i>.png mỗi cue; web lưu bản riêng CID · vung_blur.json tọa độ tỷ lệ 0–1",
+        "thuat_ngu (SQLite) theo nhóm là đầu vào tùy chọn; NLLB hiện trả thuat_ngu_moi rỗng"
       ]
     },
     {
       "dot": "emerald",
       "title": "Vì sao vùng mờ đứng trước bước dịch",
       "items": [
-        "Bước duy nhất cần người, đặt sớm để máy và người chờ chồng lên nhau",
+        "Nếu chưa có vùng và chưa tắt blur, pipeline dừng chờ hộp rồi mới dịch",
         "Bỏ cuộc ở màn vẽ hộp thì chưa tốn công dịch",
         "Thiếu hộp là trạng thái cho_chon_khung, KHÔNG phải lỗi"
       ]

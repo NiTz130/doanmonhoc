@@ -21,26 +21,9 @@ Mỗi thành viên giữ một mục riêng trong file này và tự cập nhậ
 
 ---
 
-## TV1 — _(họ tên, MSSV)_
+## TV1 — Nguyễn Lê Đức Bình · 23050025
 
-**Lĩnh vực:** Nền tảng, cơ sở dữ liệu, điều phối, tích hợp
-
-| Ngày | Việc đã làm | Kết quả | Ưu tiên | Vướng mắc / Cần hỗ trợ |
-|---|---|---|---|---|
-| | | | | |
-| | | | | |
-| | | | | |
-
-**Tự đánh giá cuối giai đoạn:**
-- Việc đã hoàn thành:
-- Việc còn dở và lý do:
-- Điều học được:
-
----
-
-## TV2 — _(họ tên, MSSV)_
-
-**Lĩnh vực:** Đầu vào — nhận video, phụ đề sẵn có, âm thanh, nhận dạng giọng nói
+**Lĩnh vực:** Nền tảng, cơ sở dữ liệu, điều phối, tích hợp, tổng hợp kiểm thử
 
 | Ngày | Việc đã làm | Kết quả | Ưu tiên | Vướng mắc / Cần hỗ trợ |
 |---|---|---|---|---|
@@ -55,9 +38,9 @@ Mỗi thành viên giữ một mục riêng trong file này và tự cập nhậ
 
 ---
 
-## TV3 — _(họ tên, MSSV)_
+## TV2 — Đinh Hoàng Phú · 23050002
 
-**Lĩnh vực:** Dịch phụ đề và quản lý thuật ngữ
+**Lĩnh vực:** Đầu vào — video, phụ đề sẵn, âm thanh, nhận dạng; hình học vùng mờ và tầng công việc
 
 | Ngày | Việc đã làm | Kết quả | Ưu tiên | Vướng mắc / Cần hỗ trợ |
 |---|---|---|---|---|
@@ -72,7 +55,26 @@ Mỗi thành viên giữ một mục riêng trong file này và tự cập nhậ
 
 ---
 
-## TV4 — _(họ tên, MSSV)_
+## TV3 — Phạm Tuấn Kiệt · 23050046
+
+**Lĩnh vực:** Dịch phụ đề, thuật ngữ, kết xuất; quản lý nhóm, canvas và kết quả
+
+| Ngày | Việc đã làm | Kết quả | Ưu tiên | Vướng mắc / Cần hỗ trợ |
+|---|---|---|---|---|
+| | | | | |
+| | | | | |
+| | | | | |
+
+**Tự đánh giá cuối giai đoạn:**
+- Việc đã hoàn thành:
+- Việc còn dở và lý do:
+- Điều học được:
+
+---
+
+## Mẫu TV4 cũ — lưu để đối chiếu
+
+Phân công hiện hành chỉ có ba thành viên; phần việc TV4 đã chia lại theo [PHAN_CONG.md](PHAN_CONG.md). Mục trống dưới đây thuộc mẫu bốn người cũ, không xác nhận có thành viên thứ tư hay công việc đã thực hiện.
 
 **Lĩnh vực:** Hình học vùng mờ, kết xuất video, tổng hợp kiểm thử
 
@@ -90,6 +92,8 @@ Mỗi thành viên giữ một mục riêng trong file này và tự cập nhậ
 ---
 
 ## Ví dụ một dòng ghi đúng
+
+Hai dòng sau chỉ minh họa cách ghi, không phải nhật ký thực tế hoặc bằng chứng kiểm thử. Các bảng thành viên còn trống và cần chính thành viên bổ sung; không suy ra người thực hiện từ việc mã nguồn đã tồn tại.
 
 | Ngày | Việc đã làm | Kết quả | Ưu tiên | Vướng mắc / Cần hỗ trợ |
 |---|---|---|---|---|

@@ -7,6 +7,7 @@
 -- Ung dung tu chay SCHEMA nay moi lan mo ket noi (db.mo), nen khong can
 -- chay file nay de he thong hoat dong. File ton tai de doc va de in vao bao cao.
 
+-- PRAGMA foreign_keys/WAL được thiết lập trong db.mo(), ngoài SCHEMA.
 PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
 

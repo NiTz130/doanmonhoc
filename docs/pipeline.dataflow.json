@@ -77,7 +77,7 @@
       "id": "db",
       "type": "database",
       "label": "subtitles.db",
-      "sublabel": "sqlite3, 5 bảng",
+      "sublabel": "sqlite3, 6 bảng",
       "stage": 1,
       "row": 0,
       "tag": "trí nhớ"
@@ -98,7 +98,7 @@
       "sublabel": "track nhúng, .srt cạnh",
       "stage": 2,
       "row": 0,
-      "tag": "1 giây"
+      "tag": "đọc sẵn"
     },
     {
       "id": "sub_goc",
@@ -116,7 +116,7 @@
       "sublabel": "faster-whisper v3",
       "stage": 2,
       "row": 4,
-      "tag": "CUDA"
+      "tag": "GPU / CPU"
     },
     {
       "id": "translate",
@@ -143,12 +143,12 @@
       "sublabel": "một lần encode",
       "stage": 4,
       "row": 2,
-      "tag": "NVENC"
+      "tag": "GPU / CPU"
     },
     {
       "id": "output",
       "type": "frontend",
-      "label": "output.mp4",
+      "label": "<ten>_vi.mp4",
       "sublabel": "phụ đề Việt burn-in",
       "stage": 4,
       "row": 4,
@@ -171,7 +171,7 @@
       "from": "input",
       "to": "render",
       "label": "video gốc",
-      "classification": "không nén lại",
+      "classification": "nguồn cho encode",
       "variant": "dashed",
       "route": "top-channel"
     },
@@ -205,7 +205,7 @@
       "from": "subs",
       "to": "sub_goc",
       "label": "rút ra sẵn",
-      "classification": "chính xác hơn",
+      "classification": "nguồn có sẵn",
       "variant": "emphasis",
       "labelDy": 40
     },
@@ -263,7 +263,7 @@
       "from": "render",
       "to": "output",
       "label": "encode 1 lần",
-      "classification": "h264_nvenc",
+      "classification": "NVENC / libx264",
       "variant": "emphasis",
       "labelDy": 90
     }
@@ -273,7 +273,7 @@
       "dot": "emerald",
       "title": "Hai đường lấy phụ đề gốc",
       "items": [
-        "Track nhúng hoặc .srt cạnh video: rút ra 1 giây",
+        "Ưu tiên .srt cạnh video, sau đó track chữ nhúng; thời gian tùy video",
         "Bỏ được cả tách audio lẫn nạp model Whisper",
         "Track dạng ảnh PGS, VobSub coi như không có"
       ]

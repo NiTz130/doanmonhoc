@@ -281,8 +281,8 @@
       "items": [
         "Tác vụ nền chạy bằng BackgroundTasks trong chính tiến trình backend, không hàng đợi ngoài",
         "CS-6: api/ không gọi ffmpeg, không nạp model, không ghép filtergraph",
-        "IC-2: chỉ dieu_phoi.py được gọi db.py; module xử lý không biết HTTP lẫn SQLite",
-        "_nap('ten') nạp module muộn — điểm tiêm duy nhất để test chạy offline"
+        "dieu_phoi.py điều phối dữ liệu; api/app.py và api/viec.py cũng gọi db.py cho vòng đời công việc",
+        "_nap('ten') nạp module muộn; callable goi/tao_model cũng cho phép kiểm tra offline"
       ]
     },
     {
@@ -290,7 +290,7 @@
       "title": "Hai kho dữ liệu, hai vai trò khác nhau",
       "items": [
         "work/<stem>-<hash>: artifact + trang_thai.json — nơi QUYẾT ĐỊNH resume",
-        "SQLite: nhóm, thuật ngữ, nhật ký, tiến độ — xoá đi không mất artifact",
+        "SQLite: 6 bảng gồm nhóm, video, thuật ngữ, nhật ký, công việc và lịch sử; artifact lưu riêng",
         "api/ đọc PNG khung mẫu thẳng từ thư mục của CID, không qua pipeline"
       ]
     }

@@ -1,7 +1,8 @@
 # Hướng dẫn Git
 
-Repo hiện chỉ có **một nhánh `main`**. Bốn nhánh `feat/*` cũ đã được gộp vào `main` và
-xóa — không mất commit nào.
+Nhánh tích hợp là **`main`**. Kiểm tra nhánh hiện có bằng `git branch -a`; danh sách thay đổi theo máy và thời điểm.
+
+Ghi chú lịch sử của nhóm: bốn nhánh `feat/*` cũ đã được gộp và xóa. Ghi chú này không thay thế việc kiểm tra lịch sử trước khi xóa một nhánh mới.
 
 Có hai cách làm việc. Chọn một, cả nhóm làm giống nhau.
 
@@ -44,7 +45,7 @@ git push
 Ai cũng `git pull` trước khi sửa. Hai người sửa cùng lúc thì người sau `git pull --rebase`
 rồi giải quyết xung đột.
 
-## Cách B — mỗi người một nhánh (khi bốn người làm song song)
+## Cách B — mỗi người một nhánh (khi các thành viên làm song song)
 
 Chỉ dùng khi thật sự có nhiều người viết code cùng lúc. Ranh giới file xem
 [PHAN_CONG.md §2](PHAN_CONG.md).
@@ -60,15 +61,14 @@ git config nhom.nhanh feat/asr     # BẬT KHOÁ AN TOÀN
 ```
 
 Dòng `git config nhom.nhanh` cuối là thứ bật khoá: sau đó máy **từ chối** commit hoặc
-push khi bạn đứng nhầm ở `main` hay ở nhánh người khác. Không khai báo thì hook không
+push sai nhánh: `pre-commit` kiểm tra nhánh hiện tại; `pre-push` kiểm tra nhánh đích trên remote, chặn `main` và nhánh khác nhánh đã khai báo. Không khai báo thì hook không
 cản gì — đó cũng là lý do Cách A chạy được.
 
-Tên nhánh gợi ý: `feat/nen-tang` (TV1), `feat/asr` (TV2), `feat/translate` (TV3),
-`feat/render` (TV4). Phần frontend dùng `feat/web-*` theo màn.
+Tên nhánh gợi ý: `feat/nen-tang` (TV1), `feat/asr-api-box` (TV2), `feat/translate-render` (TV3). Phần frontend dùng `feat/web-*` theo màn.
 
 Làm xong một phần thì mở Pull Request: vào https://github.com/NiTz130/doanmonhoc →
 **Pull requests** → **New pull request** → base = `main`, compare = nhánh của mình →
-ghi mô tả → báo người review.
+ghi mô tả hành vi, kết quả kiểm thử, hạn chế và ảnh nếu đổi giao diện → báo người review. Vòng review xem [PHAN_CONG.md](PHAN_CONG.md).
 
 Lấy phần mới của nhóm về nhánh mình:
 
@@ -77,7 +77,7 @@ git switch feat/asr
 git pull origin main
 ```
 
-Muốn quay lại Cách A: `git config --unset nhom.nhanh`.
+Chỉ khi nhóm chuyển hẳn về làm tuần tự mới bỏ cấu hình `nhom.nhanh`; không tắt cấu hình hoặc hook để vượt lỗi nhầm nhánh. Cách A không phải ngoại lệ để push thẳng `main` khi đang dùng Cách B.
 
 ---
 

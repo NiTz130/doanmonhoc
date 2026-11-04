@@ -2,7 +2,9 @@
 
 **Đề tài:** Xây dựng hệ thống web tự động dịch và chèn phụ đề tiếng Việt cho video tiếng Anh, có xử lý che phụ đề cứng
 
-**Nhóm:** 4 thành viên (TV1 nhóm trưởng) · **Tuần 2** — Khảo sát và đặc tả yêu cầu · **Ngày lập:** 16/09/2026
+**Nhóm hiện tại:** 3 thành viên (theo `PHAN_CONG.md`): TV1 Nguyễn Lê Đức Bình — 23050025 (nhóm trưởng), TV2 Đinh Hoàng Phú — 23050002, TV3 Phạm Tuấn Kiệt — 23050046. **Tuần 2** — Khảo sát và đặc tả yêu cầu · **Ngày lập:** 16/09/2026
+
+**Rà hiện trạng mã:** 04/11/2026. Các yêu cầu bên dưới mô tả hành vi hiện có hoặc mục tiêu nghiệm thu được ghi rõ; không mặc nhiên là bằng chứng đã đạt. Khảo sát ở §2 và kế hoạch ở §6 giữ bối cảnh lịch sử, không phải khảo sát thị trường hay lịch triển khai mới.
 
 **Tài liệu liên quan:** [Đề cương](DE_CUONG.md) · [Phân công](PHAN_CONG.md) · [Thiết kế hệ thống](superpowers/specs/2026-09-09-video-dich-phu-de-design.md) · [Kế hoạch triển khai](superpowers/plans/2026-09-09-dich-phu-de-video.md)
 
@@ -80,12 +82,12 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 | **Loại** | Ứng dụng desktop, mã nguồn mở | Web, thương mại | Web, thương mại | Web, thương mại | Web chạy cục bộ |
 | **Nhận dạng giọng nói** | Có (Whisper, chạy máy người dùng) | Có (125+ ngôn ngữ) | Có (100+ ngôn ngữ) | Không phải trọng tâm | Có (Whisper `large-v3`) |
 | **Tận dụng phụ đề sẵn có** | Có, đọc 300+ định dạng | Không rõ | Không rõ | Không | **Có, ưu tiên trước khi nhận dạng** |
-| **Dịch tự động** | Có (Google Translate) | Có (bản trả phí) | Có (100+ ngôn ngữ) | Không | Có (mô hình ngôn ngữ lớn) |
+| **Dịch tự động** | Có (Google Translate) | Có (bản trả phí) | Có (100+ ngôn ngữ) | Không | Có (NLLB-200 600M, dịch máy cục bộ) |
 | **Thuật ngữ nhất quán nhiều tập** | Không có cơ chế riêng | Không | Không | Không | **Có, bảng thuật ngữ theo nhóm** |
 | **Xóa/che phụ đề cứng** | Không | Không | Không | Có (AI inpainting) | **Có, làm mờ vùng người dùng khoanh** |
 | **Cháy phụ đề + che phụ đề cứng cùng lúc** | Không | Không | Không | Không | **Có, trong một lần nén** |
-| **Chi phí người dùng cuối** | Miễn phí hoàn toàn | Creator 10 USD · **Pro 21 USD** (gói thấp nhất có dịch) · Studio 35 USD — mỗi người mỗi tháng, trả theo năm | Free: 10 phút phụ đề, có dấu chìm, video ≤ 4 phút, 720p · Pro 16 USD/tháng trả năm (24 USD trả tháng) | Trả phí theo lượt | Chỉ trả tiền API dịch theo lượng dùng thật |
-| **Dữ liệu rời khỏi máy** | Không (trừ khi gọi dịch) | Có, tải video lên máy chủ | Có, tải video lên máy chủ | Có, tải video lên máy chủ | **Không, chỉ gửi văn bản phụ đề đi dịch** |
+| **Chi phí người dùng cuối** | Miễn phí hoàn toàn | Creator 10 USD · **Pro 21 USD** (gói thấp nhất có dịch) · Studio 35 USD — mỗi người mỗi tháng, trả theo năm | Free: 10 phút phụ đề, có dấu chìm, video ≤ 4 phút, 720p · Pro 16 USD/tháng trả năm (24 USD trả tháng) | Trả phí theo lượt | Không có phí API dịch; dùng tài nguyên máy và mạng tải model |
+| **Dữ liệu rời khỏi máy** | Không (trừ khi gọi dịch) | Có, tải video lên máy chủ | Có, tải video lên máy chủ | Có, tải video lên máy chủ | Video và phụ đề xử lý tại máy; tải/kiểm tra model có thể dùng mạng |
 
 ### 2.3 Nhận xét và khoảng trống tìm được
 
@@ -119,6 +121,8 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 
 **Quy ước đọc bảng.** Mỗi yêu cầu có mã `FR-xx`, phát biểu ở dạng **kiểm chứng được** — nêu rõ điều kiện đầu vào, hành vi mong đợi và cách xác minh. Cột **Ưu tiên** theo MoSCoW: `M` bắt buộc có, `S` nên có, `C` có thì tốt.
 
+**Giới hạn hiện thực:** NLLB không tự học thuật ngữ và không dùng ngữ cảnh câu liền kề; bảng thuật ngữ do người dùng nhập. Khi model làm hỏng thẻ giữ chỗ, câu được dịch lại không ép thuật ngữ và có cảnh báo, nên không bảo đảm tuyệt đối mọi lần dịch đều giữ thuật ngữ. `lang` áp cho ASR/tìm phụ đề; bộ dịch vẫn cố định `eng_Latn → vie_Latn`. Web chưa có nút VAD, tìm kiếm, xoá nhóm, nhật ký, lịch sử hoặc sao lưu; API/CLI có các khả năng tương ứng theo phạm vi từng lệnh.
+
 ### 3.1 Nhóm A — Tiếp nhận video
 
 **Mục đích:** đưa video vào hệ thống một cách an toàn, từ chối sớm những file không xử lý được để người dùng không phải chờ vô ích.
@@ -126,8 +130,8 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 | Mã | Yêu cầu | Tiêu chí chấp nhận | Ưu tiên |
 |---|---|---|---|
 | **FR-01** | Người dùng tải lên một file video qua trình duyệt | Chọn file `.mp4`/`.mkv`/`.mov`/`.webm`/`.avi`/`.ts` và bấm bắt đầu thì hệ thống trả về mã công việc trong vòng 5 giây với video dưới 100 MB | M |
-| **FR-02** | Hệ thống từ chối file không hợp lệ kèm thông báo nêu rõ lý do | File sai định dạng, file rỗng, file vượt 4 GiB, hoặc file không đọc được bằng `ffprobe` đều bị từ chối với mã lỗi 400 và một câu thông báo tiếng Việt; **không** có file rác nào còn lại trong thư mục làm việc | M |
-| **FR-03** | Người dùng chọn tùy chọn xử lý trước khi bắt đầu | Giao diện cho chọn: tên nhóm, ngôn ngữ nguồn, model nhận dạng, chế độ làm mờ (tự động/bật/tắt), hệ số cỡ chữ, bật/tắt cắt khoảng lặng, bật/tắt tách giọng hát. Mọi tùy chọn đều có giá trị mặc định dùng được ngay mà không cần chỉnh | M |
+| **FR-02** | Hệ thống từ chối file không hợp lệ kèm thông báo nêu rõ lý do | File sai định dạng, rỗng, vượt 4 GiB khi đọc nội dung hoặc không đọc được bằng `ffprobe` trả `400`; `Content-Length` vượt 4 GiB + 1 MiB trả `413` ngay tại middleware (phần dư dành cho multipart). File tạm của bước kiểm được dọn khi lỗi | M |
+| **FR-03** | Người dùng chọn tùy chọn xử lý trước khi bắt đầu | Web cho chọn nhóm, ngôn ngữ nguồn, model nhận dạng, chế độ làm mờ, hệ số cỡ chữ, tách giọng hát, nhận dạng lại và chạy lại mọi bước. Mặc định: `en`, `large-v3`, `auto`, `0.42`, không tách giọng. VAD mặc định bật; chỉ API/CLI cho tắt | M |
 
 ### 3.2 Nhóm B — Lấy phụ đề gốc
 
@@ -138,7 +142,7 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 | **FR-04** | Hệ thống ưu tiên phụ đề có sẵn trước khi nhận dạng | Video có file `.srt` đặt cạnh hoặc có track phụ đề **dạng chữ** nhúng sẵn thì hệ thống dùng luôn và **không** chạy nhận dạng. Xác minh: nhật ký ghi bước nhận dạng là `bỏ qua`, thời gian xử lý giảm rõ rệt so với cùng video đã gỡ phụ đề | M |
 | **FR-05** | Hệ thống nhận dạng lời thoại khi không có phụ đề sẵn | Video không có nguồn phụ đề nào thì hệ thống tách âm thanh và nhận dạng bằng Whisper, sinh ra file phụ đề gốc có số câu thoại lớn hơn 0 và mốc thời gian tăng dần | M |
 | **FR-06** | Hệ thống tự chuyển sang CPU khi GPU không dùng được | Khi lỗi thuộc nhóm thiếu thư viện CUDA/cuDNN hoặc hết bộ nhớ GPU, hệ thống thử lại **đúng một lần** trên CPU và hoàn thành. Lỗi khác loại (model không tồn tại, âm thanh hỏng) phải báo ra ngay, **không** thử lại | M |
-| **FR-07** | Hệ thống cảnh báo khi kết quả nhận dạng bất thường | Tổng thời lượng phụ đề nhận dạng được phủ dưới 25% thời lượng video thì công việc kết thúc ở trạng thái **suy giảm** kèm thông báo gợi ý tắt chế độ cắt khoảng lặng — **không** báo hoàn thành bình thường | S |
+| **FR-07** | Hệ thống cảnh báo khi kết quả nhận dạng bất thường | Với nguồn ASR, khoảng từ đầu cue sớm nhất tới cuối cue muộn nhất (`max(ket_thuc) - min(bat_dau)`) dưới 25% thời lượng video thì công việc kết thúc **suy giảm**. Đây không phải tổng thời gian có thoại; không phát hiện mọi khoảng thiếu ở giữa. CLI gợi ý tắt VAD/nhận dạng lại hoặc tách giọng; web nhận cảnh báo trong trạng thái | S |
 
 ### 3.3 Nhóm C — Dịch phụ đề
 
@@ -158,7 +162,7 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 | Mã | Yêu cầu | Tiêu chí chấp nhận | Ưu tiên |
 |---|---|---|---|
 | **FR-12** | Người dùng tạo và chọn nhóm cho video | Nhập tên nhóm khi tải video lên; nhóm chưa tồn tại thì được tạo mới. Trang quản lý liệt kê được các nhóm đã có | M |
-| **FR-13** | Thuật ngữ học được ở video trước áp dụng cho video sau cùng nhóm | Dịch tập 1 sinh ra cặp thuật ngữ mới; dịch tập 2 cùng nhóm thì cặp đó xuất hiện trong bản dịch với **cùng một cách dịch**. Xác minh bằng phép thử nhân quả: đổi bản dịch trong bảng thuật ngữ rồi chạy lại tập 2, kết quả phải đổi theo | M |
+| **FR-13** | Thuật ngữ người dùng lưu được áp dụng cho các video cùng nhóm | Lưu cặp từ gốc → bản dịch vào nhóm; bộ dịch thay từ nguồn bằng thẻ rồi phục hồi bản dịch đã lưu. Đổi bảng thuật ngữ làm đổi chữ ký cache dịch. Kiểm bằng callable giả và phép thử model riêng; NLLB hiện không tự sinh thuật ngữ mới và có đường lui không ép thuật ngữ khi thẻ hỏng | M |
 | **FR-14** | Người dùng xem và sửa bản dịch của một thuật ngữ | Trang quản lý cho sửa bản dịch. Bản người dùng sửa thay bản cũ; máy học từ mới **không bao giờ** ghi đè bản dịch đã có | M |
 | **FR-15** | Việc ghi thuật ngữ không bị lặp khi chạy lại | Chạy lại cùng một video đã dịch xong thì bảng thuật ngữ **không đổi**: không thêm dòng trùng, không đổi bản dịch đã có. Xác minh bằng test đọc lại cơ sở dữ liệu sau hai lượt chạy | S |
 
@@ -171,8 +175,8 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 | **FR-16** | Hệ thống trích một khung hình cho **mỗi** câu thoại để người dùng xem | Video có N câu thoại thì có đúng N ảnh khung được sinh ra, mỗi ảnh lấy tại thời điểm câu đó xuất hiện. Không lấy mẫu thưa, vì câu phụ đề nhảy chỗ chính là câu cần nhìn nhất | M |
 | **FR-17** | Người dùng vẽ, chỉnh và xóa vùng mờ bằng chuột trên khung hình | Kéo trong vùng trống tạo hộp mới; kéo cạnh hoặc góc chỉnh kích thước; kéo giữa hộp dời vị trí; rút hộp về gần bằng không là xóa. Hộp **giữ nguyên** khi chuyển sang khung khác, để người dùng so được câu nào cao nhất | M |
 | **FR-18** | Người dùng gán vùng riêng cho câu thoại có phụ đề nhảy chỗ | Chọn phạm vi riêng cho câu đang xem, vẽ vùng mới trên khung của câu đó, rồi áp cho một dải câu liền kề. Vùng chung của các câu còn lại **không đổi**; câu có vùng riêng được đánh dấu trên giao diện | S |
-| **FR-19** | Công việc **chờ** người dùng vẽ hộp thay vì báo lỗi | Video chưa có vùng mờ thì công việc dừng ở trạng thái chờ ngay **sau bước nhận dạng và trước bước dịch**. Người dùng gửi hộp lên thì công việc chạy tiếp từ bước dịch. Bỏ cuộc ở màn này thì **chưa tốn** một đồng tiền API nào | M |
-| **FR-20** | Mọi vùng mờ đều qua cùng một bộ kiểm tra hình học | Vùng phải có 4 số hữu hạn, `0 ≤ x,y < 1`, `w,h > 0`, `x+w ≤ 1`, `y+h ≤ 1`, quy ra pixel phải chẵn, tối thiểu 2×2 và nằm trọn trong ảnh. Cùng bộ kiểm tra này áp cho giao diện web, dòng lệnh, file trên đĩa và cơ sở dữ liệu | M |
+| **FR-19** | Công việc **chờ** người dùng vẽ hộp thay vì báo lỗi | Khi cần làm mờ mà chưa có vùng hợp lệ, công việc dừng **sau bước lấy phụ đề gốc và trước bước dịch**. Gửi hộp thì chạy tiếp; bỏ cuộc ở đây chưa nạp model dịch. `blur=off` hoặc `auto` với `W/H < 1.2` bỏ bước làm mờ và không chờ vẽ | M |
+| **FR-20** | Mọi vùng mờ đều qua cùng một bộ kiểm tra hình học phía máy chủ | Vùng có 4 số hữu hạn, `0 ≤ x,y < 1`, `w,h > 0`, `x+w ≤ 1`, `y+h ≤ 1`; quy ra pixel chẵn, tối thiểu 2×2 và nằm trọn trong ảnh. Backend dùng `markbox.kiem_hop/kiem_vung` cho API, CLI, file và dữ liệu nhóm; JavaScript có kiểm tra riêng để báo sớm, không thay validator backend | M |
 | **FR-21** | Người dùng đặt vùng mờ mặc định cho cả nhóm | Tích ô lưu làm mặc định thì vùng chính được ghi vào nhóm và dùng làm điểm khởi đầu cho video sau. Vùng vẽ riêng của một video luôn **được ưu tiên hơn** vùng mặc định của nhóm | S |
 
 ### 3.6 Nhóm F — Kết xuất video
@@ -195,7 +199,7 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 |---|---|---|---|
 | **FR-27** | Việc xử lý chạy nền, không chặn giao diện | Yêu cầu tải lên trả về ngay mã công việc; giao diện vẫn thao tác được trong lúc xử lý chạy | M |
 | **FR-28** | Người dùng theo dõi được bước hiện tại và phần trăm tiến độ | Giao diện hỏi lại trạng thái theo chu kỳ khoảng 1.5 giây và hiển thị tên bước cùng thanh tiến độ. Tiến độ **không** được nhảy lùi khi công việc chờ vẽ hộp rồi chạy tiếp | M |
-| **FR-29** | Hệ thống từ chối xử lý song song trên cùng một video | Công việc thứ hai trên cùng một video bị từ chối với mã 409 kèm thông báo rõ, thay vì chạy chồng và làm hỏng file trung gian | M |
+| **FR-29** | Hệ thống từ chối xử lý đồng thời trên cùng tài nguyên | Web xác định tài nguyên bằng cặp nội dung video và nhóm. Khi lock của tài nguyên còn giữ, yêu cầu mới trả `409`; lock được nhả khi chờ vẽ hộp, còn checkpoint riêng kiểm nguồn khi tiếp tục. Đây không phải khoá toàn bộ mọi video của ứng dụng | M |
 | **FR-30** | Mọi kết cục của công việc nền đều được ghi lại | Thành công, lỗi, hay chờ vẽ hộp đều được ghi vào trạng thái công việc. **Không** có công việc nào kẹt vĩnh viễn ở trạng thái đang chạy sau khi tiến trình xử lý đã kết thúc | M |
 | **FR-31** | Người dùng tải về video kết quả từ trình duyệt | Công việc hoàn tất thì nút tải về hoạt động và trả đúng file video đã xử lý | M |
 
@@ -205,10 +209,10 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 
 | Mã | Yêu cầu | Tiêu chí chấp nhận | Ưu tiên |
 |---|---|---|---|
-| **FR-32** | Đổi cấu hình chỉ làm tính lại những bước bị ảnh hưởng | Đổi vùng mờ hoặc cỡ chữ rồi chạy lại thì hệ thống **không** gọi lại nhận dạng và **không** chạy lại bước dịch (cũng không nạp model dịch). Xác minh bằng nhật ký: hai bước đó ghi là dùng lại kết quả cũ, số token tiêu thụ bằng 0 | M |
+| **FR-32** | Đổi cấu hình chỉ làm tính lại những bước bị ảnh hưởng | Đổi vùng mờ/cỡ chữ khi nguồn, glossary và các tùy chọn khác không đổi thì dùng lại cache nhận dạng/dịch hợp lệ; không nạp model dịch. Kiểm bằng số lần gọi module giả và manifest; nhật ký dịch có token bằng 0 khi cache hit nhưng không có trạng thái riêng biểu thị cache hit. Render luôn chạy lại | M |
 | **FR-33** | Thay nội dung video tại cùng đường dẫn vẫn bị phát hiện | Ghi đè một video khác lên cùng tên file rồi chạy lại thì mọi bước phụ thuộc đều được làm mới, vì chữ ký tính theo **nội dung** file chứ không theo đường dẫn | M |
 | **FR-34** | Ngắt giữa chừng không tạo file dở bị hiểu nhầm là hoàn tất | Dừng tiến trình giữa một bước rồi chạy lại thì bước đó được làm lại từ đầu, và kết quả tốt của lần chạy trước **không** bị xóa mất | M |
-| **FR-35** | Bản dịch người dùng sửa tay được giữ lại | Sửa tay file phụ đề Việt rồi chạy lại: nếu vẫn đủ số câu và đúng mốc thời gian thì bản sửa được giữ nguyên, không bị ghi đè bằng bản máy dịch | S |
+| **FR-35** | Bản dịch người dùng sửa tay được giữ lại khi chạy lại thông thường | Sửa tay `sub_vi.srt` rồi chạy lại không ép làm mới: bản SRT hợp lệ, đủ số câu và đúng mốc thời gian được giữ lại theo điều kiện cache trong `_buoc_dich`. Các cờ ép dịch/nhận dạng lại có thể chủ động làm mới bản dịch | S |
 
 ### 3.9 Nhóm I — Công cụ dòng lệnh nội bộ
 
@@ -217,7 +221,7 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 | Mã | Yêu cầu | Tiêu chí chấp nhận | Ưu tiên |
 |---|---|---|---|
 | **FR-36** | Dòng lệnh và giao diện web cho **cùng một kết quả** | Chạy cùng một video với cùng tùy chọn qua hai đường vào thì sinh ra file kết quả giống nhau. Xác minh bằng test tự động so sánh hai lượt chạy | M |
-| **FR-37** | Chế độ hàng loạt xử lý cả một thư mục theo thứ tự | Các video chạy lần lượt để thuật ngữ tích lũy từ video trước sang video sau; mỗi video sinh file kết quả riêng. Hai video trùng tên file đích thì bị từ chối **trước khi ghi bất cứ thứ gì** | S |
+| **FR-37** | Chế độ hàng loạt xử lý cả một thư mục theo thứ tự | Các video chạy lần lượt, dùng bảng thuật ngữ chung; mỗi video sinh file riêng. Trùng đích hoặc đích trùng đầu vào bị từ chối trước side effect; bỏ qua `*_vi.mp4`. NLLB hiện không tự tích luỹ thuật ngữ mới | S |
 | **FR-38** | Mã thoát phản ánh đúng kết quả | `0` khi tất cả thành công; `1` khi có lỗi, có câu giữ nguyên bản gốc, hoặc còn video chờ vẽ hộp; `130` khi người dùng nhấn dừng | S |
 
 ### 3.10 Nhóm J — Vận hành dữ liệu
@@ -228,10 +232,10 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 |---|---|---|---|
 | **FR-39** | Danh sách có tìm kiếm, lọc, sắp xếp và phân trang | Danh sách công việc, nhóm, thuật ngữ, nhật ký, lịch sử nhận `trang`, `moi_trang` (tối đa 200) và trả tổng số ở header `X-Tong-So`. Tìm nhóm không phân biệt dấu. Giá trị lọc hoặc sắp xếp ngoài danh sách trắng bị từ chối `400` | S |
 | **FR-40** | Xoá được nhóm và thuật ngữ, không xoá khi nhóm đang có việc chạy | Xoá nhóm kéo theo thuật ngữ của nhóm. Đối tượng không có trả `404`. Nhóm có việc đang chạy trả `409` và dữ liệu giữ nguyên | S |
-| **FR-41** | Mọi thay đổi nhóm và thuật ngữ để lại lịch sử | Tạo, sửa, xoá đều ghi vào `lich_su` do trigger của CSDL, kể cả thuật ngữ máy tự học và xoá dây chuyền. Lịch sử và nhật ký chạy từng bước đọc được qua API và dòng lệnh | S |
+| **FR-41** | Mọi thay đổi nhóm và thuật ngữ để lại lịch sử | Tạo, sửa, xoá ghi vào `lich_su` bằng trigger, kể cả đường ghi thuật ngữ từ kết quả dịch và xoá dây chuyền. NLLB hiện trả danh sách từ mới rỗng. API đọc được lịch sử và nhật ký; CLI `lich-su` chỉ đọc lịch sử thay đổi | S |
 | **FR-42** | Sao lưu và khôi phục CSDL | Sao lưu tạo file SQLite hợp lệ. Khôi phục từ chối file không phải SQLite, hỏng, hoặc thiếu bảng bắt buộc, và chụp bản hiện tại trước khi thay. Lúc khởi động hệ thống tự sao lưu và giữ 5 bản | S |
 | **FR-43** | Dọn kết quả và cache cũ mà không xoá nhầm | Mặc định chỉ liệt kê. Không xoá nguồn còn lock, nguồn mới, hoặc bất cứ thứ gì nằm ngoài `work/tai_len/` (kể cả qua liên kết) | S |
-| **FR-44** | Tuỳ chọn sai và file quá lớn bị từ chối sớm, không để rác | `lang`, `model`, `model_dich`, `font_scale`, độ dài tên nhóm và thuật ngữ sai thì trả `400`. `Content-Length` vượt 4 GiB trả `413` trước khi nhận file. Request bị từ chối không để lại file hay công việc | M |
+| **FR-44** | Tuỳ chọn sai và file quá lớn bị từ chối sớm, không để rác | Validator nghiệp vụ từ chối `lang`, model ngoài danh sách web, `font_scale` không hữu hạn/≤0/>5 và tên sai độ dài bằng `400`; lỗi kiểu hoặc thiếu trường do FastAPI có thể trả `422`. `Content-Length` > 4 GiB + 1 MiB trả `413` trước khi đọc thân; nội dung file giới hạn 4 GiB. Kiểm tuỳ chọn thường diễn ra sau khi FastAPI đã nhận multipart | M |
 
 **Tổng cộng: 44 yêu cầu chức năng** — 29 bắt buộc (M), 15 nên có (S).
 
@@ -239,15 +243,17 @@ Nguồn dữ liệu là trang chủ và trang giá **chính thức** của từn
 
 ## 4. Yêu cầu phi chức năng
 
+Các ngưỡng thời gian, chất lượng và nghiệm thu trên thiết bị khác là **mục tiêu cần đo**, không phải bảo đảm từ mã. Lượt 04/11/2026: offline 100/102 PASS, hai test render lỗi vì thiếu `ffmpeg` trong PATH; coverage báo 95,4% nhưng lệnh thoát lỗi nên chưa đạt nghiệm thu. Số đo lịch sử và phạm vi kiểm thật xem [Báo cáo tổng hợp](BAO_CAO_TONG_HOP.md#18-kiểm-thử--kết-quả-đo-ngày-2026-10-07).
+
 | Mã | Nhóm | Yêu cầu | Tiêu chí chấp nhận |
 |---|---|---|---|
 | **NFR-01** | Hiệu năng | Nhận dạng giọng nói hoàn thành trong thời gian chấp nhận được | Với GPU NVIDIA: không quá 0.5× thời lượng video. Không có GPU, chạy CPU: không quá 2.5× thời lượng video. Đo trên video mẫu 2 phút của nhóm, ghi số thực đo vào báo cáo |
-| **NFR-02** | Hiệu năng | Trích khung hình không làm nghẽn giao diện | Thời gian trích trung bình dưới 0.3 giây mỗi khung ở độ phân giải 640×360; ảnh tải lười nên vài chục khung vẫn cuộn mượt |
+| **NFR-02** | Hiệu năng | Trích khung hình không làm nghẽn giao diện | Mục tiêu đo dưới 0.3 giây/khung trên mẫu 640×360. Mã hiện chạy tối đa 4 ffmpeg cùng lúc, trích toàn bộ cue trước khi chờ vẽ; giữ độ phân giải nguồn, không ép về 640×360. Web tải ảnh khi chuyển khung; chưa có số đo mới chứng minh ngưỡng này |
 | **NFR-03** | Hiệu năng | Giao diện phản hồi ngay với thao tác của người dùng | Vẽ và kéo hộp trên canvas không có độ trễ nhìn thấy được; yêu cầu tải lên trả về mã công việc dưới 5 giây với video dưới 100 MB |
 | **NFR-04** | Chất lượng đầu ra | Video kết quả không bị giảm chất lượng do nén chồng | Chỉ đúng một lần mã hóa lại; thời lượng, độ phân giải và luồng âm thanh giữ nguyên so với bản gốc |
 | **NFR-05** | Độ tin cậy | Mọi lần ghi file đều nguyên vẹn | Ghi ra file tạm cùng thư mục, đóng, kiểm tra, rồi mới thay thế file đích. Mất điện giữa chừng chỉ làm mất cache, không sinh file hỏng |
 | **NFR-06** | Độ tin cậy | Một video chỉ được một tiến trình xử lý tại một thời điểm | Khóa theo thư mục làm việc; tiến trình thứ hai bị từ chối. Khóa sót sau khi máy treo **không** tự động bị coi là đã chết — người dùng xác minh rồi xóa tay |
-| **NFR-07** | Bảo mật, riêng tư | Video không rời khỏi máy người dùng | Cả video lẫn văn bản phụ đề đều được xử lý tại máy: Whisper và NLLB chạy cục bộ, không có khóa API. Mạng chỉ dùng để tải model về lần đầu; sau đó chạy ngoại tuyến được |
+| **NFR-07** | Bảo mật, riêng tư | Video không rời khỏi máy người dùng | Video và phụ đề xử lý tại máy, không có khóa API dịch. Model dùng cache, nhưng `snapshot_download(repo)` không đặt `local_files_only`; có thể kiểm tra/tải model qua mạng khi khởi tạo. Chưa có bảo đảm tuyệt đối không gọi mạng sau lần đầu |
 | **NFR-08** | Bảo mật | Dữ liệu vào từ bên ngoài đều được kiểm tại biên | Tên file tải lên chỉ lấy phần tên, loại bỏ đường dẫn; giới hạn kích thước 4 GiB kiểm **trong lúc** đọc; thông báo lỗi không tiết lộ đường dẫn thật trên máy chủ |
 | **NFR-09** | Khả dụng | Giao diện dùng được trên nhiều khổ màn hình | Bốn màn hiển thị đúng ở chiều rộng 360px, 768px và 1440px, có ảnh chụp làm bằng chứng |
 | **NFR-10** | Khả dụng | Thông báo lỗi bằng tiếng Việt và nêu được cách xử lý | Mỗi thông báo lỗi nói rõ chuyện gì xảy ra và người dùng nên làm gì tiếp theo |
@@ -325,7 +331,7 @@ Bản tương tác có thể mở bằng trình duyệt: [usecase.html](usecase.
 |---|---|
 | **Tác nhân** | Người biên tập phụ đề |
 | **Mục tiêu** | Sửa cách dịch một tên riêng và giữ nó cố định cho các tập sau |
-| **Điều kiện trước** | Nhóm đã tồn tại và đã có ít nhất một video được dịch |
+| **Điều kiện trước** | Nhóm đã tồn tại; không bắt buộc đã dịch video trước đó |
 | **Điều kiện sau** | Bản dịch mới được lưu; những lần dịch sau dùng bản này |
 | **Luồng chính** | 1. Người dùng mở màn Nhóm & thuật ngữ<br>2. Chọn nhóm cần xem<br>3. Hệ thống hiển thị danh sách cặp từ gốc → bản dịch<br>4. Người dùng sửa bản dịch của một thuật ngữ<br>5. Lưu |
 | **Luồng thay thế** | **4a.** Người dùng thêm thuật ngữ mới chưa từng xuất hiện → hệ thống ghi nhận và áp dụng từ lần dịch sau |
@@ -337,16 +343,16 @@ Bản tương tác có thể mở bằng trình duyệt: [usecase.html](usecase.
 
 ### 6.1 Nguyên tắc sắp xếp
 
-Kế hoạch sắp theo **thứ tự phụ thuộc kỹ thuật**, không theo lịch cố định: việc nào đủ đầu vào thì bắt đầu ngay, việc nào chưa đủ thì chưa khởi động. Mỗi giai đoạn là một **cổng** chỉ mở khi điều kiện ra đã đạt. Trong cùng một giai đoạn, bốn thành viên chạy song song trên bốn nhánh riêng.
+Kế hoạch sắp theo **thứ tự phụ thuộc kỹ thuật**, không theo lịch cố định: việc nào đủ đầu vào thì bắt đầu ngay, việc nào chưa đủ thì chưa khởi động. Mỗi giai đoạn là một **cổng** chỉ mở khi điều kiện ra đã đạt. Phân công hiện tại có ba thành viên trên ba nhánh riêng, theo `PHAN_CONG.md`; đây không phải nhật ký xác nhận các cổng đã hoàn tất.
 
-Lý do chọn cách này: cả bốn người đều cần lớp đọc-ghi phụ đề, nên nếu chia theo lịch thì ba người sẽ ngồi chờ người thứ tư. Chia theo phụ thuộc thì ba người đó có việc chuẩn bị làm ngay trong lúc chờ.
+Lý do chọn cách này: các thành viên đều cần lớp đọc-ghi phụ đề. Trong khi TV1 làm phần nền, TV2 và TV3 chuẩn bị dữ liệu giả và hợp đồng module.
 
 ### 6.2 Sáu cổng
 
 | Cổng | Nội dung | Điều kiện đóng cổng |
 |---|---|---|
-| **G0 — Hợp đồng dữ liệu** | Chốt phạm vi, dựng môi trường, kiểm `ffmpeg`/GPU/máy chủ web. Làm trước lớp đọc-ghi phụ đề vì cả ba người còn lại đều cần | Lớp phụ đề có trên nhánh chính; chữ ký các module và bảng địa chỉ API được chốt |
-| **G1 — Bốn module song song** | Mỗi người làm phần xử lý của mình với dữ liệu giả, không chờ nhau | Bốn module chạy độc lập, kiểm thử ngoại tuyến đạt |
+| **G0 — Hợp đồng dữ liệu** | Chốt phạm vi, dựng môi trường, kiểm `ffmpeg`/GPU/máy chủ web. Làm trước lớp đọc-ghi phụ đề vì các thành viên đều cần | Lớp phụ đề có trên nhánh chính; chữ ký các module và bảng địa chỉ API được chốt |
+| **G1 — Các module song song** | Mỗi người làm phần xử lý của mình với dữ liệu giả, không chờ nhau | Các module chạy độc lập, kiểm thử ngoại tuyến đạt |
 | **G2 — Điều phối** | Ghép luồng thật, làm cơ chế chạy lại, khóa tiến trình, xử lý hàng loạt | Chạy trọn một video qua dòng lệnh |
 | **G3 — Backend API** | Bọc HTTP quanh luồng đã có | Chạy trọn một video qua API, cho **cùng kết quả** với dòng lệnh |
 | **G4 — Frontend web** | Bốn màn giao diện, mỗi người dựng màn thuộc lĩnh vực mình | Tải lên → vẽ hộp → tải kết quả chạy được trên trình duyệt |
@@ -358,21 +364,20 @@ Nguyên tắc chia: mỗi người theo **một lĩnh vực xuyên suốt cả b
 
 | Thành viên | Lĩnh vực | Yêu cầu phụ trách |
 |---|---|---|
-| **TV1** (nhóm trưởng) | Nền tảng, cơ sở dữ liệu, điều phối, tích hợp | FR-32 → FR-35, FR-36, NFR-05, NFR-06, NFR-12, NFR-13 |
-| **TV2** | Đầu vào: nhận video, phụ đề sẵn, âm thanh, nhận dạng | FR-01 → FR-07, FR-27 → FR-31, NFR-01, NFR-08 |
-| **TV3** | Dịch và thuật ngữ | FR-08 → FR-15, NFR-07 |
-| **TV4** | Hình học, vùng mờ, kết xuất, tổng hợp kiểm thử | FR-16 → FR-26, NFR-02, NFR-04, NFR-09 |
+| **TV1** (nhóm trưởng) | Nền tảng, CSDL, điều phối, tích hợp, tổng hợp kiểm thử | FR-32 → FR-38, vận hành FR-39 → FR-44; NFR-05, NFR-06, NFR-12, NFR-13 |
+| **TV2** | Đầu vào, ASR, hình học, route khung/hộp, công việc | FR-01 → FR-07, backend FR-16 → FR-21, FR-27 → FR-31; NFR-01, NFR-02, NFR-08 |
+| **TV3** | Dịch, thuật ngữ, kết xuất, canvas và kết quả | FR-08 → FR-15, giao diện FR-17 → FR-21, FR-22 → FR-26; NFR-04, NFR-07, NFR-09 |
 
 ### 6.4 Ba điểm cần canh
 
-1. **G0 chặn mọi việc khác.** Lớp đọc-ghi phụ đề phải xong sớm nhất và được đưa thẳng lên nhánh chính, không xếp hàng chờ duyệt — ba người còn lại làm việc chuẩn bị song song trong lúc đó.
+1. **G0 chặn các phần phụ thuộc.** Lớp đọc-ghi phụ đề phải xong sớm, được duyệt và tích hợp theo `GIT.md`; TV2 và TV3 chuẩn bị song song trong lúc đó, không bỏ qua hook bảo vệ nhánh.
 2. **TV1 nằm trên đường găng hai lần** (G0 và G2). Vì vậy TV1 **không nhận địa chỉ API nào**; tầng web giao cho TV2 và TV3.
 3. **Nếu thiếu thời gian thì cắt G4 trước.** Backend chạy được vẫn là sản phẩm bảo vệ được; frontend không có backend thì không. Phần chưa làm phải ghi rõ trong báo cáo, **không** ghi đạt cho màn chưa dựng.
 
 ### 6.5 Cách phối hợp
 
 - Mỗi phần việc một nhánh riêng cắt từ nhánh chính; mỗi việc có một người chịu trách nhiệm chính và một người duyệt chéo.
-- Duyệt chéo vòng tròn: TV2 duyệt TV1 · TV3 duyệt TV2 · TV4 duyệt TV3 · TV1 duyệt TV4.
+- Duyệt chéo vòng tròn: TV2 duyệt TV1 · TV3 duyệt TV2 · TV1 duyệt TV3.
 - Đồng bộ 20–30 phút mỗi khi một cổng sắp đóng hoặc có người bị chặn.
 - **Thay đổi hợp đồng phải thống nhất trước khi gộp.** Có hai hợp đồng: chữ ký các module và bảng địa chỉ API. Đổi một trong hai giữa G3/G4 làm gãy phần của người khác.
 - Không đưa lên kho mã: file cấu hình môi trường, khóa bí mật, thư mục môi trường ảo, model, video lớn, thư mục làm việc.
